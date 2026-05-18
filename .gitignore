@@ -1,0 +1,51 @@
+# PF67 runtime data
+data/
+logs/
+backups/
+diagnostics/
+pf67_milestone_backups/
+
+# SQLite/runtime DB files
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+
+# User uploads / generated media
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+app/static/uploads/jobs/
+app/static/uploads/tmp/
+
+# Synology metadata
+@eaDir/
+**/@eaDir/
+*@SynoEAStream
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local/generated patch clutter
+patch_pf67_*.py
+backup_pf67_*.py
+generate_pf67_*.py
+regenerate_pf67_*.py
+build_pf67_*.py
+pf67_empty_app_installer_*.py
+pf67_clean_regenerator_*.py
+*.manifest.json
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp

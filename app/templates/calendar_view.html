@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Calendar{% endblock %}
+
+{% block content %}
+
+<h2>Calendar</h2>
+
+<div class="row">
+    <div class="col-lg-3">
+        <div class="card pf67-card">
+            <div class="card-body">
+                <h3 class="h5">Jobs</h3>
+
+                {% if job_rows %}
+                    <div class="d-grid gap-2">
+                        {% for row in job_rows %}
+                            <div class="pf67-calendar-job-row"
+                                 data-pf67-calendar-job-row="{{ row.job.id }}"
+                                 data-pf67-calendar-job-url="{{ url_for('views.job_detail', job_id=row.job.id) }}"
+                                 title="Right-click for actions">
+                                <label class="form-check pf67-calendar-job-label mb-0">
+                                    <input class="form-check-input pf67-calendar-job" type="checkbox" value="{{ row.job.id }}" checked>
+                                    <span class="form-check-label">
+                                        <span class="pf67-job-dot {{ row.color_class }}"></span>
+                                        {{ row.job.name }}
+                                        <span class="text-muted pf67-small">({{ row.job.status|title }})</span>
+                                    </span>
+                                </label>
+
+                                <button class="btn btn-outline-secondary btn-sm pf67-show-only-button"
+                                        type="button"
+                                        data-pf67-show-only="{{ row.job.id }}"
+                                        title="Show only this job">
+                                    Only
+                                </button>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <hr>
+
+                    <label class="form-check">
+                        <input class="form-check-input" type="checkbox" id="pf67-show-completed" checked>
+                        <span class="form-check-label">Show completed</span>
+                    </label>
+                {% else %}
+                    <p>No active or pending jobs.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <p class="text-muted pf67-small">
+            Calendar colors identify jobs. Status is shown in the event title.
+        </p>
+
+        <div class="alert alert-danger d-none pf67-small" id="pf67-calendar-error">
+            Calendar events failed to load. Check the Python console for details.
+        </div>
+    </div>
+
+    <div class="col-lg-9">
+        <div id="pf67-calendar"></div>
+    </div>
+</div>
+
+<div class="pf67-context-menu" id="pf67-calendar-job-menu">
+    <button type="button" id="pf67-calendar-menu-show-only">Show Only</button>
+    <button type="button" id="pf67-calendar-menu-go-to">Go To Job</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var calendarEl = document.getElementById("pf67-calendar");
+    var showCompletedBox = document.getElementById("pf67-show-completed");
+    var errorBox = document.getElementById("pf67-calendar-error");
+    var contextMenu = document.getElementById("pf67-calendar-job-menu");
+    var contextMenuShowOnly = document.getElementById("pf67-calendar-menu-show-only");
+    var contextMenuGoTo = document.getElementById("pf67-calendar-menu-go-to");
+    var contextJobId = "";
+    var contextJobUrl = "";
+
+    function selectedJobIds() {
+        var boxes = document.querySelectorAll(".pf67-calendar-job:checked");
+        var ids = [];
+
+        boxes.forEach(function(box) {
+            ids.push(box.value);
+        });
+
+        return ids;
+    }
+
+    function includeCompleted() {
+        if (!showCompletedBox) {
+            return "1";
+        }
+
+        if (showCompletedBox.checked) {
+            return "1";
+        }
+
+        return "0";
+    }
+
+    function showOnlyJob(jobId) {
+        var boxes = document.querySelectorAll(".pf67-calendar-job");
+
+        boxes.forEach(function(box) {
+            box.checked = box.value === String(jobId);
+        });
+
+        if (calendar) {
+            calendar.refetchEvents();
+        }
+    }
+
+    function eventsFunction(fetchInfo, successCallback, failureCallback) {
+        var ids = selectedJobIds();
+        var url = "{{ url_for('views.api_calendar_events') }}?job_ids=" + ids.join(",") + "&include_completed=" + includeCompleted();
+
+        if (errorBox) {
+            errorBox.classList.add("d-none");
+        }
+
+        fetch(url)
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error("Calendar event API failed");
+                }
+
+                return response.json();
+            })
+            .then(function(data) {
+                successCallback(data);
+            })
+            .catch(function(error) {
+                console.error(error);
+
+                if (errorBox) {
+                    errorBox.classList.remove("d-none");
+                }
+
+                successCallback([]);
+            });
+    }
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        height: "auto",
+        nowIndicator: true,
+        headerToolbar: {
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,listWeek"
+        },
+        events: eventsFunction,
+        eventClick: function(info) {
+            if (info.event.url) {
+                info.jsEvent.preventDefault();
+                window.location.href = info.event.url;
+            }
+        },
+        eventDidMount: function(info) {
+            var tooltip = info.event.extendedProps.tooltip || info.event.title;
+
+            if (tooltip) {
+                tooltip = tooltip.replace(/\\\\n/g, "\n").replace(/\\n/g, "\n");
+                info.el.setAttribute("title", tooltip);
+            }
+        }
+    });
+
+    calendar.render();
+
+    var boxes = document.querySelectorAll(".pf67-calendar-job");
+
+    boxes.forEach(function(box) {
+        box.addEventListener("change", function() {
+            calendar.refetchEvents();
+        });
+    });
+
+    if (showCompletedBox) {
+        showCompletedBox.addEventListener("change", function() {
+            calendar.refetchEvents();
+        });
+    }
+
+    var showOnlyButtons = document.querySelectorAll("[data-pf67-show-only]");
+
+    showOnlyButtons.forEach(function(button) {
+        button.addEventListener("click", function() {
+            showOnlyJob(button.getAttribute("data-pf67-show-only"));
+        });
+    });
+
+    var jobRows = document.querySelectorAll("[data-pf67-calendar-job-row]");
+
+    jobRows.forEach(function(row) {
+        row.addEventListener("contextmenu", function(event) {
+            event.preventDefault();
+
+            contextJobId = row.getAttribute("data-pf67-calendar-job-row");
+            contextJobUrl = row.getAttribute("data-pf67-calendar-job-url");
+
+            if (!contextMenu) {
+                return;
+            }
+
+            contextMenu.style.left = event.clientX + "px";
+            contextMenu.style.top = event.clientY + "px";
+            contextMenu.style.display = "block";
+        });
+    });
+
+    if (contextMenuShowOnly) {
+        contextMenuShowOnly.addEventListener("click", function() {
+            if (contextJobId) {
+                showOnlyJob(contextJobId);
+            }
+
+            if (contextMenu) {
+                contextMenu.style.display = "none";
+            }
+        });
+    }
+
+    if (contextMenuGoTo) {
+        contextMenuGoTo.addEventListener("click", function() {
+            if (contextJobUrl) {
+                window.location.href = contextJobUrl;
+            }
+        });
+    }
+
+    document.addEventListener("click", function() {
+        if (contextMenu) {
+            contextMenu.style.display = "none";
+        }
+    });
+});
+</script>
+
+{% endblock %}

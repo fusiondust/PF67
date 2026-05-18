@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Note{% endblock %}
+
+{% block content %}
+
+<h2>Edit Note</h2>
+
+<p>
+    Job:
+    <a href="{{ url_for('views.job_detail', job_id=job.id) }}">
+        {{ job.name }}
+    </a>
+</p>
+
+{% if note.step %}
+    <p>
+        Step:
+        <a href="{{ url_for('views.job_detail', job_id=job.id) }}#step-{{ note.step.id }}">
+            {{ note.step.name }}
+        </a>
+    </p>
+{% endif %}
+
+{% if can_edit %}
+    <form method="post" class="pf67-note-form">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h3 class="h5 mb-0">Note Details</h3>
+            <a class="pf67-small" data-bs-toggle="collapse" href="#note-date-panel">
+                {{ event_at_display }}
+            </a>
+        </div>
+
+        <div class="collapse mb-3" id="note-date-panel">
+            <div class="pf67-time-editor-row">
+                <div class="pf67-time-editor">
+                    <label class="form-label">Time</label>
+                    <input class="form-control" type="datetime-local" name="event_at" value="{{ event_at_value }}">
+                </div>
+            </div>
+        </div>
+
+        {% if note.note_type != "job_note" %}
+            <div class="mb-3" style="max-width: 66.666%;">
+                <label class="form-label">Title</label>
+                <input class="form-control" name="title" value="{{ note.title }}">
+            </div>
+        {% else %}
+            <input type="hidden" name="title" value="">
+        {% endif %}
+
+        <div class="mb-3">
+            <a data-bs-toggle="collapse" href="#preview-image-panel">
+                Change timeline preview image
+            </a>
+
+            <div class="collapse mt-2" id="preview-image-panel">
+                <label class="form-label">Default timeline image</label>
+                <select class="form-select" name="preview_image_url">
+                    <option value="">Auto / first image</option>
+                    {% for image_url in note_images %}
+                        <option value="{{ image_url }}" {% if note.preview_image_url == image_url %}selected{% endif %}>
+                            {{ image_url }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">
+                    The timeline preview shows one thumbnail. The full note can contain multiple images.
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Note</label>
+            <textarea class="form-control pf67-rich-text" name="note_html">{{ note.note_html }}</textarea>
+        </div>
+
+        <button class="btn btn-outline-secondary btn-sm pf67-media-button" type="button">
+            Insert Existing Image
+        </button>
+        <button class="btn btn-primary" type="submit">Save Note</button>
+        <a class="btn btn-secondary" href="{{ url_for('views.job_detail', job_id=job.id) }}">Cancel</a>
+    </form>
+
+    {% if note.note_type != "job_note" and note.job_step_id %}
+        <form method="post" action="{{ url_for('views.delete_note', note_id=note.id) }}" class="mt-3" onsubmit="return confirm('Delete this note?');">
+            <button class="btn btn-outline-danger btn-sm" type="submit">Delete Note</button>
+        </form>
+    {% endif %}
+
+    <div class="mt-4">
+        <h3 class="h5">Full Note Preview</h3>
+        <div class="border rounded p-3 pf67-note-full">
+            {{ note.note_html | safe }}
+        </div>
+    </div>
+
+    <div class="modal fade" id="pf67-media-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Insert Existing Image</h5>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    {% if images %}
+                        <div class="row">
+                            {% for image in images %}
+                                <div class="col-md-3 col-6 mb-3">
+                                    <img class="pf67-media-thumb" src="{{ image.url }}" data-pf67-image-url="{{ image.url }}">
+                                    <div class="pf67-small text-muted text-break">{{ image.filename }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p>No uploaded images yet. Upload an image through the editor first.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js" referrerpolicy="no-referrer"></script>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var activeEditorId = "";
+
+        if (window.tinymce) {
+            tinymce.init(pf67TinyOptions({
+                selector: ".pf67-rich-text",
+                plugins: "code link lists image",
+                toolbar: "undo redo | bold italic | bullist numlist | link image | code",
+                menubar: false,
+                branding: false,
+                height: 360,
+                automatic_uploads: true,
+                images_upload_url: "{{ url_for('views.upload_job_image', job_id=job.id) }}",
+                images_file_types: "jpg,jpeg,png,gif,webp",
+                setup: function(editor) {
+                    editor.on("focus", function() {
+                        activeEditorId = editor.id;
+                    });
+                }
+            }));
+        }
+
+        var forms = document.querySelectorAll(".pf67-note-form");
+
+        forms.forEach(function(form) {
+            form.addEventListener("submit", function() {
+                if (window.tinymce) {
+                    tinymce.triggerSave();
+                }
+            });
+        });
+
+        var modalElement = document.getElementById("pf67-media-modal");
+        var mediaModal = null;
+
+        if (modalElement && window.bootstrap) {
+            mediaModal = new bootstrap.Modal(modalElement);
+        }
+
+        var mediaButtons = document.querySelectorAll(".pf67-media-button");
+
+        mediaButtons.forEach(function(button) {
+            button.addEventListener("click", function() {
+                if (window.tinymce && tinymce.activeEditor) {
+                    activeEditorId = tinymce.activeEditor.id;
+                }
+
+                if (mediaModal) {
+                    mediaModal.show();
+                }
+            });
+        });
+
+        var imageThumbs = document.querySelectorAll("[data-pf67-image-url]");
+
+        imageThumbs.forEach(function(image) {
+            image.addEventListener("click", function() {
+                var url = image.getAttribute("data-pf67-image-url");
+                var editor = null;
+
+                if (activeEditorId && window.tinymce) {
+                    editor = tinymce.get(activeEditorId);
+                }
+
+                if (!editor && window.tinymce) {
+                    editor = tinymce.activeEditor;
+                }
+
+                if (editor) {
+                    editor.insertContent('<p><img src="' + url + '" alt=""></p>');
+                }
+
+                if (mediaModal) {
+                    mediaModal.hide();
+                }
+            });
+        });
+    });
+    </script>
+{% else %}
+    <div class="alert alert-secondary">
+        Read-only mode. Login to edit notes.
+    </div>
+{% endif %}
+
+{% endblock %}

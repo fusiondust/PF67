@@ -1,0 +1,1097 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Job{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-xl-9">
+        <div class="mb-3 d-flex justify-content-between align-items-start gap-3">
+            <div>
+                <h2 class="mb-1">{{ job.name }}</h2>
+
+                <div class="pf67-small text-muted">
+                    Template v{{ job.template_version }}
+                    ·
+                    Status:
+                    {% if can_edit %}
+                        <span id="pf67-job-status-display">
+                            <a href="#" id="pf67-job-status-link" class="pf67-muted-link">{{ job.status|title }}</a>
+                        </span>
+
+                        <form method="post" action="{{ url_for('views.update_job_status', job_id=job.id) }}" id="pf67-job-status-form" class="d-inline d-none">
+                            <select class="pf67-inline-select pf67-small" name="status" id="pf67-job-status-select">
+                                {% for status in ["active", "pending", "complete", "cancelled", "failed"] %}
+                                    <option value="{{ status }}" {% if job.status == status %}selected{% endif %}>{{ status|title }}</option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    {% else %}
+                        {{ job.status|title }}
+                    {% endif %}
+                    ·
+                    <a href="{{ url_for('api.job_notes', job_id=job.id) }}" class="pf67-muted-link">API</a>
+                    ·
+                    <a href="{{ url_for('views.job_report_pdf', job_id=job.id) }}" class="pf67-muted-link">PDF</a>
+                    {% if can_edit %}
+                        ·
+                        <a data-bs-toggle="collapse" href="#general-note-panel" class="pf67-muted-link">
+                            General Note
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if can_edit %}
+                <div class="pf67-header-actions text-end">
+                    {% if job.status == "active" %}
+                        <button class="btn btn-outline-secondary btn-sm" type="button" id="pf67-header-add-note">
+                            Add Step Note
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" type="button" id="pf67-header-complete-step">
+                            Complete Step
+                        </button>
+                    {% endif %}
+
+                    <form method="post"
+                          action="{{ url_for('views.delete_job', job_id=job.id) }}"
+                          class="d-inline pf67-job-danger-action"
+                          onsubmit="return confirm('Delete this job and all steps/notes? This cannot be undone.');">
+                        <button class="btn btn-outline-danger btn-sm" type="submit">
+                            Delete Job
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if can_edit %}
+            <div class="collapse mb-3" id="general-note-panel">
+                <div class="border rounded p-3">
+                    <form method="post" action="{{ url_for('views.add_job_note', job_id=job.id) }}" class="pf67-note-form">
+                        <input type="hidden" name="title" value="" class="pf67-general-note-title-hidden">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="h6 mb-0">General Job Note</h5>
+                            <span class="pf67-inline-date-local">
+                                <a href="#" class="pf67-small pf67-inline-date-local-display">
+                                    {% if general_note %}{{ general_note.event_at.strftime("%b %d, %I:%M %p") if general_note.event_at else now_display }}{% else %}{{ now_display }}{% endif %}
+                                </a>
+                                <span class="pf67-inline-date-editor d-none">
+                                    <input class="form-control form-control-sm" type="datetime-local" name="event_at" value="{% if general_note %}{{ general_note.event_at.strftime('%Y-%m-%dT%H:%M') if general_note.event_at else now_value }}{% else %}{{ now_value }}{% endif %}">
+                                    <span class="pf67-inline-edit-buttons">
+                                        <button class="btn btn-success btn-sm pf67-inline-edit-button pf67-inline-date-local-save" type="button">✓</button>
+                                        <button class="btn btn-danger btn-sm pf67-inline-edit-button pf67-inline-date-local-cancel" type="button">×</button>
+                                    </span>
+                                </span>
+                            </span>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">Note</label>
+                            <textarea class="form-control pf67-rich-text" name="note_html">{% if general_note %}{{ general_note.note_html }}{% endif %}</textarea>
+                        </div>
+
+                        <button class="btn btn-outline-secondary btn-sm pf67-media-button" type="button">
+                            Insert Existing Image
+                        </button>
+
+                        <button class="btn btn-primary" type="submit">
+                            {% if general_note %}Save General Note{% else %}Add General Note{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-secondary">
+                Read-only mode. Login to add notes, upload images, or complete steps.
+            </div>
+        {% endif %}
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="nav flex-column nav-pills pf67-step-list" id="step-tabs" role="tablist">
+                    {% for step in job.steps %}
+                        {% set timing = step_timing.get(step.id) %}
+                        {% set is_active = step.id == selected_step_id %}
+
+                        <button
+                            class="nav-link pf67-step-button pf67-context-enabled {% if is_active %}active{% endif %}"
+                            id="step-tab-{{ step.id }}"
+                            data-bs-toggle="pill"
+                            data-bs-target="#step-panel-{{ step.id }}"
+                            type="button"
+                            role="tab"
+                            data-pf67-step-id="{{ step.id }}" data-pf67-step-completed="{% if step.completed_at %}1{% else %}0{% endif %}" title="Right-click for actions">
+                            <span class="pf67-step-title">{{ step.name }}</span>
+                            <span class="pf67-small">{{ timing.status_label if timing else "" }}</span>
+                            {% if timing and timing.compact_label %}
+                                <span class="pf67-step-time" title="{{ timing.compact_title }}">
+                                    {{ timing.compact_label }}
+                                </span>
+                            {% endif %}
+                            {% if step.context_tag %}
+                                <span class="pf67-step-context-watermark">{{ step.context_tag }}</span>
+                            {% endif %}
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="tab-content">
+                    {% for step in job.steps %}
+                        {% set timing = step_timing.get(step.id) %}
+                        {% set is_active = step.id == selected_step_id %}
+                        {% set notes_for_step = step_notes.get(step.id, []) %}
+
+                        <div
+                            class="tab-pane fade {% if is_active %}show active{% endif %}"
+                            id="step-panel-{{ step.id }}"
+                            role="tabpanel"
+                            tabindex="0">
+                            <div class="card pf67-card" id="step-{{ step.id }}">
+                                <div class="card-body">
+                                    <h4>{{ step.name }}</h4>
+
+                                    {% if timing %}
+                                        <div class="pf67-timing-box mt-2">
+                                            <div class="pf67-timing-status">{{ timing.box.status }}</div>
+
+                                            <div class="pf67-timing-row">
+                                                {% for row in timing.box.rows %}
+                                                    <div class="pf67-timing-cell {{ row.class }}" title="{{ row.title }}">
+                                                        <span class="pf67-timing-label">{{ row.label }}</span>
+                                                        <span class="pf67-timing-value">{{ row.display }}</span>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="text-muted pf67-small mt-2">
+                                        Type: {{ step.step_type|title }}
+                                        {% if step.context_tag %}
+                                            | Context: {{ step.context_tag }}
+                                        {% endif %}
+                                    </div>
+
+                                    {% if step.instructions_html %}
+                                        <div class="mt-3">
+                                            <strong>Instructions</strong>
+                                            <div>{{ step.instructions_html | safe }}</div>
+                                        </div>
+                                    {% endif %}
+
+                                    {% if notes_for_step %}
+                                        <div class="mt-4">
+                                            <h5 class="h6">Notes for this step</h5>
+
+                                            {% for note_item in notes_for_step %}
+                                                {% if note_item.is_editing and can_edit %}
+                                                    <div class="card mb-2 pf67-inline-note-editor" id="note-{{ note_item.note.id }}">
+                                                        <div class="card-body">
+                                                            <form method="post" action="{{ url_for('views.inline_update_note', note_id=note_item.note.id) }}" class="pf67-note-form">
+                                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                    <h5 class="h6 mb-0">Edit Note</h5>
+
+                                                                    <span class="pf67-inline-date"
+                                                                          data-pf67-note-id="{{ note_item.note.id }}"
+                                                                          data-pf67-original-display="{{ note_item.event_at_display }}"
+                                                                          data-pf67-original-value="{{ note_item.event_at_value }}">
+                                                                        <a href="#" class="pf67-small pf67-inline-date-display">
+                                                                            {{ note_item.event_at_display }}
+                                                                        </a>
+
+                                                                        <span class="pf67-inline-date-editor d-none">
+                                                                            <input class="form-control form-control-sm"
+                                                                                   type="datetime-local"
+                                                                                   name="event_at"
+                                                                                   value="{{ note_item.event_at_value }}">
+                                                                            <span class="pf67-inline-edit-buttons">
+                                                                                <button class="btn btn-success btn-sm pf67-inline-edit-button pf67-inline-date-save" type="button">✓</button>
+                                                                                <button class="btn btn-danger btn-sm pf67-inline-edit-button pf67-inline-date-cancel" type="button">×</button>
+                                                                            </span>
+                                                                        </span>
+                                                                    </span>
+                                                                </div>
+
+                                                                <div class="mb-2">
+                                                                    <label class="form-label">Title</label>
+                                                                    <input class="form-control" name="title" value="{{ note_item.note.title }}">
+                                                                </div>
+
+                                                                <div class="mb-2">
+                                                                    <label class="form-label">Note</label>
+                                                                    <textarea class="form-control pf67-rich-text" name="note_html">{{ note_item.note.note_html }}</textarea>
+                                                                </div>
+
+                                                                <button class="btn btn-outline-secondary btn-sm pf67-media-button pf67-inline-edit-note-media" type="button">
+                                                                    Insert Existing Image
+                                                                </button>
+                                                                <button class="btn btn-primary btn-sm" type="submit">Save Note</button>
+                                                                <a class="btn btn-secondary btn-sm" href="{{ url_for('views.job_detail', job_id=job.id) }}#step-{{ step.id }}">Cancel</a>
+                                                            </form>
+
+                                                            <form method="post" action="{{ url_for('views.delete_note', note_id=note_item.note.id) }}" class="mt-2" onsubmit="return confirm('Delete this note?');">
+                                                                <button class="btn btn-outline-danger btn-sm" type="submit">Delete Note</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="card mb-2 pf67-step-note-card" id="note-{{ note_item.note.id }}">
+                                                        <div class="card-body">
+                                                            <div class="d-flex justify-content-between gap-2">
+                                                                <strong>
+                                                                    {% if can_edit %}
+                                                                        <a href="{{ note_item.edit_url }}">
+                                                                            {{ note_item.title }}
+                                                                        </a>
+                                                                    {% else %}
+                                                                        {{ note_item.title }}
+                                                                    {% endif %}
+                                                                </strong>
+                                                                <span class="text-muted pf67-small">{{ note_item.event_at_display }}</span>
+                                                            </div>
+
+                                                            <div class="mt-2 pf67-step-note-body">
+                                                                {{ note_item.body_html | safe }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+
+                                    {% if can_edit and job.status == "active" %}
+                                        <div class="mt-3">
+                                            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#add-step-note-panel-{{ step.id }}">
+                                                Add Step Note
+                                            </button>
+
+                                            {% if not step.completed_at %}
+                                                <button class="btn btn-outline-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#complete-step-panel-{{ step.id }}">
+                                                    Complete Step
+                                                </button>
+                                            {% else %}
+                                                <form method="post" action="{{ url_for('views.uncomplete_step', step_id=step.id) }}" class="d-inline">
+                                                    <button class="btn btn-outline-warning btn-sm" type="submit">
+                                                        Uncomplete Step
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="collapse mt-3" id="add-step-note-panel-{{ step.id }}">
+                                            <div class="border rounded p-3">
+                                                <form method="post" action="{{ url_for('views.add_step_note', step_id=step.id) }}" class="pf67-note-form">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <h5 class="h6 mb-0">Add Step Note</h5>
+                                                        <span class="pf67-inline-date-local">
+                                                            <a href="#" class="pf67-small pf67-inline-date-local-display">{{ now_display }}</a>
+                                                            <span class="pf67-inline-date-editor d-none">
+                                                                <input class="form-control form-control-sm" type="datetime-local" name="event_at" value="{{ now_value }}">
+                                                                <span class="pf67-inline-edit-buttons">
+                                                                    <button class="btn btn-success btn-sm pf67-inline-edit-button pf67-inline-date-local-save" type="button">✓</button>
+                                                                    <button class="btn btn-danger btn-sm pf67-inline-edit-button pf67-inline-date-local-cancel" type="button">×</button>
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                    </div>
+
+                                                    
+
+                                                    <div class="mb-2">
+                                                        <label class="form-label">Title</label>
+                                                        <input class="form-control" name="title" placeholder="Optional note title">
+                                                    </div>
+
+                                                    <div class="mb-2">
+                                                        <label class="form-label">Note</label>
+                                                        <textarea class="form-control pf67-rich-text" name="note_html"></textarea>
+                                                    </div>
+
+                                                    <button class="btn btn-outline-secondary btn-sm pf67-media-button" type="button">
+                                                        Insert Existing Image
+                                                    </button>
+
+                                                    <button class="btn btn-secondary" type="submit">Add Step Note</button>
+                                                    <button class="btn btn-outline-secondary pf67-cancel-step-note" type="button">
+                                                        Cancel
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+
+                                        {% if not step.completed_at %}
+                                            <div class="collapse mt-3" id="complete-step-panel-{{ step.id }}">
+                                                <div class="border rounded p-3">
+                                                    <form method="post" action="{{ url_for('views.complete_step', step_id=step.id) }}" class="pf67-note-form">
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <h5 class="h6 mb-0">Complete Step</h5>
+                                                            <span class="pf67-inline-date-local">
+                                                                <a href="#" class="pf67-small pf67-inline-date-local-display">{{ now_display }}</a>
+                                                                <span class="pf67-inline-date-editor d-none">
+                                                                    <input class="form-control form-control-sm" type="datetime-local" name="event_at" value="{{ now_value }}">
+                                                                    <span class="pf67-inline-edit-buttons">
+                                                                        <button class="btn btn-success btn-sm pf67-inline-edit-button pf67-inline-date-local-save" type="button">✓</button>
+                                                                        <button class="btn btn-danger btn-sm pf67-inline-edit-button pf67-inline-date-local-cancel" type="button">×</button>
+                                                                    </span>
+                                                                </span>
+                                                            </span>
+                                                        </div>
+
+                                                        
+
+                                                        <div class="mb-2">
+                                                            <label class="form-label">Completion note title</label>
+                                                            <input class="form-control" name="title" placeholder="Optional">
+                                                        </div>
+
+                                                        <div class="mb-2">
+                                                            <label class="form-label">Completion note</label>
+                                                            <textarea class="form-control pf67-rich-text" name="note_html"></textarea>
+                                                        </div>
+
+                                                        <button class="btn btn-outline-secondary btn-sm pf67-media-button" type="button">
+                                                            Insert Existing Image
+                                                        </button>
+
+                                                        <button class="btn btn-success" type="submit">Mark Complete</button>
+                                                        <button class="btn btn-outline-secondary pf67-cancel-completion-note" type="button">
+                                                            Cancel
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% elif can_edit and job.status != "active" %}
+                                        <div class="alert alert-secondary mt-3">
+                                            Step actions are paused because this job is {{ job.status }}.
+                                        </div>
+
+                                        {% if step.completed_at %}
+                                            <form method="post" action="{{ url_for('views.uncomplete_step', step_id=step.id) }}">
+                                                <button class="btn btn-outline-warning btn-sm" type="submit">
+                                                    Uncomplete Step
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3">
+        <div class="sticky-xl-top" style="top: 70px;">
+            <h3 class="h5">Timeline / Project Story</h3>
+
+            {% if timeline %}
+                <div class="list-group pf67-timeline">
+                    {% for item in timeline %}
+                        <div class="list-group-item pf67-timeline-item {{ item.css_class }}" data-pf67-timeline-step-id="{{ item.step_id }}">
+                            <div class="pf67-timeline-watermark">{{ item.watermark }}</div>
+
+                            <div class="pf67-timeline-title">
+                                <a href="{{ item.url }}" class="pf67-step-link">
+                                    {{ item.title }}
+                                </a>
+                            </div>
+
+                            <div class="text-muted pf67-small">
+                                {{ item.time.strftime("%b %d, %I:%M %p") }}
+                            </div>
+
+                            {% if item.preview_text %}
+                                <div class="pf67-timeline-preview">
+                                    {{ item.preview_text }}
+                                </div>
+                            {% endif %}
+
+                            {% if item.preview_image_url %}
+                                <img class="pf67-timeline-thumb" src="{{ item.preview_image_url }}">
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No timeline entries yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if can_edit %}
+
+<div class="pf67-context-menu" id="pf67-step-context-menu">
+    <button type="button" id="pf67-context-add-note">Add Step Note</button>
+    <button type="button" id="pf67-context-complete-step">Complete Step</button>
+</div>
+
+<div class="modal fade" id="pf67-media-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Insert Existing Image</h5>
+                <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                {% if images %}
+                    <div class="row">
+                        {% for image in images %}
+                            <div class="col-md-3 col-6 mb-3">
+                                <img class="pf67-media-thumb" src="{{ image.url }}" data-pf67-image-url="{{ image.url }}">
+                                <div class="pf67-small text-muted text-break">{{ image.filename }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>No uploaded images yet. Upload an image through the editor first.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js" referrerpolicy="no-referrer"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var activeEditorId = "";
+
+    var activeStepId = "";
+    var activeStepCompleted = "0";
+
+    function getActiveStepButton() {
+        return document.querySelector("[data-pf67-step-id].active");
+    }
+
+    function setActiveStepFromButton(button) {
+        if (!button) {
+            return;
+        }
+
+        activeStepId = button.getAttribute("data-pf67-step-id") || "";
+        activeStepCompleted = button.getAttribute("data-pf67-step-completed") || "0";
+        updateHeaderStepActions();
+    }
+
+    function updateHeaderStepActions() {
+        var addButton = document.getElementById("pf67-header-add-note");
+        var completeButton = document.getElementById("pf67-header-complete-step");
+
+        if (!activeStepId) {
+            var activeButton = getActiveStepButton();
+            setActiveStepFromButton(activeButton);
+            return;
+        }
+
+        if (addButton) {
+            addButton.setAttribute("data-pf67-step-id", activeStepId);
+        }
+
+        if (completeButton) {
+            completeButton.setAttribute("data-pf67-step-id", activeStepId);
+
+            if (activeStepCompleted === "1") {
+                completeButton.classList.add("d-none");
+            } else {
+                completeButton.classList.remove("d-none");
+            }
+        }
+    }
+
+    function showStepPanel(stepId, panelPrefix) {
+        if (!stepId) {
+            return;
+        }
+
+        var tabButton = document.getElementById("step-tab-" + stepId);
+
+        if (tabButton && window.bootstrap) {
+            var tab = new bootstrap.Tab(tabButton);
+            tab.show();
+            setActiveStepFromButton(tabButton);
+        }
+
+        var panel = document.getElementById(panelPrefix + stepId);
+
+        if (panel && window.bootstrap) {
+            var collapse = bootstrap.Collapse.getOrCreateInstance(panel, {
+                toggle: false
+            });
+
+            collapse.show();
+
+            panel.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        }
+    }
+
+    function hideAndClearAddNotePanel(panel) {
+        if (!panel) {
+            return;
+        }
+
+        var form = panel.querySelector("form");
+
+        if (form) {
+            var titleInput = form.querySelector("input[name='title']");
+            var textArea = form.querySelector("textarea[name='note_html']");
+
+            if (titleInput) {
+                titleInput.value = "";
+            }
+
+            if (textArea) {
+                if (window.tinymce) {
+                    var editor = tinymce.get(textArea.id);
+
+                    if (editor) {
+                        editor.setContent("");
+                    }
+                }
+
+                textArea.value = "";
+            }
+        }
+
+        if (window.bootstrap) {
+            var collapse = bootstrap.Collapse.getOrCreateInstance(panel, {
+                toggle: false
+            });
+
+            collapse.hide();
+        } else {
+            panel.classList.remove("show");
+        }
+    }
+
+    function convertTimeTogglesToInline() {
+        var links = document.querySelectorAll("a[data-bs-toggle='collapse'][href*='date-panel']");
+
+        links.forEach(function(link) {
+            var targetSelector = link.getAttribute("href");
+
+            link.removeAttribute("data-bs-toggle");
+            link.setAttribute("href", "#");
+            link.setAttribute("data-pf67-time-target", targetSelector);
+
+            link.addEventListener("click", function(event) {
+                event.preventDefault();
+
+                var target = document.querySelector(targetSelector);
+
+                if (!target) {
+                    return;
+                }
+
+                if (target.classList.contains("show")) {
+                    target.classList.remove("show");
+                } else {
+                    target.classList.add("show");
+                }
+            });
+        });
+    }
+
+
+    var statusLink = document.getElementById("pf67-job-status-link");
+    var statusDisplay = document.getElementById("pf67-job-status-display");
+    var statusForm = document.getElementById("pf67-job-status-form");
+    var statusSelect = document.getElementById("pf67-job-status-select");
+
+    if (statusLink && statusForm && statusSelect && statusDisplay) {
+        statusLink.addEventListener("click", function(event) {
+            event.preventDefault();
+            statusDisplay.classList.add("d-none");
+            statusForm.classList.remove("d-none");
+            statusSelect.focus();
+        });
+
+        statusSelect.addEventListener("change", function() {
+            statusForm.submit();
+        });
+
+        statusSelect.addEventListener("blur", function() {
+            if (!statusForm.classList.contains("d-none")) {
+                statusForm.classList.add("d-none");
+                statusDisplay.classList.remove("d-none");
+            }
+        });
+    }
+
+    function highlightTimelineForStep(stepId) {
+        var timelineItems = document.querySelectorAll("[data-pf67-timeline-step-id]");
+
+        timelineItems.forEach(function(item) {
+            var itemStepId = item.getAttribute("data-pf67-timeline-step-id");
+
+            if (stepId && itemStepId === stepId) {
+                item.classList.add("pf67-timeline-item-active");
+            } else {
+                item.classList.remove("pf67-timeline-item-active");
+            }
+        });
+    }
+
+    if (window.tinymce) {
+        tinymce.init(pf67TinyOptions({
+            selector: ".pf67-rich-text",
+            plugins: "code link lists image",
+            toolbar: "undo redo | bold italic | bullist numlist | link image | code",
+            menubar: false,
+            branding: false,
+            height: 220,
+            automatic_uploads: true,
+            images_upload_url: "{{ url_for('views.upload_job_image', job_id=job.id) }}",
+            images_file_types: "jpg,jpeg,png,gif,webp",
+            setup: function(editor) {
+                editor.on("focus", function() {
+                    activeEditorId = editor.id;
+                });
+            }
+        }));
+    }
+
+
+    var inlineDateControls = document.querySelectorAll(".pf67-inline-date");
+
+    inlineDateControls.forEach(function(control) {
+        var display = control.querySelector(".pf67-inline-date-display");
+        var editor = control.querySelector(".pf67-inline-date-editor");
+        var input = control.querySelector("input[type='datetime-local']");
+        var saveButton = control.querySelector(".pf67-inline-date-save");
+        var cancelButton = control.querySelector(".pf67-inline-date-cancel");
+        var noteId = control.getAttribute("data-pf67-note-id");
+        var originalDisplay = control.getAttribute("data-pf67-original-display");
+        var originalValue = control.getAttribute("data-pf67-original-value");
+
+        if (!display || !editor || !input || !saveButton || !cancelButton || !noteId) {
+            return;
+        }
+
+        display.addEventListener("click", function(event) {
+            event.preventDefault();
+            display.classList.add("d-none");
+            editor.classList.remove("d-none");
+            input.focus();
+        });
+
+        cancelButton.addEventListener("click", function() {
+            input.value = originalValue;
+            editor.classList.add("d-none");
+            display.classList.remove("d-none");
+        });
+
+        saveButton.addEventListener("click", function() {
+            var formData = new FormData();
+            formData.append("event_at", input.value);
+
+            fetch("/notes/" + noteId + "/time", {
+                method: "POST",
+                body: formData
+            })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data.ok) {
+                        originalDisplay = data.display;
+                        originalValue = data.value;
+                        control.setAttribute("data-pf67-original-display", originalDisplay);
+                        control.setAttribute("data-pf67-original-value", originalValue);
+                        display.textContent = originalDisplay;
+                    }
+
+                    editor.classList.add("d-none");
+                    display.classList.remove("d-none");
+                })
+                .catch(function() {
+                    input.value = originalValue;
+                    editor.classList.add("d-none");
+                    display.classList.remove("d-none");
+                });
+        });
+    });
+
+
+    var inlineDateControls = document.querySelectorAll(".pf67-inline-date");
+
+    inlineDateControls.forEach(function(control) {
+        var display = control.querySelector(".pf67-inline-date-display");
+        var editor = control.querySelector(".pf67-inline-date-editor");
+        var input = control.querySelector("input[type='datetime-local']");
+        var saveButton = control.querySelector(".pf67-inline-date-save");
+        var cancelButton = control.querySelector(".pf67-inline-date-cancel");
+        var noteId = control.getAttribute("data-pf67-note-id");
+        var originalDisplay = control.getAttribute("data-pf67-original-display");
+        var originalValue = control.getAttribute("data-pf67-original-value");
+
+        if (!display || !editor || !input || !saveButton || !cancelButton || !noteId) {
+            return;
+        }
+
+        display.addEventListener("click", function(event) {
+            event.preventDefault();
+            display.classList.add("d-none");
+            editor.classList.remove("d-none");
+            input.focus();
+        });
+
+        cancelButton.addEventListener("click", function() {
+            input.value = originalValue;
+            editor.classList.add("d-none");
+            display.classList.remove("d-none");
+        });
+
+        saveButton.addEventListener("click", function() {
+            var formData = new FormData();
+            formData.append("event_at", input.value);
+
+            fetch("/notes/" + noteId + "/time", {
+                method: "POST",
+                body: formData
+            })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data.ok) {
+                        originalDisplay = data.display;
+                        originalValue = data.value;
+                        control.setAttribute("data-pf67-original-display", originalDisplay);
+                        control.setAttribute("data-pf67-original-value", originalValue);
+                        display.textContent = originalDisplay;
+                    }
+
+                    editor.classList.add("d-none");
+                    display.classList.remove("d-none");
+                })
+                .catch(function() {
+                    input.value = originalValue;
+                    editor.classList.add("d-none");
+                    display.classList.remove("d-none");
+                });
+        });
+    });
+
+    var localInlineDateControls = document.querySelectorAll(".pf67-inline-date-local");
+
+    localInlineDateControls.forEach(function(control) {
+        var display = control.querySelector(".pf67-inline-date-local-display");
+        var editor = control.querySelector(".pf67-inline-date-editor");
+        var input = control.querySelector("input[type='datetime-local']");
+        var saveButton = control.querySelector(".pf67-inline-date-local-save");
+        var cancelButton = control.querySelector(".pf67-inline-date-local-cancel");
+        var originalValue = input ? input.value : "";
+        var originalDisplay = display ? display.textContent.trim() : "";
+
+        if (!display || !editor || !input || !saveButton || !cancelButton) {
+            return;
+        }
+
+        display.addEventListener("click", function(event) {
+            event.preventDefault();
+            display.classList.add("d-none");
+            editor.classList.remove("d-none");
+            input.focus();
+        });
+
+        cancelButton.addEventListener("click", function() {
+            input.value = originalValue;
+            display.textContent = originalDisplay;
+            editor.classList.add("d-none");
+            display.classList.remove("d-none");
+        });
+
+        saveButton.addEventListener("click", function() {
+            originalValue = input.value;
+
+            if (input.value) {
+                var dateObject = new Date(input.value);
+
+                if (!isNaN(dateObject.getTime())) {
+                    display.textContent = dateObject.toLocaleString([], {
+                        month: "short",
+                        day: "2-digit",
+                        hour: "numeric",
+                        minute: "2-digit"
+                    });
+                    originalDisplay = display.textContent;
+                }
+            }
+
+            editor.classList.add("d-none");
+            display.classList.remove("d-none");
+        });
+    });
+
+    var forms = document.querySelectorAll(".pf67-note-form");
+
+    forms.forEach(function(form) {
+        form.addEventListener("submit", function() {
+            if (window.tinymce) {
+                tinymce.triggerSave();
+            }
+        });
+    });
+
+    var modalElement = document.getElementById("pf67-media-modal");
+    var mediaModal = null;
+
+    if (modalElement && window.bootstrap) {
+        mediaModal = new bootstrap.Modal(modalElement);
+    }
+
+    var mediaButtons = document.querySelectorAll(".pf67-media-button");
+
+    mediaButtons.forEach(function(button) {
+        button.addEventListener("click", function() {
+            var form = button.closest("form");
+            var textarea = form.querySelector("textarea.pf67-rich-text");
+
+            if (textarea) {
+                activeEditorId = textarea.id;
+            }
+
+            if (mediaModal) {
+                mediaModal.show();
+            }
+        });
+    });
+
+    var imageThumbs = document.querySelectorAll("[data-pf67-image-url]");
+
+    imageThumbs.forEach(function(image) {
+        image.addEventListener("click", function() {
+            var url = image.getAttribute("data-pf67-image-url");
+            var editor = null;
+
+            if (activeEditorId && window.tinymce) {
+                editor = tinymce.get(activeEditorId);
+            }
+
+            if (!editor && window.tinymce) {
+                editor = tinymce.activeEditor;
+            }
+
+            if (editor) {
+                editor.insertContent('<p><img src="' + url + '" alt=""></p>');
+            }
+
+            if (mediaModal) {
+                mediaModal.hide();
+            }
+        });
+    });
+
+    var stepButtons = document.querySelectorAll("[data-pf67-step-id]");
+
+    stepButtons.forEach(function(button) {
+        button.addEventListener("shown.bs.tab", function() {
+            var stepId = button.getAttribute("data-pf67-step-id");
+            setActiveStepFromButton(button);
+            highlightTimelineForStep(stepId);
+        });
+
+        button.addEventListener("contextmenu", function(event) {
+            event.preventDefault();
+            setActiveStepFromButton(button);
+
+            var menu = document.getElementById("pf67-step-context-menu");
+            var completeItem = document.getElementById("pf67-context-complete-step");
+
+            if (!menu) {
+                return;
+            }
+
+            if (completeItem) {
+                completeItem.disabled = activeStepCompleted === "1";
+            }
+
+            menu.style.left = event.clientX + "px";
+            menu.style.top = event.clientY + "px";
+            menu.style.display = "block";
+        });
+    });
+
+    var stepLinks = document.querySelectorAll(".pf67-step-link");
+
+    stepLinks.forEach(function(link) {
+        link.addEventListener("click", function(event) {
+            var href = link.getAttribute("href");
+
+            if (!href || href.indexOf("#step-") === -1) {
+                return;
+            }
+
+            var stepId = href.split("#step-").pop();
+            var tabButton = document.getElementById("step-tab-" + stepId);
+
+            if (tabButton && window.bootstrap) {
+                event.preventDefault();
+                var tab = new bootstrap.Tab(tabButton);
+                tab.show();
+
+                var target = document.getElementById("step-" + stepId);
+
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
+                }
+
+                history.replaceState(null, "", "#step-" + stepId);
+                highlightTimelineForStep(stepId);
+            }
+        });
+    });
+
+
+    convertTimeTogglesToInline();
+
+    var headerAddNote = document.getElementById("pf67-header-add-note");
+    var headerCompleteStep = document.getElementById("pf67-header-complete-step");
+
+    if (headerAddNote) {
+        headerAddNote.addEventListener("click", function() {
+            if (!activeStepId) {
+                setActiveStepFromButton(getActiveStepButton());
+            }
+
+            showStepPanel(activeStepId, "add-step-note-panel-");
+        });
+    }
+
+    if (headerCompleteStep) {
+        headerCompleteStep.addEventListener("click", function() {
+            if (!activeStepId) {
+                setActiveStepFromButton(getActiveStepButton());
+            }
+
+            showStepPanel(activeStepId, "complete-step-panel-");
+        });
+    }
+
+
+    var cancelCompletionButtons = document.querySelectorAll(".pf67-cancel-completion-note");
+
+    cancelCompletionButtons.forEach(function(button) {
+        button.addEventListener("click", function() {
+            var panel = button.closest(".collapse");
+
+            if (!panel) {
+                return;
+            }
+
+            var form = panel.querySelector("form");
+
+            if (form) {
+                var titleInput = form.querySelector("input[name='title']");
+                var textArea = form.querySelector("textarea[name='note_html']");
+
+                if (titleInput) {
+                    titleInput.value = "";
+                }
+
+                if (textArea) {
+                    if (window.tinymce) {
+                        var editor = tinymce.get(textArea.id);
+
+                        if (editor) {
+                            editor.setContent("");
+                        }
+                    }
+
+                    textArea.value = "";
+                }
+            }
+
+            if (window.bootstrap) {
+                var collapse = bootstrap.Collapse.getOrCreateInstance(panel, {
+                    toggle: false
+                });
+
+                collapse.hide();
+            } else {
+                panel.classList.remove("show");
+            }
+        });
+    });
+
+    var cancelStepNoteButtons = document.querySelectorAll(".pf67-cancel-step-note");
+
+    cancelStepNoteButtons.forEach(function(button) {
+        button.addEventListener("click", function() {
+            var panel = button.closest(".collapse");
+            hideAndClearAddNotePanel(panel);
+        });
+    });
+
+    var contextMenu = document.getElementById("pf67-step-context-menu");
+    var contextAddNote = document.getElementById("pf67-context-add-note");
+    var contextCompleteStep = document.getElementById("pf67-context-complete-step");
+
+    if (contextAddNote) {
+        contextAddNote.addEventListener("click", function() {
+            if (contextMenu) {
+                contextMenu.style.display = "none";
+            }
+
+            showStepPanel(activeStepId, "add-step-note-panel-");
+        });
+    }
+
+    if (contextCompleteStep) {
+        contextCompleteStep.addEventListener("click", function() {
+            if (contextCompleteStep.disabled) {
+                return;
+            }
+
+            if (contextMenu) {
+                contextMenu.style.display = "none";
+            }
+
+            showStepPanel(activeStepId, "complete-step-panel-");
+        });
+    }
+
+    document.addEventListener("click", function() {
+        if (contextMenu) {
+            contextMenu.style.display = "none";
+        }
+    });
+
+    if (window.location.hash && window.location.hash.indexOf("#step-") === 0) {
+        var hashStepId = window.location.hash.replace("#step-", "");
+        var hashTabButton = document.getElementById("step-tab-" + hashStepId);
+
+        if (hashTabButton && window.bootstrap) {
+            var hashTab = new bootstrap.Tab(hashTabButton);
+            hashTab.show();
+            highlightTimelineForStep(hashStepId);
+            setActiveStepFromButton(hashTabButton);
+        }
+    } else {
+        var activeStepButton = document.querySelector("[data-pf67-step-id].active");
+
+        if (activeStepButton) {
+            setActiveStepFromButton(activeStepButton);
+            highlightTimelineForStep(activeStepButton.getAttribute("data-pf67-step-id"));
+        }
+    }
+});
+</script>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Home{% endblock %}
+
+{% block content %}
+
+<div class="mb-3">
+    <h2>Protocol Flow - Process Scheduler</h2>
+</div>
+
+<div class="row">
+    <div class="col-xl-4">
+        <div class="card pf67-card pf67-dashboard-list">
+            <div class="card-body">
+                <h3 class="h5">Active Job List</h3>
+
+                {% if landing_jobs %}
+                    <div class="list-group list-group-flush">
+                        {% for item in landing_jobs %}
+                            <a class="list-group-item list-group-item-action" href="{{ item.url }}">
+                                <div class="fw-semibold">{{ item.job.name }}</div>
+                                <div class="pf67-small text-muted">
+                                    {{ item.status_label }} · Started {{ item.started_display }}
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>No active or pending jobs.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card pf67-card pf67-dashboard-list">
+            <div class="card-body">
+                <h3 class="h5">Work Queue</h3>
+
+                {% if attention_tasks %}
+                    <div class="pf67-work-section">
+                        <h3 class="h6">Needs Attention</h3>
+                        <div class="list-group list-group-flush">
+                            {% for item in attention_tasks %}
+                                <a class="list-group-item list-group-item-action" href="{{ item.url }}">
+                                    <div class="fw-semibold">{{ item.step.name }}</div>
+                                    <div class="pf67-small text-muted">
+                                        {{ item.status_label }} · {{ item.time_label }}
+                                    </div>
+                                    <div class="pf67-small text-muted">{{ item.job.name }}</div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if ready_tasks %}
+                    <div class="pf67-work-section">
+                        <h3 class="h6">Ready Tasks</h3>
+                        <div class="list-group list-group-flush">
+                            {% for item in ready_tasks %}
+                                <a class="list-group-item list-group-item-action" href="{{ item.url }}">
+                                    <div class="fw-semibold">{{ item.step.name }}</div>
+                                    <div class="pf67-small text-muted">
+                                        {{ item.status_label }} · {{ item.time_label }}
+                                    </div>
+                                    <div class="pf67-small text-muted">{{ item.job.name }}</div>
+                                </a>
+                            {% endfor %}
+                        </div>
+
+                        {% if ready_more_count > 0 %}
+                            <div class="mt-2">
+                                <span class="pf67-small text-muted">{{ ready_more_count }} more ready task(s)</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {% if not attention_tasks and not ready_tasks %}
+                    <p>No active work queue items.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card pf67-card pf67-dashboard-list">
+            <div class="card-body">
+                <h3 class="h5">Recent Movements</h3>
+
+                {% if recent_movements %}
+                    <div class="list-group list-group-flush">
+                        {% for item in recent_movements %}
+                            <a class="list-group-item list-group-item-action" href="{{ item.url }}">
+                                <div class="fw-semibold">{{ item.title }}</div>
+                                <div class="pf67-small text-muted">{{ item.type }} · {{ item.subtitle }}</div>
+                                <div class="pf67-small text-muted">{{ item.time }}</div>
+                            </a>
+                        {% endfor %}
+                    </div>
+
+                    {% if recent_more_count > 0 %}
+                        <div class="mt-3">
+                            <a href="{{ url_for('views.movements') }}">More recent movements ({{ recent_more_count }})</a>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <p>No movements yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

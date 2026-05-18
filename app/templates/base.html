@@ -1,0 +1,1335 @@
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}PF67{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <style>
+        body {
+            padding-top: 0;
+            padding-bottom: 30px;
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+        }
+
+        .pf67-status {
+            font-weight: 600;
+        }
+
+        .pf67-card {
+            margin-bottom: 16px;
+        }
+
+        .pf67-small {
+            font-size: 0.9rem;
+        }
+
+        .pf67-muted-link {
+            color: var(--bs-secondary-color);
+            text-decoration: none;
+        }
+
+        .pf67-muted-link:hover {
+            color: var(--bs-link-color);
+            text-decoration: underline;
+        }
+
+        .pf67-inline-select {
+            border: 0;
+            border-bottom: 1px solid var(--bs-border-color);
+            border-radius: 0;
+            background: transparent;
+            color: var(--bs-body-color);
+            padding: 0 1.4rem 0 0;
+            width: auto;
+            min-width: 110px;
+            box-shadow: none;
+            display: inline-block;
+        }
+
+        .pf67-inline-select:focus {
+            outline: 0;
+            box-shadow: none;
+            border-bottom-color: var(--bs-link-color);
+        }
+
+        .pf67-header-actions {
+            white-space: nowrap;
+        }
+
+        .pf67-context-menu {
+            position: fixed;
+            z-index: 2500;
+            min-width: 170px;
+            display: none;
+            background: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+            padding: 4px;
+        }
+
+        .pf67-context-menu button {
+            display: block;
+            width: 100%;
+            border: 0;
+            background: transparent;
+            color: var(--bs-body-color);
+            text-align: left;
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+
+        .pf67-context-menu button:hover {
+            background: rgba(108, 117, 125, 0.18);
+        }
+
+        .pf67-context-menu button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        textarea {
+            min-height: 100px;
+        }
+
+        .pf67-footer {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            text-align: center;
+            padding: 2px 0;
+            font-size: 0.72rem;
+            line-height: 1.25;
+            opacity: 0.72;
+            background: var(--bs-body-bg);
+            border-top: 1px solid var(--bs-border-color);
+            z-index: 1020;
+        }
+
+        .pf67-dashboard-list {
+            min-height: 280px;
+        }
+
+        .pf67-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            align-items: start;
+        }
+
+        .pf67-board-column {
+            min-height: 180px;
+        }
+
+        .pf67-board-item {
+            border-left: 4px solid rgba(13, 110, 253, 0.72);
+        }
+
+        .pf67-step-list {
+            max-height: 75vh;
+            overflow: auto;
+        }
+
+        .pf67-step-button {
+            text-align: left;
+            white-space: normal;
+            position: relative;
+            overflow: hidden;
+            padding-right: 72px;
+        }
+
+        .pf67-step-title {
+            display: block;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .pf67-step-context-watermark {
+            position: absolute;
+            right: 10px;
+            bottom: 6px;
+            opacity: 0.14;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            pointer-events: none;
+            text-transform: uppercase;
+            max-width: 70px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .pf67-step-time {
+            display: block;
+            font-size: 0.78rem;
+            opacity: 0.82;
+        }
+
+        .pf67-timing-box {
+            display: inline-flex;
+            align-items: stretch;
+            flex-wrap: wrap;
+            gap: 0;
+            max-width: 100%;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            background: rgba(108, 117, 125, 0.08);
+        }
+
+        .pf67-timing-status {
+            display: flex;
+            align-items: center;
+            padding: 7px 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            background: rgba(108, 117, 125, 0.16);
+            border-right: 1px solid var(--bs-border-color);
+        }
+
+        .pf67-timing-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: stretch;
+        }
+
+        .pf67-timing-cell {
+            padding: 7px 9px;
+            border-right: 1px solid rgba(108, 117, 125, 0.18);
+            min-width: 82px;
+        }
+
+        .pf67-timing-cell:last-child {
+            border-right: 0;
+        }
+
+        .pf67-timing-label {
+            font-size: 0.68rem;
+            color: var(--bs-secondary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-right: 4px;
+        }
+
+        .pf67-timing-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .pf67-time-ready {
+            background: rgba(13, 110, 253, 0.08);
+        }
+
+        .pf67-time-ideal {
+            background: rgba(25, 135, 84, 0.14);
+        }
+
+        .pf67-time-limit {
+            background: rgba(255, 193, 7, 0.22);
+        }
+
+        .pf67-time-risk {
+            background: rgba(253, 126, 20, 0.28);
+        }
+
+        .pf67-time-failure {
+            background: rgba(220, 53, 69, 0.38);
+        }
+
+        .pf67-time-completed {
+            background: rgba(25, 135, 84, 0.24);
+        }
+
+        .pf67-time-editor-row {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .pf67-time-editor {
+            width: 33.333%;
+            min-width: 230px;
+        }
+
+        .pf67-timeline {
+            max-height: 80vh;
+            overflow: auto;
+        }
+
+        .pf67-timeline-item {
+            position: relative;
+            border-left-width: 5px;
+            border-left-style: solid;
+            overflow: hidden;
+        }
+
+        .pf67-timeline-item-active {
+            background-color: rgba(108, 117, 125, 0.32);
+        }
+
+        .pf67-timeline-job {
+            border-left-color: rgba(13, 110, 253, 0.65);
+        }
+
+        .pf67-timeline-status {
+            border-left-color: rgba(255, 193, 7, 0.8);
+        }
+
+        .pf67-timeline-job-note {
+            border-left-color: rgba(13, 202, 240, 0.72);
+        }
+
+        .pf67-timeline-completed {
+            border-left-color: rgba(25, 135, 84, 0.72);
+        }
+
+        .pf67-timeline-note {
+            border-left-color: rgba(111, 66, 193, 0.72);
+        }
+
+        .pf67-timeline-completion-note {
+            border-left-color: rgba(32, 201, 151, 0.72);
+        }
+
+        .pf67-timeline-critical {
+            border-left-color: rgba(220, 53, 69, 0.78);
+        }
+
+        .pf67-timeline-default {
+            border-left-color: rgba(108, 117, 125, 0.7);
+        }
+
+        .pf67-timeline-watermark {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            opacity: 0.12;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            pointer-events: none;
+            text-transform: uppercase;
+            max-width: 76px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .pf67-timeline-title {
+            padding-right: 76px;
+            font-weight: 600;
+        }
+
+        .pf67-timeline-preview {
+            color: var(--bs-secondary-color);
+            font-size: 0.86rem;
+        }
+
+        .pf67-timeline-thumb {
+            width: 96px;
+            height: 64px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid var(--bs-border-color);
+            margin-top: 8px;
+        }
+
+        .pf67-media-thumb {
+            width: 100%;
+            height: 130px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid var(--bs-border-color);
+            cursor: pointer;
+        }
+
+        .pf67-note-full img,
+        .pf67-step-note-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            border: 1px solid var(--bs-border-color);
+            margin-top: 8px;
+        }
+
+        .pf67-step-note-card {
+            border-left: 4px solid rgba(111, 66, 193, 0.6);
+        }
+
+        .pf67-inline-note-editor {
+            border-left: 4px solid rgba(13, 110, 253, 0.75);
+            background: rgba(108, 117, 125, 0.06);
+        }
+
+        .pf67-template-meta-grid {
+            display: grid;
+            grid-template-columns: minmax(220px, 2fr) minmax(130px, 0.8fr) minmax(160px, 1fr);
+            gap: 10px;
+            align-items: end;
+        }
+
+        .pf67-template-timing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(160px, 1fr));
+            gap: 10px;
+        }
+
+        .pf67-template-time-pair {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .pf67-job-dot {
+            display: inline-block;
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 50%;
+            margin-right: 0.35rem;
+            vertical-align: middle;
+        }
+
+        .pf67-job-color-1 {
+            --pf67-job-color: rgba(13, 110, 253, 0.95);
+            border-left-color: rgba(13, 110, 253, 0.95) !important;
+        }
+
+        .pf67-job-color-2 {
+            --pf67-job-color: rgba(111, 66, 193, 0.95);
+            border-left-color: rgba(111, 66, 193, 0.95) !important;
+        }
+
+        .pf67-job-color-3 {
+            --pf67-job-color: rgba(214, 51, 132, 0.95);
+            border-left-color: rgba(214, 51, 132, 0.95) !important;
+        }
+
+        .pf67-job-color-4 {
+            --pf67-job-color: rgba(253, 126, 20, 0.95);
+            border-left-color: rgba(253, 126, 20, 0.95) !important;
+        }
+
+        .pf67-job-color-5 {
+            --pf67-job-color: rgba(32, 201, 151, 0.95);
+            border-left-color: rgba(32, 201, 151, 0.95) !important;
+        }
+
+        .pf67-job-color-6 {
+            --pf67-job-color: rgba(102, 16, 242, 0.95);
+            border-left-color: rgba(102, 16, 242, 0.95) !important;
+        }
+
+        .pf67-job-dot.pf67-job-color-1,
+        .pf67-job-dot.pf67-job-color-2,
+        .pf67-job-dot.pf67-job-color-3,
+        .pf67-job-dot.pf67-job-color-4,
+        .pf67-job-dot.pf67-job-color-5,
+        .pf67-job-dot.pf67-job-color-6 {
+            background: var(--pf67-job-color);
+        }
+
+        .fc-event {
+            border-left-width: 5px !important;
+        }
+
+        .pf67-cal-completed {
+            background-color: rgba(25, 135, 84, 0.9) !important;
+            border-color: rgba(25, 135, 84, 0.9) !important;
+        }
+
+        .pf67-cal-waiting {
+            background-color: rgba(108, 117, 125, 0.9) !important;
+            border-color: rgba(108, 117, 125, 0.9) !important;
+        }
+
+        .pf67-cal-checkable,
+        .pf67-cal-ideal {
+            background-color: rgba(13, 110, 253, 0.9) !important;
+            border-color: rgba(13, 110, 253, 0.9) !important;
+        }
+
+        .pf67-cal-late,
+        .pf67-cal-risky {
+            background-color: rgba(255, 193, 7, 0.95) !important;
+            border-color: rgba(255, 193, 7, 0.95) !important;
+            color: #111 !important;
+        }
+
+        .pf67-cal-critical {
+            background-color: rgba(220, 53, 69, 0.95) !important;
+            border-color: rgba(220, 53, 69, 0.95) !important;
+        }
+
+        @media (max-width: 768px) {
+            .pf67-timing-box {
+                display: flex;
+            }
+
+            .pf67-timing-status {
+                width: 100%;
+                border-right: 0;
+                border-bottom: 1px solid var(--bs-border-color);
+            }
+
+            .pf67-timing-cell {
+                min-width: 50%;
+            }
+
+            .pf67-time-editor {
+                width: 100%;
+            }
+
+            .pf67-template-meta-grid,
+            .pf67-template-timing-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    
+        .pf67-inline-edit-buttons {
+            display: inline-flex;
+            gap: 4px;
+            vertical-align: middle;
+        }
+
+        .pf67-inline-edit-button {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            line-height: 1;
+            text-align: center;
+            font-weight: 800;
+            border-radius: 6px;
+        }
+
+        .pf67-inline-date-editor {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pf67-inline-date-editor input[type="datetime-local"] {
+            width: 210px;
+            max-width: 60vw;
+        }
+
+        .pf67-timeline-watermark,
+        .pf67-step-context-watermark {
+            opacity: 0.22;
+            font-size: 0.82rem;
+            font-weight: 900;
+        }
+
+        [data-bs-theme="dark"] .pf67-timeline-watermark,
+        [data-bs-theme="dark"] .pf67-step-context-watermark {
+            opacity: 0.30;
+        }
+
+        .fc-event,
+        .fc-event-main,
+        .fc-event-title,
+        .fc-event-time {
+            color: #ffffff !important;
+            font-weight: 650;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+        }
+
+        .fc-daygrid-event {
+            border-width: 1px !important;
+            border-left-width: 5px !important;
+        }
+
+        .fc-event.pf67-job-color-1 {
+            background-color: rgba(13, 110, 253, 0.92) !important;
+            border-color: rgba(13, 110, 253, 0.98) !important;
+        }
+
+        .fc-event.pf67-job-color-2 {
+            background-color: rgba(111, 66, 193, 0.92) !important;
+            border-color: rgba(111, 66, 193, 0.98) !important;
+        }
+
+        .fc-event.pf67-job-color-3 {
+            background-color: rgba(214, 51, 132, 0.92) !important;
+            border-color: rgba(214, 51, 132, 0.98) !important;
+        }
+
+        .fc-event.pf67-job-color-4 {
+            background-color: rgba(253, 126, 20, 0.94) !important;
+            border-color: rgba(253, 126, 20, 1) !important;
+        }
+
+        .fc-event.pf67-job-color-5 {
+            background-color: rgba(32, 201, 151, 0.90) !important;
+            border-color: rgba(32, 201, 151, 1) !important;
+        }
+
+        .fc-event.pf67-job-color-6 {
+            background-color: rgba(102, 16, 242, 0.92) !important;
+            border-color: rgba(102, 16, 242, 0.98) !important;
+        }
+
+        .pf67-status-chip {
+            display: inline-block;
+            padding: 1px 5px;
+            margin-right: 4px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.22);
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+    
+        .pf67-inline-edit-buttons {
+            display: inline-flex;
+            gap: 4px;
+            vertical-align: middle;
+        }
+
+        .pf67-inline-edit-button {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            line-height: 1;
+            text-align: center;
+            font-weight: 800;
+            border-radius: 6px;
+        }
+
+        .pf67-inline-date-editor,
+        .pf67-inline-text-editor {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pf67-inline-date-editor input[type="datetime-local"] {
+            width: 210px;
+            max-width: 60vw;
+        }
+
+        .pf67-inline-text-editor input[type="text"] {
+            width: min(520px, 70vw);
+        }
+
+        .pf67-timeline-watermark,
+        .pf67-step-context-watermark {
+            opacity: 0.22;
+            font-size: 0.82rem;
+            font-weight: 900;
+        }
+
+        [data-bs-theme="dark"] .pf67-timeline-watermark,
+        [data-bs-theme="dark"] .pf67-step-context-watermark {
+            opacity: 0.30;
+        }
+
+        select option {
+            background-color: #ffffff;
+            color: #212529;
+        }
+
+        [data-bs-theme="dark"] select,
+        [data-bs-theme="dark"] select option,
+        [data-bs-theme="dark"] .form-select,
+        [data-bs-theme="dark"] .pf67-inline-select {
+            background-color: #212529;
+            color: #f8f9fa;
+        }
+
+        [data-bs-theme="dark"] select option:checked {
+            background-color: #495057;
+            color: #ffffff;
+        }
+
+        .fc-event,
+        .fc-event-main,
+        .fc-event-title,
+        .fc-event-time {
+            color: #ffffff !important;
+            font-weight: 650;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.60);
+        }
+
+        .fc-daygrid-event {
+            border-width: 1px !important;
+            border-left-width: 5px !important;
+        }
+
+        .fc-event.pf67-job-color-1 {
+            background-color: rgba(13, 110, 253, 0.92) !important;
+            border-color: rgba(13, 110, 253, 0.98) !important;
+        }
+
+        .fc-event.pf67-job-color-2 {
+            background-color: rgba(111, 66, 193, 0.92) !important;
+            border-color: rgba(111, 66, 193, 0.98) !important;
+        }
+
+        .fc-event.pf67-job-color-3 {
+            background-color: rgba(214, 51, 132, 0.92) !important;
+            border-color: rgba(214, 51, 132, 0.98) !important;
+        }
+
+        .fc-event.pf67-job-color-4 {
+            background-color: rgba(253, 126, 20, 0.94) !important;
+            border-color: rgba(253, 126, 20, 1) !important;
+        }
+
+        .fc-event.pf67-job-color-5 {
+            background-color: rgba(32, 201, 151, 0.90) !important;
+            border-color: rgba(32, 201, 151, 1) !important;
+        }
+
+        .fc-event.pf67-job-color-6 {
+            background-color: rgba(102, 16, 242, 0.92) !important;
+            border-color: rgba(102, 16, 242, 0.98) !important;
+        }
+
+        .pf67-status-chip {
+            display: inline-block;
+            padding: 1px 5px;
+            margin-right: 4px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.22);
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .pf67-timing-table {
+            max-width: 720px;
+        }
+
+        .pf67-timing-table th,
+        .pf67-timing-table td {
+            vertical-align: middle;
+        }
+
+        .pf67-timing-table input[type="number"] {
+            max-width: 120px;
+        }
+
+        .pf67-timing-table select {
+            max-width: 150px;
+        }
+
+    
+        :root {
+            --pf67-page-surface: #eef0f3;
+            --pf67-card-surface: #ffffff;
+            --pf67-list-surface: #f8f9fb;
+            --pf67-inner-surface: #f2f4f7;
+        }
+
+        [data-bs-theme="dark"] {
+            --pf67-page-surface: #17191d;
+            --pf67-card-surface: #20242a;
+            --pf67-list-surface: #252a31;
+            --pf67-inner-surface: #2b3038;
+        }
+
+        body {
+            background: var(--pf67-page-surface);
+        }
+
+        .card {
+            background: var(--pf67-card-surface);
+            border-color: var(--bs-border-color);
+        }
+
+        .list-group-item {
+            background: var(--pf67-list-surface);
+            border-color: var(--bs-border-color);
+        }
+
+        .list-group-item:hover {
+            background: var(--pf67-inner-surface);
+        }
+
+        .pf67-dashboard-list .card-body,
+        .pf67-board-column .card-body {
+            background: var(--pf67-card-surface);
+            border-radius: var(--bs-card-border-radius);
+        }
+
+        .pf67-work-section {
+            background: var(--pf67-inner-surface);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 12px;
+        }
+
+        .pf67-work-section h3 {
+            margin-bottom: 8px;
+        }
+
+        .pf67-soft-panel {
+            background: var(--pf67-inner-surface);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+    
+        .fc {
+            background: var(--pf67-card-surface);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .fc .fc-scrollgrid,
+        .fc .fc-daygrid-day,
+        .fc .fc-timegrid-slot,
+        .fc .fc-list {
+            background: var(--pf67-list-surface);
+        }
+
+        .fc .fc-daygrid-day-frame {
+            background: rgba(255, 255, 255, 0.035);
+        }
+
+        [data-bs-theme="light"] .fc .fc-daygrid-day-frame {
+            background: rgba(255, 255, 255, 0.60);
+        }
+
+        .fc .fc-day-today {
+            background: rgba(255, 193, 7, 0.16) !important;
+        }
+
+        .pf67-calendar-job-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .pf67-calendar-job-label {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pf67-show-only-button {
+            padding: 0 5px;
+            line-height: 1.2;
+            font-size: 0.72rem;
+        }
+
+        .pf67-context-menu {
+            position: fixed;
+            z-index: 2500;
+            display: none;
+            min-width: 150px;
+            background: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 8px;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+            padding: 4px;
+        }
+
+        .pf67-context-menu button {
+            display: block;
+            width: 100%;
+            border: 0;
+            background: transparent;
+            color: var(--bs-body-color);
+            text-align: left;
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+
+        .pf67-context-menu button:hover {
+            background: rgba(108, 117, 125, 0.18);
+        }
+.pf67-job-danger-action {
+            white-space: nowrap;
+        }
+
+        .pf67-context-menu hr {
+            margin: 4px 0;
+        }
+
+    
+        .pf67-context-enabled {
+            position: relative;
+            box-shadow: inset 3px 0 0 rgba(25, 135, 84, 0.42);
+            transition: box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+
+        .pf67-context-enabled:hover {
+            box-shadow:
+                inset 3px 0 0 rgba(25, 135, 84, 0.82),
+                0 0 0 2px rgba(25, 135, 84, 0.14);
+            background-color: rgba(25, 135, 84, 0.045);
+        }
+
+        [data-bs-theme="dark"] .pf67-context-enabled {
+            box-shadow: inset 3px 0 0 rgba(75, 210, 130, 0.42);
+        }
+
+        [data-bs-theme="dark"] .pf67-context-enabled:hover {
+            box-shadow:
+                inset 3px 0 0 rgba(75, 210, 130, 0.85),
+                0 0 0 2px rgba(75, 210, 130, 0.18);
+            background-color: rgba(75, 210, 130, 0.055);
+        }
+
+    
+        .pf67-backlog-note {
+            white-space: pre-wrap;
+        }
+
+        .pf67-inline-field-display {
+            cursor: pointer;
+            border-bottom: 1px dotted var(--bs-secondary-color);
+        }
+
+        .pf67-inline-field-editor {
+            display: none;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .pf67-inline-field.is-editing .pf67-inline-field-display {
+            display: none;
+        }
+
+        .pf67-inline-field.is-editing .pf67-inline-field-editor {
+            display: inline-flex;
+        }
+
+        .pf67-inline-field-editor input,
+        .pf67-inline-field-editor select {
+            max-width: 220px;
+        }
+
+        .pf67-backlog-textarea {
+            min-height: 120px;
+        }
+
+        .pf67-backlog-pin {
+            font-weight: 800;
+            color: #ffc107;
+        }
+
+        .pf67-backlog-pill {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: rgba(108, 117, 125, 0.16);
+            font-size: 0.82rem;
+        }
+
+        .pf67-backlog-row-pinned {
+            box-shadow: inset 4px 0 0 rgba(255, 193, 7, 0.88);
+        }
+
+    
+        .pf67-ai-write-global {
+            position: fixed;
+            top: 8px;
+            right: 12px;
+            z-index: 3000;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: rgba(255, 193, 7, 0.96);
+            color: #212529;
+            border: 1px solid rgba(0, 0, 0, 0.18);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .pf67-ai-write-global:hover {
+            color: #000000;
+            text-decoration: none;
+            filter: brightness(1.04);
+        }
+
+        .pf67-ai-write-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #198754;
+            box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.20);
+        }
+
+        [data-bs-theme="dark"] .pf67-ai-write-global {
+            background: rgba(255, 193, 7, 0.90);
+            color: #111111;
+            border-color: rgba(255, 255, 255, 0.20);
+        }
+
+        .pf67-backlog-top-control {
+            min-width: 260px;
+        }
+
+        .pf67-ai-write-card-on {
+            border-color: rgba(255, 193, 7, 0.80);
+            box-shadow: inset 4px 0 0 rgba(255, 193, 7, 0.95);
+        }
+
+    
+        .pf67-ai-write-global {
+            display: none !important;
+        }
+
+        .pf67-ai-write-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            background: rgba(255, 193, 7, 0.92);
+            color: #212529 !important;
+            font-weight: 800;
+            padding-left: 10px !important;
+            padding-right: 10px !important;
+            margin-left: 4px;
+        }
+
+        .pf67-ai-write-nav:hover {
+            background: rgba(255, 193, 7, 1);
+            color: #000000 !important;
+        }
+
+        .pf67-ai-write-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #198754;
+            box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.20);
+            display: inline-block;
+        }
+
+        [data-bs-theme="dark"] .pf67-ai-write-nav {
+            background: rgba(255, 193, 7, 0.86);
+            color: #111111 !important;
+        }
+
+        .pf67-dev-note-display.is-hidden {
+            display: none;
+        }
+
+        .pf67-dev-inline-editor {
+            display: none;
+        }
+
+        .pf67-dev-inline-editor.is-open {
+            display: block;
+        }
+
+        .pf67-dev-row-actions {
+            white-space: nowrap;
+        }
+
+    
+        /* Rev 28: AI Write indicator is inline in the nav and visible only to logged-in users. */
+        .pf67-ai-write-global {
+            display: none !important;
+            position: static !important;
+        }
+
+        .pf67-ai-write-nav {
+            display: inline-flex !important;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            background: rgba(255, 193, 7, 0.92);
+            color: #212529 !important;
+            font-weight: 800;
+            padding-left: 10px !important;
+            padding-right: 10px !important;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+
+        .pf67-ai-write-nav:hover {
+            background: rgba(255, 193, 7, 1);
+            color: #000000 !important;
+        }
+
+        .pf67-ai-write-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #198754;
+            box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.20);
+            display: inline-block;
+        }
+
+        [data-bs-theme="dark"] .pf67-ai-write-nav {
+            background: rgba(255, 193, 7, 0.86);
+            color: #111111 !important;
+        }
+
+        /* Rev 28: one-click form submission guard visual state. */
+        form.pf67-submitted button[type="submit"],
+        button.pf67-clicked-once {
+            opacity: 0.68;
+            pointer-events: none;
+        }
+
+        .pf67-save-once-message {
+            font-size: 0.78rem;
+            margin-left: 6px;
+            color: var(--bs-secondary-color);
+        }
+
+        /* Rev 28: Dev table cleanup reinforcement. */
+        .pf67-dev-row-actions {
+            white-space: nowrap;
+            min-width: 110px;
+        }
+
+        .pf67-dev-note-display.is-hidden {
+            display: none !important;
+        }
+
+        .pf67-dev-inline-editor {
+            display: none;
+        }
+
+        .pf67-dev-inline-editor.is-open {
+            display: block;
+        }
+
+        .pf67-dev-date-cell {
+            white-space: nowrap;
+            font-size: 0.82rem;
+            color: var(--bs-secondary-color);
+        }
+
+    
+        /* Rev 31: Dev list ID/action cleanup */
+        .pf67-dev-id-cell {
+            white-space: nowrap;
+            font-weight: 700;
+            color: var(--bs-secondary-color);
+            font-size: 0.86rem;
+        }
+
+        .pf67-dev-row-action-stack {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 4px;
+            min-width: 168px;
+        }
+
+        .pf67-dev-row-action-stack .btn {
+            min-width: 58px;
+        }
+
+        .pf67-dev-row-action-stack form {
+            display: inline;
+            margin: 0;
+        }
+
+        .pf67-dev-action-hidden {
+            display: none !important;
+        }
+
+        .pf67-dev-row-actions {
+            white-space: nowrap;
+            min-width: 172px;
+        }
+
+    
+        /* Rev 32: Dev action area cleanup */
+        .pf67-dev-id-cell {
+            white-space: nowrap;
+            font-weight: 700;
+            color: var(--bs-secondary-color);
+            font-size: 0.86rem;
+        }
+
+        .pf67-dev-row-action-stack {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 4px;
+            min-width: 180px;
+        }
+
+        .pf67-dev-row-action-stack .btn {
+            min-width: 64px;
+        }
+
+        .pf67-dev-row-action-stack form {
+            display: inline;
+            margin: 0;
+        }
+
+        .pf67-dev-action-hidden {
+            display: none !important;
+        }
+
+        .pf67-dev-note-display.is-hidden {
+            display: none !important;
+        }
+
+        .pf67-dev-inline-editor {
+            display: none;
+        }
+
+        .pf67-dev-inline-editor.is-open {
+            display: block;
+        }
+
+        .pf67-dev-date-cell {
+            white-space: nowrap;
+            font-size: 0.82rem;
+            color: var(--bs-secondary-color);
+        }
+
+    </style>
+
+    <script>
+        (function() {
+            var theme = localStorage.getItem("pf67-theme");
+
+            if (!theme) {
+                theme = "light";
+            }
+
+            document.documentElement.setAttribute("data-bs-theme", theme);
+        })();
+
+        function pf67TinyThemeOptions() {
+            var theme = document.documentElement.getAttribute("data-bs-theme");
+
+            if (theme === "dark") {
+                return {
+                    skin: "oxide-dark",
+                    content_css: "dark"
+                };
+            }
+
+            return {
+                skin: "oxide",
+                content_css: "default"
+            };
+        }
+
+        function pf67TinyOptions(options) {
+            var themeOptions = pf67TinyThemeOptions();
+            var merged = {};
+
+            Object.keys(options).forEach(function(key) {
+                merged[key] = options[key];
+            });
+
+            Object.keys(themeOptions).forEach(function(key) {
+                merged[key] = themeOptions[key];
+            });
+
+            return merged;
+        }
+    </script>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">PF67</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#pf67-navbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="pf67-navbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('views.index') }}">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('views.upcoming_tasks_page') }}">Game Plan</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('views.calendar_view') }}">Calendar</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('views.movements') }}">Movements</a></li>
+                {% if can_edit %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('views.templates_page') }}">Templates</a></li>
+                {% if can_edit %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('views.backlog_page') }}">Dev</a></li>
+                {% endif %}
+                {% endif %}
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('api.ping') }}">API</a></li>
+            
+                {% if can_edit and global_ai_write_enabled %}
+                    <li class="nav-item ms-lg-auto">
+                        <a class="nav-link pf67-ai-write-nav" href="{{ url_for('views.backlog_page') }}" title="AI Write is ON. Click to manage Dev AI access.">
+                            <span class="pf67-ai-write-pulse"></span> AI Write ON
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-secondary btn-sm" type="button" id="pf67-theme-toggle">
+                    Dark
+                </button>
+
+                {% if can_edit %}
+                    <span class="badge text-bg-success">Edit mode</span>
+                    <a class="btn btn-outline-danger btn-sm" href="{{ url_for('views.logout') }}">Logout</a>
+                {% else %}
+                    <span class="badge text-bg-secondary">Read only</span>
+                    <a class="btn btn-primary btn-sm" href="{{ url_for('views.login') }}">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    {% block content %}{% endblock %}
+
+    <div class="pf67-footer">
+        PF67 · {{ pf67_revision }}
+    </div>
+</div>
+
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var toggle = document.getElementById("pf67-theme-toggle");
+
+    if (toggle) {
+        toggle.addEventListener("click", function() {
+            var currentTheme = document.documentElement.getAttribute("data-bs-theme");
+            var nextTheme = "dark";
+
+            if (currentTheme === "dark") {
+                nextTheme = "light";
+            }
+
+            document.documentElement.setAttribute("data-bs-theme", nextTheme);
+            localStorage.setItem("pf67-theme", nextTheme);
+        });
+    }
+});
+</script>
+
+</body>
+</html>

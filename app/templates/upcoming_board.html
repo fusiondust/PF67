@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Game Plan{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Game Plan</h2>
+    <div class="text-muted pf67-small">Auto-refreshes when tasks change.</div>
+</div>
+
+{% if board_columns %}
+    <div class="pf67-board" data-pf67-fingerprint="{{ fingerprint }}">
+        {% for column in board_columns %}
+            <div class="card pf67-card pf67-board-column">
+                <div class="card-body">
+                    <h3 class="h5">{{ column.title }}</h3>
+
+                    <div class="list-group list-group-flush">
+                        {% for item in column['items'] %}
+                            <a class="list-group-item list-group-item-action pf67-board-item" href="{{ item.url }}">
+                                <div class="fw-semibold">{{ item.title }}</div>
+                                <div class="pf67-small text-muted">{{ item.job_name }}</div>
+                                <div class="pf67-small text-muted" title="{{ item.time_title }}">
+                                    Check {{ item.time_label }}
+                                    {% if item.context %}
+                                        · {{ item.context }}
+                                    {% endif %}
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No game plan tasks.</p>
+{% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var board = document.querySelector("[data-pf67-fingerprint]");
+
+    if (!board) {
+        return;
+    }
+
+    var currentFingerprint = board.getAttribute("data-pf67-fingerprint");
+
+    function checkForChanges() {
+        fetch("{{ url_for('views.api_upcoming_fingerprint') }}")
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.fingerprint && data.fingerprint !== currentFingerprint) {
+                    window.location.reload();
+                }
+            })
+            .catch(function() {
+            });
+    }
+
+    window.setInterval(checkForChanges, 30000);
+});
+</script>
+
+{% endblock %}

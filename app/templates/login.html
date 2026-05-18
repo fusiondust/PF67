@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Login{% endblock %}
+
+{% block content %}
+
+<h2>Login</h2>
+
+<p>Login enables editing. Without login, PF67 remains read-only.</p>
+
+{% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<form method="post" style="max-width: 420px;">
+    <div class="mb-3">
+        <label class="form-label">Edit password</label>
+        <input class="form-control" type="password" name="password" autofocus>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Login</button>
+</form>
+
+{% endblock %}

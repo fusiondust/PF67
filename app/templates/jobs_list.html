@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Jobs{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Jobs</h2>
+
+    <div class="btn-group">
+        <a class="btn btn-sm {% if view == 'active' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{{ url_for('views.jobs_page', view='active') }}">Active</a>
+        <a class="btn btn-sm {% if view == 'pending' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{{ url_for('views.jobs_page', view='pending') }}">Pending</a>
+        <a class="btn btn-sm {% if view == 'archive' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{{ url_for('views.jobs_page', view='archive') }}">Archive</a>
+    </div>
+</div>
+
+{% if jobs %}
+    <div class="list-group">
+        {% for job in jobs %}
+            <a class="list-group-item list-group-item-action"
+               href="{{ url_for('views.job_detail', job_id=job.id) }}">
+                <div class="fw-semibold">{{ job.name }}</div>
+                <div class="pf67-small text-muted">
+                    Status: {{ job.status|title }} · Started: {{ job.started_at.strftime("%Y-%m-%d %I:%M %p") }}
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No jobs found for this view.</p>
+{% endif %}
+
+{% endblock %}

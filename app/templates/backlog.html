@@ -1,0 +1,629 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Dev{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+    <div>
+        <h2>Dev</h2>
+        <div class="text-muted pf67-small">
+            AI-readable issue and feature log for PF67.
+        </div>
+    </div>
+
+    <div class="text-end pf67-backlog-top-control">
+        {% if can_edit %}
+            <form method="post" action="{{ url_for('views.backlog_ai_write_setting') }}" class="mb-2">
+                <input type="hidden" name="ai_write_enabled" value="{% if ai_write_enabled %}0{% else %}1{% endif %}">
+
+                {% if ai_write_enabled %}
+                    <button class="btn btn-warning btn-sm w-100" type="submit">
+                        AI Write ON
+                    </button>
+                {% else %}
+                    <button class="btn btn-outline-success btn-sm w-100" type="submit">
+                        AI Write Off
+                    </button>
+                {% endif %}
+            </form>
+        {% endif %}
+
+        <button class="btn btn-outline-secondary btn-sm" type="button" id="pf67-copy-ai-brief">
+            Copy AI Brief
+        </button>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('views.api_ai_backlog_workbench_v3') }}">
+            AI Workbench
+        </a>
+    </div>
+</div>
+
+{% if can_edit %}
+    <p>
+        <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#pf67-add-dev-panel">
+            New Dev Entry
+        </button>
+    </p>
+
+    <div class="collapse" id="pf67-add-dev-panel">
+        <div class="card pf67-card">
+            <div class="card-body">
+                <h3 class="h5">New Dev Entry</h3>
+
+                <form method="post" action="{{ url_for('views.backlog_add') }}">
+                    <div class="row g-2">
+                        <div class="col-md-2">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" name="type">
+                                {% for option in backlog_types %}
+                                    <option value="{{ option }}" {% if option == "Improve" %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label">Priority</label>
+                            <select class="form-select" name="priority">
+                                {% for option in backlog_priorities %}
+                                    <option value="{{ option }}" {% if option == "Medium" %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label">Area</label>
+                            <select class="form-select" name="area">
+                                {% for option in backlog_areas %}
+                                    <option value="{{ option }}" {% if option == "Dev" %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                {% for option in backlog_statuses %}
+                                    <option value="{{ option }}" {% if option == "New Addition" %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label">Resolved Rev</label>
+                            <input class="form-control" name="resolved_in_rev" placeholder="Rev 33">
+                        </div>
+
+                        <div class="col-md-2 d-flex align-items-end">
+                            <label class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="pin" value="1">
+                                <span class="form-check-label">Pin</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mt-2">
+                        <label class="form-label">Note</label>
+                        <textarea class="form-control pf67-backlog-textarea" name="note" placeholder="Describe the issue, feature, or improvement."></textarea>
+                    </div>
+
+                    <div class="mt-2">
+                        <label class="form-label">AI Summary</label>
+                        <textarea class="form-control" name="ai_summary" placeholder="Optional. AI can populate this when AI Write is enabled."></textarea>
+                    </div>
+
+                    <div class="mt-3">
+                        <button class="btn btn-primary btn-sm" type="submit">Save</button>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#pf67-add-dev-panel">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<div class="card pf67-card">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h3 class="h5 mb-1">Items</h3>
+                <div class="pf67-small text-muted">
+                    Auto-refresh checks every 20 seconds. Filters do not change saved records.
+                </div>
+            </div>
+
+            <div class="text-end">
+                <span class="badge text-bg-secondary" id="pf67-dev-item-count">{{ backlog_items|length }} item(s)</span>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-3">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <input class="form-control form-control-sm" id="pf67-dev-search" placeholder="Search notes, summaries, area, status...">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select class="form-select form-select-sm" id="pf67-dev-status-filter">
+                    <option value="">All</option>
+                    {% for option in backlog_statuses %}
+                        <option value="{{ option }}">{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Priority</label>
+                <select class="form-select form-select-sm" id="pf67-dev-priority-filter">
+                    <option value="">All</option>
+                    {% for option in backlog_priorities %}
+                        <option value="{{ option }}">{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Area</label>
+                <select class="form-select form-select-sm" id="pf67-dev-area-filter">
+                    <option value="">All</option>
+                    {% for option in backlog_areas %}
+                        <option value="{{ option }}">{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+                <label class="form-check mb-1">
+                    <input class="form-check-input" type="checkbox" id="pf67-dev-hide-done" checked>
+                    <span class="form-check-label">Hide Done</span>
+                </label>
+            </div>
+        </div>
+
+        {% if backlog_items %}
+            <div class="table-responsive">
+                <table class="table align-middle" id="pf67-dev-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Pin</th>
+                            <th><button class="btn btn-link btn-sm p-0 pf67-dev-sort" type="button" data-sort="type">Type</button></th>
+                            <th><button class="btn btn-link btn-sm p-0 pf67-dev-sort" type="button" data-sort="priority">Priority</button></th>
+                            <th><button class="btn btn-link btn-sm p-0 pf67-dev-sort" type="button" data-sort="area">Area</button></th>
+                            <th><button class="btn btn-link btn-sm p-0 pf67-dev-sort" type="button" data-sort="status">Status</button></th>
+                            <th style="min-width: 360px;">Note</th>
+                            <th><button class="btn btn-link btn-sm p-0 pf67-dev-sort" type="button" data-sort="created">Created</button></th>
+                            <th><button class="btn btn-link btn-sm p-0 pf67-dev-sort" type="button" data-sort="modified">Modified</button></th>
+                            <th>Resolved</th>
+                            {% if can_edit %}
+                                <th></th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody id="pf67-dev-tbody">
+                        {% for item in backlog_items %}
+                            <tr id="backlog-item-{{ item.id }}"
+                                class="{% if item.pin %}pf67-backlog-row-pinned{% endif %}"
+                                data-dev-row="1"
+                                data-id="{{ item.id }}"
+                                data-type="{{ item.type }}"
+                                data-priority="{{ item.priority }}"
+                                data-area="{{ item.area }}"
+                                data-status="{{ item.status }}"
+                                data-created="{{ item.created_at }}"
+                                data-modified="{{ item.modified_at }}"
+                                data-search="{{ (item.id|string ~ ' ' ~ item.type ~ ' ' ~ item.priority ~ ' ' ~ item.area ~ ' ' ~ item.status ~ ' ' ~ item.note ~ ' ' ~ item.ai_summary ~ ' ' ~ item.resolved_in_rev)|lower|e }}">
+                                <td class="pf67-dev-id-cell">#{{ item.id }}</td>
+
+                                <td>
+                                    <form method="post" action="{{ url_for('views.backlog_update', item_id=item.id) }}">
+                                        <input type="hidden" name="pin" value="{% if item.pin %}0{% else %}1{% endif %}">
+                                        <button class="btn btn-link btn-sm p-0" type="submit">
+                                            {% if item.pin %}
+                                                <span class="pf67-backlog-pin">PIN</span>
+                                            {% else %}
+                                                Pin
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </td>
+
+                                <td>
+                                    <form method="post" action="{{ url_for('views.backlog_update', item_id=item.id) }}" class="pf67-inline-form">
+                                        <span class="pf67-inline-field">
+                                            <span class="pf67-inline-field-display pf67-backlog-pill">{{ item.type }}</span>
+                                            <span class="pf67-inline-field-editor">
+                                                <select class="form-select form-select-sm" name="type">
+                                                    {% for option in backlog_types %}
+                                                        <option value="{{ option }}" {% if item.type == option %}selected{% endif %}>{{ option }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button class="btn btn-success btn-sm pf67-inline-edit-button" type="submit">✓</button>
+                                                <button class="btn btn-danger btn-sm pf67-inline-edit-button pf67-inline-cancel" type="button">×</button>
+                                            </span>
+                                        </span>
+                                    </form>
+                                </td>
+
+                                <td>
+                                    <form method="post" action="{{ url_for('views.backlog_update', item_id=item.id) }}" class="pf67-inline-form">
+                                        <span class="pf67-inline-field">
+                                            <span class="pf67-inline-field-display pf67-backlog-pill">{{ item.priority }}</span>
+                                            <span class="pf67-inline-field-editor">
+                                                <select class="form-select form-select-sm" name="priority">
+                                                    {% for option in backlog_priorities %}
+                                                        <option value="{{ option }}" {% if item.priority == option %}selected{% endif %}>{{ option }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button class="btn btn-success btn-sm pf67-inline-edit-button" type="submit">✓</button>
+                                                <button class="btn btn-danger btn-sm pf67-inline-edit-button pf67-inline-cancel" type="button">×</button>
+                                            </span>
+                                        </span>
+                                    </form>
+                                </td>
+
+                                <td>
+                                    <form method="post" action="{{ url_for('views.backlog_update', item_id=item.id) }}" class="pf67-inline-form">
+                                        <span class="pf67-inline-field">
+                                            <span class="pf67-inline-field-display pf67-backlog-pill">{{ item.area }}</span>
+                                            <span class="pf67-inline-field-editor">
+                                                <select class="form-select form-select-sm" name="area">
+                                                    {% for option in backlog_areas %}
+                                                        <option value="{{ option }}" {% if item.area == option %}selected{% endif %}>{{ option }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button class="btn btn-success btn-sm pf67-inline-edit-button" type="submit">✓</button>
+                                                <button class="btn btn-danger btn-sm pf67-inline-edit-button pf67-inline-cancel" type="button">×</button>
+                                            </span>
+                                        </span>
+                                    </form>
+                                </td>
+
+                                <td>
+                                    <form method="post" action="{{ url_for('views.backlog_update', item_id=item.id) }}" class="pf67-inline-form">
+                                        <span class="pf67-inline-field">
+                                            <span class="pf67-inline-field-display pf67-backlog-pill">{{ item.status }}</span>
+                                            <span class="pf67-inline-field-editor">
+                                                <select class="form-select form-select-sm" name="status">
+                                                    {% for option in backlog_statuses %}
+                                                        <option value="{{ option }}" {% if item.status == option %}selected{% endif %}>{{ option }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button class="btn btn-success btn-sm pf67-inline-edit-button" type="submit">✓</button>
+                                                <button class="btn btn-danger btn-sm pf67-inline-edit-button pf67-inline-cancel" type="button">×</button>
+                                            </span>
+                                        </span>
+                                    </form>
+                                </td>
+
+                                <td>
+                                    <div class="pf67-dev-note-wrapper" id="dev-note-wrapper-{{ item.id }}">
+                                        <div class="pf67-dev-note-display" id="dev-note-display-{{ item.id }}">
+                                            <div class="pf67-backlog-note">{{ item.note }}</div>
+
+                                            {% if item.ai_summary %}
+                                                <div class="mt-2 pf67-small text-muted">
+                                                    <strong>AI Summary:</strong> {{ item.ai_summary }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="pf67-dev-inline-editor" id="dev-note-editor-{{ item.id }}">
+                                            <form id="dev-note-form-{{ item.id }}" method="post" action="{{ url_for('views.backlog_update', item_id=item.id) }}">
+                                                <label class="form-label">Note</label>
+                                                <textarea class="form-control pf67-backlog-textarea" name="note">{{ item.note }}</textarea>
+
+                                                <label class="form-label mt-2">AI Summary</label>
+                                                <textarea class="form-control" name="ai_summary">{{ item.ai_summary }}</textarea>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="pf67-dev-date-cell">{{ item.created_at[:10] }}</td>
+                                <td class="pf67-dev-date-cell">{{ item.modified_at[:10] }}</td>
+
+                                <td>
+                                    <form method="post" action="{{ url_for('views.backlog_update', item_id=item.id) }}" class="pf67-inline-form">
+                                        <span class="pf67-inline-field">
+                                            <span class="pf67-inline-field-display">{{ item.resolved_in_rev or "—" }}</span>
+                                            <span class="pf67-inline-field-editor">
+                                                <input class="form-control form-control-sm" name="resolved_in_rev" value="{{ item.resolved_in_rev }}">
+                                                <button class="btn btn-success btn-sm pf67-inline-edit-button" type="submit">✓</button>
+                                                <button class="btn btn-danger btn-sm pf67-inline-edit-button pf67-inline-cancel" type="button">×</button>
+                                            </span>
+                                        </span>
+                                    </form>
+                                </td>
+
+                                <td class="pf67-dev-row-actions">
+                                    <div class="pf67-dev-row-action-stack">
+                                        <button class="btn btn-outline-secondary btn-sm pf67-dev-edit-button"
+                                                type="button"
+                                                data-pf67-dev-edit-id="{{ item.id }}">
+                                            Edit
+                                        </button>
+
+                                        <button class="btn btn-success btn-sm pf67-dev-save-button pf67-dev-action-hidden"
+                                                type="submit"
+                                                form="dev-note-form-{{ item.id }}"
+                                                data-pf67-dev-edit-id="{{ item.id }}">
+                                            Save
+                                        </button>
+
+                                        <button class="btn btn-outline-secondary btn-sm pf67-dev-edit-cancel pf67-dev-cancel-button pf67-dev-action-hidden"
+                                                type="button"
+                                                data-pf67-dev-edit-id="{{ item.id }}">
+                                            Cancel
+                                        </button>
+
+                                        <form method="post"
+                                              action="{{ url_for('views.backlog_delete', item_id=item.id) }}"
+                                              class="pf67-dev-delete-form"
+                                              onsubmit="return confirm('Delete this dev item?');">
+                                            <button class="btn btn-outline-danger btn-sm pf67-dev-delete-button" type="submit">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p>No dev items yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    function setDevEditorState(id, isEditing) {
+        var display = document.getElementById("dev-note-display-" + id);
+        var editor = document.getElementById("dev-note-editor-" + id);
+        var editButton = document.querySelector(".pf67-dev-edit-button[data-pf67-dev-edit-id='" + id + "']");
+        var saveButton = document.querySelector(".pf67-dev-save-button[data-pf67-dev-edit-id='" + id + "']");
+        var cancelButton = document.querySelector(".pf67-dev-cancel-button[data-pf67-dev-edit-id='" + id + "']");
+        var deleteForm = document.querySelector("#backlog-item-" + id + " .pf67-dev-delete-form");
+
+        if (display && editor) {
+            if (isEditing) {
+                display.classList.add("is-hidden");
+                editor.classList.add("is-open");
+            } else {
+                editor.classList.remove("is-open");
+                display.classList.remove("is-hidden");
+            }
+        }
+
+        if (editButton) {
+            editButton.classList.toggle("pf67-dev-action-hidden", isEditing);
+        }
+
+        if (saveButton) {
+            saveButton.classList.toggle("pf67-dev-action-hidden", !isEditing);
+        }
+
+        if (cancelButton) {
+            cancelButton.classList.toggle("pf67-dev-action-hidden", !isEditing);
+        }
+
+        if (deleteForm) {
+            deleteForm.classList.toggle("pf67-dev-action-hidden", isEditing);
+        }
+    }
+
+    document.querySelectorAll(".pf67-dev-edit-button").forEach(function(button) {
+        button.addEventListener("click", function() {
+            setDevEditorState(button.getAttribute("data-pf67-dev-edit-id"), true);
+        });
+    });
+
+    document.querySelectorAll(".pf67-dev-edit-cancel").forEach(function(button) {
+        button.addEventListener("click", function() {
+            setDevEditorState(button.getAttribute("data-pf67-dev-edit-id"), false);
+        });
+    });
+
+    document.querySelectorAll(".pf67-inline-field-display").forEach(function(display) {
+        display.addEventListener("click", function() {
+            var field = display.closest(".pf67-inline-field");
+
+            if (field) {
+                field.classList.add("is-editing");
+            }
+        });
+    });
+
+    document.querySelectorAll(".pf67-inline-cancel").forEach(function(button) {
+        button.addEventListener("click", function() {
+            var field = button.closest(".pf67-inline-field");
+
+            if (field) {
+                field.classList.remove("is-editing");
+            }
+        });
+    });
+
+    var copyButton = document.getElementById("pf67-copy-ai-brief");
+
+    if (copyButton) {
+        copyButton.addEventListener("click", function() {
+            fetch("{{ url_for('views.api_backlog_brief') }}")
+                .then(function(response) {
+                    return response.text();
+                })
+                .then(function(text) {
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(text);
+                        copyButton.textContent = "Copied";
+                    } else {
+                        window.prompt("Copy AI Brief", text);
+                    }
+
+                    window.setTimeout(function() {
+                        copyButton.textContent = "Copy AI Brief";
+                    }, 1500);
+                });
+        });
+    }
+
+    var searchInput = document.getElementById("pf67-dev-search");
+    var statusFilter = document.getElementById("pf67-dev-status-filter");
+    var priorityFilter = document.getElementById("pf67-dev-priority-filter");
+    var areaFilter = document.getElementById("pf67-dev-area-filter");
+    var hideDone = document.getElementById("pf67-dev-hide-done");
+    var itemCount = document.getElementById("pf67-dev-item-count");
+    var tbody = document.getElementById("pf67-dev-tbody");
+    var currentSort = {
+        field: "modified",
+        direction: "desc"
+    };
+
+    function rowValue(row, field) {
+        return (row.getAttribute("data-" + field) || "").toLowerCase();
+    }
+
+    function priorityRank(value) {
+        var ranks = {
+            "critical": 1,
+            "high": 2,
+            "medium": 3,
+            "low": 4,
+            "none": 5
+        };
+
+        return ranks[value] || 9;
+    }
+
+    function applyFiltersAndSort() {
+        if (!tbody) {
+            return;
+        }
+
+        var rows = Array.prototype.slice.call(tbody.querySelectorAll("tr[data-dev-row='1']"));
+        var searchText = searchInput ? searchInput.value.trim().toLowerCase() : "";
+        var statusValue = statusFilter ? statusFilter.value : "";
+        var priorityValue = priorityFilter ? priorityFilter.value : "";
+        var areaValue = areaFilter ? areaFilter.value : "";
+        var hideDoneValue = hideDone ? hideDone.checked : false;
+        var visibleCount = 0;
+
+        rows.forEach(function(row) {
+            var visible = true;
+            var searchBlob = row.getAttribute("data-search") || "";
+            var rowStatus = row.getAttribute("data-status") || "";
+            var rowPriority = row.getAttribute("data-priority") || "";
+            var rowArea = row.getAttribute("data-area") || "";
+
+            if (searchText && searchBlob.indexOf(searchText) === -1) {
+                visible = false;
+            }
+
+            if (statusValue && rowStatus !== statusValue) {
+                visible = false;
+            }
+
+            if (priorityValue && rowPriority !== priorityValue) {
+                visible = false;
+            }
+
+            if (areaValue && rowArea !== areaValue) {
+                visible = false;
+            }
+
+            if (hideDoneValue && (rowStatus === "Done" || rowStatus === "Rejected")) {
+                visible = false;
+            }
+
+            row.style.display = visible ? "" : "none";
+
+            if (visible) {
+                visibleCount += 1;
+            }
+        });
+
+        rows.sort(function(a, b) {
+            var av = rowValue(a, currentSort.field);
+            var bv = rowValue(b, currentSort.field);
+
+            if (currentSort.field === "priority") {
+                av = priorityRank(av);
+                bv = priorityRank(bv);
+            }
+
+            if (av < bv) {
+                return currentSort.direction === "asc" ? -1 : 1;
+            }
+
+            if (av > bv) {
+                return currentSort.direction === "asc" ? 1 : -1;
+            }
+
+            return 0;
+        });
+
+        rows.forEach(function(row) {
+            tbody.appendChild(row);
+        });
+
+        if (itemCount) {
+            itemCount.textContent = visibleCount + " visible";
+        }
+    }
+
+    [searchInput, statusFilter, priorityFilter, areaFilter, hideDone].forEach(function(control) {
+        if (control) {
+            control.addEventListener("input", applyFiltersAndSort);
+            control.addEventListener("change", applyFiltersAndSort);
+        }
+    });
+
+    document.querySelectorAll(".pf67-dev-sort").forEach(function(button) {
+        button.addEventListener("click", function() {
+            var field = button.getAttribute("data-sort");
+
+            if (currentSort.field === field) {
+                currentSort.direction = currentSort.direction === "asc" ? "desc" : "asc";
+            } else {
+                currentSort.field = field;
+                currentSort.direction = field === "modified" || field === "created" ? "desc" : "asc";
+            }
+
+            applyFiltersAndSort();
+        });
+    });
+
+    applyFiltersAndSort();
+
+    var currentFingerprint = "";
+
+    function checkDevFingerprint() {
+        fetch("{{ url_for('views.api_backlog_fingerprint') }}")
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (!currentFingerprint) {
+                    currentFingerprint = data.fingerprint || "";
+                    return;
+                }
+
+                if (data.fingerprint && data.fingerprint !== currentFingerprint) {
+                    window.location.reload();
+                }
+            })
+            .catch(function() {
+            });
+    }
+
+    if (tbody) {
+        window.setInterval(checkDevFingerprint, 20000);
+        checkDevFingerprint();
+    }
+});
+</script>
+
+{% endblock %}

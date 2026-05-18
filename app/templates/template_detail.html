@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Template{% endblock %}
+
+{% block content %}
+
+<h2>{{ template.name }}</h2>
+
+<p>{{ template.description }}</p>
+
+{% if can_edit %}
+    <div class="card pf67-card">
+        <div class="card-body">
+            <h4>Start Job</h4>
+
+            <form method="post" action="{{ url_for('views.start_job', template_id=template.id) }}">
+                <div class="mb-3">
+                    <label class="form-label">Job name</label>
+
+                    <span class="pf67-inline-text-local">
+                        <a href="#" class="pf67-inline-text-local-display">
+                            {{ template.name }} Job_{{ today_suffix }}
+                        </a>
+
+                        <span class="pf67-inline-text-editor d-none">
+                            <input class="form-control form-control-sm" type="text" value="{{ template.name }} Job_{{ today_suffix }}">
+                            <span class="pf67-inline-edit-buttons">
+                                <button class="btn btn-success btn-sm pf67-inline-edit-button pf67-inline-text-local-save" type="button">✓</button>
+                                <button class="btn btn-danger btn-sm pf67-inline-edit-button pf67-inline-text-local-cancel" type="button">×</button>
+                            </span>
+                        </span>
+                    </span>
+
+                    <input type="hidden" name="job_name" value="{{ template.name }} Job_{{ today_suffix }}" class="pf67-inline-text-hidden">
+                </div>
+
+                <button class="btn btn-success" type="submit">Start Job</button>
+            </form>
+        </div>
+    </div>
+{% else %}
+    <div class="alert alert-secondary">
+        Login to start jobs or edit this template.
+    </div>
+{% endif %}
+
+<h3>Steps</h3>
+
+{% if template.steps %}
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th style="width: 90px;">Order</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Timing</th>
+                <th>Context</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for step in template.steps %}
+                <tr id="step-template-{{ step.id }}">
+                    <td>
+                        {{ step.sort_order }}
+
+                        {% if can_edit %}
+                            <form method="post" action="{{ url_for('views.move_template_step', template_id=template.id, step_id=step.id, direction='up') }}" class="d-inline">
+                                <button class="btn btn-link btn-sm p-0" type="submit" title="Move up">^</button>
+                            </form>
+
+                            <form method="post" action="{{ url_for('views.move_template_step', template_id=template.id, step_id=step.id, direction='down') }}" class="d-inline">
+                                <button class="btn btn-link btn-sm p-0" type="submit" title="Move down">v</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if can_edit %}
+                            <a data-bs-toggle="collapse" href="#edit-step-{{ step.id }}">
+                                {{ step.name }}
+                            </a>
+                        {% else %}
+                            {{ step.name }}
+                        {% endif %}
+                    </td>
+                    <td>{{ step.step_type }}</td>
+                    <td>
+                        {% if step.minimum_minutes %}Check {{ step.minimum_minutes | human_minutes }} · {% endif %}
+                        {% if step.ideal_minutes %}Ideal {{ step.ideal_minutes | human_minutes }} · {% endif %}
+                        Limit {{ step.limit_minutes | human_minutes }}
+                        {% if step.detrimental_minutes %} · Risk {{ step.detrimental_minutes | human_minutes }}{% endif %}
+                        {% if step.failure_minutes %} · Failure {{ step.failure_minutes | human_minutes }}{% endif %}
+                    </td>
+                    <td>{{ step.context_tag }}</td>
+                </tr>
+
+                {% if can_edit %}
+                    <tr>
+                        <td colspan="5" class="p-0">
+                            <div class="collapse" id="edit-step-{{ step.id }}">
+                                <div class="border rounded p-3 m-2">
+                                    <h4 class="h6">Edit Step</h4>
+
+                                    <form method="post" action="{{ url_for('views.edit_template_step', template_id=template.id, step_id=step.id) }}" class="pf67-template-step-form">
+                                        <div class="pf67-template-meta-grid mb-3">
+                                            <div>
+                                                <label class="form-label">Step name</label>
+                                                <input class="form-control" name="name" value="{{ step.name }}" required>
+                                            </div>
+
+                                            <div>
+                                                <label class="form-label">Step type</label>
+                                                <select class="form-select" name="step_type">
+                                                    {% for option in ["action", "wait", "observation", "subtemplate"] %}
+                                                        <option value="{{ option }}" {% if step.step_type == option %}selected{% endif %}>{{ option|title }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label class="form-label">Context</label>
+                                                <input class="form-control" name="context_tag" value="{{ step.context_tag }}">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Instructions / HTML notes</label>
+                                            <textarea class="form-control pf67-rich-text" name="instructions_html">{{ step.instructions_html }}</textarea>
+                                        </div>
+
+                                        <h5 class="h6">Timing Window</h5>
+
+                                        <table class="table table-sm pf67-timing-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Boundary</th>
+                                                    <th>Value</th>
+                                                    <th>Unit</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% set timing_fields = [
+                                                    ('minimum','Check', step.minimum_minutes, false),
+                                                    ('ideal','Ideal', step.ideal_minutes, false),
+                                                    ('limit','Limit', step.limit_minutes, true),
+                                                    ('detrimental','Risk', step.detrimental_minutes, false),
+                                                    ('failure','Failure', step.failure_minutes, false),
+                                                    ('estimated','Est.', step.estimated_duration_minutes, false)
+                                                ] %}
+
+                                                {% for field,label,stored_value,is_required in timing_fields %}
+                                                    {% set display_value = '' %}
+                                                    {% set display_unit = 'minutes' %}
+
+                                                    {% if stored_value %}
+                                                        {% if stored_value % 1440 == 0 %}
+                                                            {% set display_value = stored_value // 1440 %}
+                                                            {% set display_unit = 'days' %}
+                                                        {% elif stored_value % 60 == 0 %}
+                                                            {% set display_value = stored_value // 60 %}
+                                                            {% set display_unit = 'hours' %}
+                                                        {% else %}
+                                                            {% set display_value = stored_value %}
+                                                            {% set display_unit = 'minutes' %}
+                                                        {% endif %}
+                                                    {% endif %}
+
+                                                    <tr>
+                                                        <td>{{ label }}{% if is_required %} *{% endif %}</td>
+                                                        <td>
+                                                            <input class="form-control form-control-sm" name="{{ field }}_value" type="number" min="0" value="{{ display_value }}" data-pf67-value="1" data-pf67-field="{{ field }}" {% if is_required %}required{% endif %}>
+                                                        </td>
+                                                        <td>
+                                                            <select class="form-select form-select-sm" name="{{ field }}_unit" data-pf67-unit="1" data-pf67-field="{{ field }}">
+                                                                {% for unit in ["minutes", "hours", "days"] %}
+                                                                    <option value="{{ unit }}" {% if display_unit == unit %}selected{% endif %}>{{ unit|title }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+
+                                        <button class="btn btn-primary mt-3" type="submit">Save Step</button>
+                                        <button class="btn btn-secondary mt-3" type="button" data-bs-toggle="collapse" data-bs-target="#edit-step-{{ step.id }}">Cancel</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No steps yet.</p>
+{% endif %}
+
+{% if can_edit %}
+    <hr>
+
+    <p>
+        <a data-bs-toggle="collapse" href="#add-step-panel">
+            Add Step
+        </a>
+    </p>
+
+    <div class="collapse" id="add-step-panel">
+        <div class="border rounded p-3">
+            <h3>Add Step</h3>
+
+            <div id="timing-warning" class="alert alert-warning d-none"></div>
+
+            <form method="post" action="{{ url_for('views.add_step', template_id=template.id) }}" id="step-form">
+                <div class="pf67-template-meta-grid mb-3">
+                    <div>
+                        <label class="form-label">Step name</label>
+                        <input class="form-control" name="name" required>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Step type</label>
+                        <select class="form-select" name="step_type">
+                            <option value="action">Action</option>
+                            <option value="wait">Wait</option>
+                            <option value="observation">Observation</option>
+                            <option value="subtemplate">Subtemplate placeholder</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Context</label>
+                        <input class="form-control" name="context_tag" placeholder="Cellar, lab, kitchen">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Instructions / HTML notes</label>
+                    <textarea class="form-control pf67-rich-text" name="instructions_html"></textarea>
+                </div>
+
+                <h5>Timing Window</h5>
+
+                <table class="table table-sm pf67-timing-table">
+                    <thead>
+                        <tr>
+                            <th>Boundary</th>
+                            <th>Value</th>
+                            <th>Unit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for field,label,is_required in [
+                            ('minimum','Check', false),
+                            ('ideal','Ideal', false),
+                            ('limit','Limit', true),
+                            ('detrimental','Risk', false),
+                            ('failure','Failure', false),
+                            ('estimated','Est.', false)
+                        ] %}
+                            <tr>
+                                <td>{{ label }}{% if is_required %} *{% endif %}</td>
+                                <td>
+                                    <input class="form-control form-control-sm" name="{{ field }}_value" type="number" min="0" data-pf67-value="1" data-pf67-field="{{ field }}" {% if is_required %}required{% endif %}>
+                                </td>
+                                <td>
+                                    <select class="form-select form-select-sm" name="{{ field }}_unit" data-pf67-unit="1" data-pf67-field="{{ field }}">
+                                        <option value="minutes">Minutes</option>
+                                        <option value="hours">Hours</option>
+                                        <option value="days">Days</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <button class="btn btn-primary mt-3" type="submit">Add Step</button>
+                <button class="btn btn-outline-secondary mt-3" type="button" id="pf67-cancel-add-step">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js" referrerpolicy="no-referrer"></script>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var valueInputs = document.querySelectorAll("input[data-pf67-value]");
+        var unitSelects = document.querySelectorAll("select[data-pf67-unit]");
+        var warningBox = document.getElementById("timing-warning");
+
+        if (window.tinymce) {
+            tinymce.init(pf67TinyOptions({
+                selector: ".pf67-rich-text",
+                plugins: "code link lists",
+                toolbar: "undo redo | bold italic | bullist numlist | link | code",
+                menubar: false,
+                branding: false,
+                height: 280
+            }));
+        }
+
+        valueInputs.forEach(function(input) {
+            input.addEventListener("input", updateTimingWarning);
+        });
+
+        unitSelects.forEach(function(select) {
+            select.addEventListener("change", updateTimingWarning);
+        });
+
+        function getMinutes(fieldName) {
+            var valueInput = document.querySelector("input[name='" + fieldName + "_value']");
+            var unitSelect = document.querySelector("select[name='" + fieldName + "_unit']");
+
+            if (!valueInput || !unitSelect) {
+                return null;
+            }
+
+            var rawValue = valueInput.value.trim();
+
+            if (rawValue === "") {
+                return null;
+            }
+
+            var number = parseInt(rawValue, 10);
+
+            if (isNaN(number)) {
+                return null;
+            }
+
+            if (unitSelect.value === "days") {
+                return number * 1440;
+            }
+
+            if (unitSelect.value === "hours") {
+                return number * 60;
+            }
+
+            return number;
+        }
+
+        function updateTimingWarning() {
+            if (!warningBox) {
+                return;
+            }
+
+            var checks = [
+                ["Check", getMinutes("minimum"), "Ideal", getMinutes("ideal")],
+                ["Ideal", getMinutes("ideal"), "Limit", getMinutes("limit")],
+                ["Limit", getMinutes("limit"), "Risk", getMinutes("detrimental")],
+                ["Risk", getMinutes("detrimental"), "Failure", getMinutes("failure")]
+            ];
+
+            var messages = [];
+
+            checks.forEach(function(check) {
+                var leftLabel = check[0];
+                var leftValue = check[1];
+                var rightLabel = check[2];
+                var rightValue = check[3];
+
+                if (leftValue !== null && rightValue !== null && leftValue > rightValue) {
+                    messages.push(leftLabel + " is greater than " + rightLabel + ".");
+                }
+            });
+
+            if (messages.length) {
+                warningBox.classList.remove("d-none");
+                warningBox.innerHTML = "<strong>Timing warning:</strong><br>" + messages.join("<br>");
+            } else {
+                warningBox.classList.add("d-none");
+                warningBox.innerHTML = "";
+            }
+        }
+
+        var cancelAddStep = document.getElementById("pf67-cancel-add-step");
+
+        if (cancelAddStep) {
+            cancelAddStep.addEventListener("click", function() {
+                var panel = document.getElementById("add-step-panel");
+                var form = document.getElementById("step-form");
+
+                if (form) {
+                    form.reset();
+                }
+
+                if (window.tinymce) {
+                    tinymce.get().forEach(function(editor) {
+                        editor.setContent("");
+                    });
+                }
+
+                if (panel && window.bootstrap) {
+                    var collapse = bootstrap.Collapse.getOrCreateInstance(panel, {
+                        toggle: false
+                    });
+
+                    collapse.hide();
+                }
+            });
+        }
+
+        var inlineTextControls = document.querySelectorAll(".pf67-inline-text-local");
+
+        inlineTextControls.forEach(function(control) {
+            var display = control.querySelector(".pf67-inline-text-local-display");
+            var editor = control.querySelector(".pf67-inline-text-editor");
+            var input = control.querySelector("input[type='text']");
+            var saveButton = control.querySelector(".pf67-inline-text-local-save");
+            var cancelButton = control.querySelector(".pf67-inline-text-local-cancel");
+            var hidden = document.querySelector(".pf67-inline-text-hidden");
+            var originalValue = input ? input.value : "";
+
+            if (!display || !editor || !input || !saveButton || !cancelButton || !hidden) {
+                return;
+            }
+
+            display.addEventListener("click", function(event) {
+                event.preventDefault();
+                display.classList.add("d-none");
+                editor.classList.remove("d-none");
+                input.focus();
+            });
+
+            cancelButton.addEventListener("click", function() {
+                input.value = originalValue;
+                editor.classList.add("d-none");
+                display.classList.remove("d-none");
+            });
+
+            saveButton.addEventListener("click", function() {
+                originalValue = input.value;
+                hidden.value = input.value;
+                display.textContent = input.value;
+                editor.classList.add("d-none");
+                display.classList.remove("d-none");
+            });
+        });
+
+        updateTimingWarning();
+    });
+    </script>
+{% endif %}
+
+{% endblock %}
