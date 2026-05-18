@@ -1,0 +1,105 @@
+<h5 class="pf67-protocol-timing-heading">Timing before this step</h5>
+<div class="row g-3 pf67-protocol-primary-timing-row">
+    <div class="col-md-6">
+        <label class="form-label">Ideal <span class="pf67-required-star">*</span></label>
+        <div class="pf67-protocol-duration-row">
+            <input class="form-control" type="number" min="0" name="ideal_value">
+            <select class="form-select" name="ideal_unit">
+                <option value="minutes">minutes</option>
+                <option value="hours">hours</option>
+                <option value="days">days</option>
+            </select>
+        </div>
+    <div class="col-md-6">
+        <label class="form-label">Check</label>
+        <div class="pf67-protocol-duration-row">
+            <input class="form-control" type="number" min="0" name="minimum_value">
+            <select class="form-select" name="minimum_unit">
+                <option value="minutes">minutes</option>
+                <option value="hours">hours</option>
+                <option value="days">days</option>
+            </select>
+        </div>
+    </div>
+    </div>
+</div>
+
+<details class="pf67-protocol-advanced-timing">
+    <summary>Advanced Timing</summary>
+
+    <div class="row g-3 mt-1">
+        <div class="col-md-4">
+            <label class="form-label">Limit</label>
+            <div class="pf67-protocol-duration-row">
+                <input class="form-control" type="number" min="0" name="limit_value">
+                <select class="form-select" name="limit_unit">
+                    <option value="minutes">minutes</option>
+                    <option value="hours">hours</option>
+                    <option value="days">days</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Risk</label>
+            <div class="pf67-protocol-duration-row">
+                <input class="form-control" type="number" min="0" name="detrimental_value">
+                <select class="form-select" name="detrimental_unit">
+                    <option value="minutes">minutes</option>
+                    <option value="hours">hours</option>
+                    <option value="days">days</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Failure</label>
+            <div class="pf67-protocol-duration-row">
+                <input class="form-control" type="number" min="0" name="failure_value">
+                <select class="form-select" name="failure_unit">
+                    <option value="minutes">minutes</option>
+                    <option value="hours">hours</option>
+                    <option value="days">days</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</details>
+
+<div class="mb-3">
+    <label class="form-label">Step Title</label>
+    <input class="form-control" name="name">
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <label class="form-label">Type</label>
+        <select class="form-select" name="step_type">
+            <option value="action">Action</option>
+            <option value="wait">Wait</option>
+            <option value="observation">Observation</option>
+            <option value="subtemplate">Subtemplate</option>
+        </select>
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label">Area / Context</label>
+        <input class="form-control" list="pf67-protocol-context-options" name="context_tag">
+    </div>
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Instructions</label>
+    {{ pf67_lite_editor(
+        "instructions_html",
+        "",
+        url_for('views.pf67_patch006_protocol_image_upload', template_id=template.id),
+        url_for('views.pf67_patch006_protocol_image_list', template_id=template.id),
+        "Write this step like an instruction paragraph..."
+  ) }}
+</div>
+
+<div class="pf67-protocol-edit-actions">
+    <button class="btn btn-primary" type="submit">Add Step</button>
+    <button class="btn btn-outline-secondary" type="button" data-pf67-close-nearest-panel>Cancel</button>
+</div>

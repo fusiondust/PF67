@@ -262,3 +262,113 @@ def job_to_dict(job, include_steps=True):
         data["steps"] = [step_to_dict(step) for step in job.steps]
 
     return data
+
+# === PF67 PATCH 007A WAIT BEFORE STEP TIMING ===
+# User-facing terminology is Flow, while internal model names remain Job/JobStep.
+# New model:
+# - Step 1 timing is ignored; first due time is controlled by Flow creation.
+# - Step 2+ timing belongs before the step.
+# - Ideal is the mandatory wait value for timed steps.
+from datetime import datetime as _pf67_007a_datetime, timedelta as _pf67_007a_timedelta
+
+
+def _pf67_007a_has_any_timing(step):
+    return (
+        step.minimum_minutes is not None
+        or step.ideal_minutes is not None
+        or step.limit_minutes is not None
+        or step.detrimental_minutes is not None
+        or step.failure_minutes is not None
+    )
+
+
+def calculate_step_status(step, now=None):
+    if now is None:
+        now = _pf67_007a_datetime.utcnow()
+
+    if step.completed_at:
+        return "completed"
+
+    if step.status_override:
+        return step.status_override
+
+    if now < step.anchor_time:
+        return "waiting"
+
+    # Untimed/manual steps are due as soon as their anchor time arrives.
+    if not _pf67_007a_has_any_timing(step):
+        return "due"
+
+    elapsed_minutes = int((now - step.anchor_time).total_seconds() // 60)
+
+    if step.failure_minutes is not None and elapsed_minutes >= step.failure_minutes:
+        return "critical"
+
+    if step.detrimental_minutes is not None and elapsed_minutes >= step.detrimental_minutes:
+        return "risky"
+
+    if step.limit_minutes is not None and elapsed_minutes > step.limit_minutes:
+        return "late"
+
+    if step.ideal_minutes is not None and elapsed_minutes >= step.ideal_minutes:
+        return "ideal"
+
+    if step.minimum_minutes is not None and elapsed_minutes >= step.minimum_minutes:
+        return "checkable"
+
+    return "waiting"
+
+
+def create_job_from_template(template, job_name, started_at=None):
+    if started_at is None:
+        started_at = _pf67_007a_datetime.utcnow()
+
+    job = Job(
+        template_id=template.id,
+        name=job_name,
+        template_version=template.current_version,
+        started_at=started_at,
+        allow_ai_read=True,
+        allow_ai_suggest=True,
+        allow_ai_write=False,
+    )
+
+    db.session.add(job)
+    db.session.flush()
+
+    anchor_time = started_at
+    ordered_steps = list(template.steps)
+
+    for index, step_template in enumerate(ordered_steps):
+        is_first_step = index == 0
+
+        job_step = JobStep(
+            job_id=job.id,
+            source_step_template_id=step_template.id,
+            sort_order=step_template.sort_order,
+            name=step_template.name,
+            step_type=step_template.step_type,
+            instructions_html=step_template.instructions_html,
+            context_tag=step_template.context_tag,
+
+            # Step 1 timing is intentionally ignored. The first due time belongs
+            # to Flow creation, not to the Protocol timing chain.
+            minimum_minutes=None if is_first_step else step_template.minimum_minutes,
+            ideal_minutes=None if is_first_step else step_template.ideal_minutes,
+            limit_minutes=None if is_first_step else step_template.limit_minutes,
+            detrimental_minutes=None if is_first_step else step_template.detrimental_minutes,
+            failure_minutes=None if is_first_step else step_template.failure_minutes,
+
+            estimated_duration_minutes=step_template.estimated_duration_minutes,
+            anchor_time=anchor_time,
+        )
+
+        db.session.add(job_step)
+
+        # For Step 2+ and onward, this step's Ideal value is the wait before
+        # the step and becomes the cascade anchor for the next step.
+        if not is_first_step and step_template.ideal_minutes is not None:
+            anchor_time = anchor_time + _pf67_007a_timedelta(minutes=step_template.ideal_minutes)
+
+    db.session.commit()
+    return job

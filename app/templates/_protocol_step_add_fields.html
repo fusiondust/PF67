@@ -1,0 +1,61 @@
+<div class="mb-3">
+    <label class="form-label">Step title</label>
+    <input class="form-control" name="name">
+</div>
+
+<div class="pf67-form-grid-2">
+    <div>
+        <label class="form-label">Type</label>
+        <select class="form-select" name="step_type">
+            <option value="action">Action</option>
+            <option value="wait">Wait</option>
+            <option value="observation">Observation</option>
+            <option value="subtemplate">Subtemplate</option>
+        </select>
+    </div>
+
+    <div>
+        <label class="form-label">Context tag</label>
+        <input class="form-control" name="context_tag">
+    </div>
+</div>
+
+<div class="mb-3 mt-3">
+    <label class="form-label">Instructions</label>
+    <textarea class="form-control" name="instructions_html" rows="5"></textarea>
+</div>
+
+<div class="pf67-form-grid-2">
+    <div>
+        <label class="form-label">Check minutes</label>
+        <input class="form-control" type="number" min="0" name="minimum_minutes">
+    </div>
+    <div>
+        <label class="form-label">Ideal minutes</label>
+        <input class="form-control" type="number" min="0" name="ideal_minutes">
+    </div>
+</div>
+
+<details class="pf67-protocol-advanced-timing mt-3">
+    <summary>Advanced Timing: Limit, Risk, Failure</summary>
+
+    <div class="pf67-form-grid-3 mt-3">
+        <div>
+            <label class="form-label">Limit minutes</label>
+            <input class="form-control" type="number" min="0" name="limit_minutes">
+        </div>
+        <div>
+            <label class="form-label">Risk minutes</label>
+            <input class="form-control" type="number" min="0" name="detrimental_minutes">
+        </div>
+        <div>
+            <label class="form-label">Failure minutes</label>
+            <input class="form-control" type="number" min="0" name="failure_minutes">
+        </div>
+    </div>
+</details>
+
+<div class="d-flex gap-2 mt-3">
+    <button class="btn btn-primary" type="submit">Add Step</button>
+    <button class="btn btn-outline-secondary" type="button" onclick="this.closest('.pf67-protocol-toggle-panel').classList.remove('is-open')">Cancel</button>
+</div>

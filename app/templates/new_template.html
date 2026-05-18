@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 - New Protocol{% endblock %}
+
+{% block content %}
+
+<datalist id="pf67-protocol-category-options">
+    {% for category in pf67_protocol_categories() %}
+        <option value="{{ category }}"></option>
+    {% endfor %}
+</datalist>
+
+<div class="pf67-page-shell">
+    <div class="card pf67-card">
+        <div class="card-body">
+            <h2>New Protocol</h2>
+            <p class="text-muted">Create a reusable process definition. Jobs are scheduled or live runs created from Protocols.</p>
+
+            <form method="post">
+                <div class="mb-3">
+                    <label class="form-label">Protocol title</label>
+                    <input class="form-control" name="name" required autofocus>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Category</label>
+                    <input class="form-control"
+                           list="pf67-protocol-category-options"
+                           name="category"
+                           placeholder="Type a new category or select an existing one">
+                    <div class="form-text">Examples: Microgreens, Brewing, Mycology, Shop, Admin.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Description / overview</label>
+                    <textarea class="form-control" name="description" rows="5"></textarea>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" type="submit">Create Protocol</button>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('views.templates_page') }}">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

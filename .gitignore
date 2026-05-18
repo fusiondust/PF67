@@ -19,6 +19,8 @@ app/static/uploads/*
 !app/static/uploads/.gitkeep
 app/static/uploads/jobs/
 app/static/uploads/tmp/
+app/_pf67_patch_backups/
+_pf67_patch_backups/
 
 # Synology metadata
 @eaDir/
@@ -42,7 +44,10 @@ regenerate_pf67_*.py
 build_pf67_*.py
 pf67_empty_app_installer_*.py
 pf67_clean_regenerator_*.py
+pf67_synology_patch_*.py
+pf67_patch_*_report_*.txt
 *.manifest.json
+*.bak
 
 # OS/editor junk
 .DS_Store

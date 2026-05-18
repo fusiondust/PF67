@@ -26,9 +26,9 @@ Included:
 - Flask app
 - SQLite database in db/pf67.sqlite3
 - SQLAlchemy models
-- Template creation
+- Protocol creation
 - Step creation
-- Job creation from template
+- Job creation from protocol
 - Basic dashboard
 - Read-only JSON API
 - Basic ICS calendar feed

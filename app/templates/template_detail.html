@@ -1,445 +1,814 @@
 {% extends "base.html" %}
 
-{% block title %}PF67 · Template{% endblock %}
+
+{% macro pf67_lite_editor(field_name, initial_html, upload_url, list_url, placeholder) %}
+    <div class="pf67-lite-editor"
+         data-pf67-lite-editor
+         data-pf67-upload-url="{{ upload_url }}"
+         data-pf67-list-url="{{ list_url }}">
+        <div class="pf67-lite-editor-toolbar">
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-pf67-editor-command="bold" title="Bold"><strong>B</strong></button>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-pf67-editor-command="italic" title="Italic"><em>I</em></button>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-pf67-editor-command="insertUnorderedList" title="Bulleted list">&bull;</button>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-pf67-editor-command="insertOrderedList" title="Numbered list">1.</button>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-pf67-editor-link title="Link">Link</button>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-pf67-editor-image title="Upload or take photo">Camera/Image</button>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-pf67-editor-library title="Use image already uploaded to this Protocol">Protocol Images</button>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-pf67-editor-source title="Edit HTML source">HTML</button>
+        </div>
+
+        <div class="pf67-lite-editor-surface"
+             contenteditable="true"
+             data-placeholder="{{ placeholder }}">{{ initial_html | safe }}</div>
+
+        <textarea class="pf67-lite-editor-hidden" name="{{ field_name }}" hidden>{{ initial_html or '' }}</textarea>
+        <textarea class="form-control pf67-lite-editor-source" spellcheck="false"></textarea>
+
+        <div class="pf67-lite-editor-image-list">
+            <div class="pf67-small text-muted mb-2">Images uploaded to this Protocol:</div>
+            <div class="pf67-lite-editor-image-grid"></div>
+        </div>
+    </div>
+{% endmacro %}
+
+
+{% block title %}PF67 - Protocol - {{ template.name }}{% endblock %}
 
 {% block content %}
 
-<h2>{{ template.name }}</h2>
+<datalist id="pf67-protocol-category-options">
+    {% for category in pf67_patch006_protocol_categories() %}
+        <option value="{{ category }}"></option>
+    {% endfor %}
+</datalist>
 
-<p>{{ template.description }}</p>
+<datalist id="pf67-protocol-context-options">
+    {% for context in pf67_patch006_protocol_contexts() %}
+        <option value="{{ context }}"></option>
+    {% endfor %}
+</datalist>
 
-{% if can_edit %}
-    <div class="card pf67-card">
-        <div class="card-body">
-            <h4>Start Job</h4>
-
-            <form method="post" action="{{ url_for('views.start_job', template_id=template.id) }}">
-                <div class="mb-3">
-                    <label class="form-label">Job name</label>
-
-                    <span class="pf67-inline-text-local">
-                        <a href="#" class="pf67-inline-text-local-display">
-                            {{ template.name }} Job_{{ today_suffix }}
-                        </a>
-
-                        <span class="pf67-inline-text-editor d-none">
-                            <input class="form-control form-control-sm" type="text" value="{{ template.name }} Job_{{ today_suffix }}">
-                            <span class="pf67-inline-edit-buttons">
-                                <button class="btn btn-success btn-sm pf67-inline-edit-button pf67-inline-text-local-save" type="button">✓</button>
-                                <button class="btn btn-danger btn-sm pf67-inline-edit-button pf67-inline-text-local-cancel" type="button">×</button>
-                            </span>
-                        </span>
-                    </span>
-
-                    <input type="hidden" name="job_name" value="{{ template.name }} Job_{{ today_suffix }}" class="pf67-inline-text-hidden">
-                </div>
-
-                <button class="btn btn-success" type="submit">Start Job</button>
-            </form>
-        </div>
-    </div>
-{% else %}
-    <div class="alert alert-secondary">
-        Login to start jobs or edit this template.
-    </div>
-{% endif %}
-
-<h3>Steps</h3>
-
-{% if template.steps %}
-    <table class="table align-middle">
-        <thead>
-            <tr>
-                <th style="width: 90px;">Order</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Timing</th>
-                <th>Context</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for step in template.steps %}
-                <tr id="step-template-{{ step.id }}">
-                    <td>
-                        {{ step.sort_order }}
-
-                        {% if can_edit %}
-                            <form method="post" action="{{ url_for('views.move_template_step', template_id=template.id, step_id=step.id, direction='up') }}" class="d-inline">
-                                <button class="btn btn-link btn-sm p-0" type="submit" title="Move up">^</button>
-                            </form>
-
-                            <form method="post" action="{{ url_for('views.move_template_step', template_id=template.id, step_id=step.id, direction='down') }}" class="d-inline">
-                                <button class="btn btn-link btn-sm p-0" type="submit" title="Move down">v</button>
-                            </form>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if can_edit %}
-                            <a data-bs-toggle="collapse" href="#edit-step-{{ step.id }}">
-                                {{ step.name }}
-                            </a>
-                        {% else %}
-                            {{ step.name }}
-                        {% endif %}
-                    </td>
-                    <td>{{ step.step_type }}</td>
-                    <td>
-                        {% if step.minimum_minutes %}Check {{ step.minimum_minutes | human_minutes }} · {% endif %}
-                        {% if step.ideal_minutes %}Ideal {{ step.ideal_minutes | human_minutes }} · {% endif %}
-                        Limit {{ step.limit_minutes | human_minutes }}
-                        {% if step.detrimental_minutes %} · Risk {{ step.detrimental_minutes | human_minutes }}{% endif %}
-                        {% if step.failure_minutes %} · Failure {{ step.failure_minutes | human_minutes }}{% endif %}
-                    </td>
-                    <td>{{ step.context_tag }}</td>
-                </tr>
+<div class="pf67-protocol-doc-shell">
+    <div class="pf67-protocol-doc-header">
+        <div class="pf67-protocol-header-row">
+            <div class="pf67-protocol-header-main">
+                <h2 class="pf67-protocol-title-display"
+                    tabindex="0"
+                    data-pf67-inline-open="pf67-protocol-title-editor"
+                    data-pf67-inline-hide-self="true"
+                    title="Click to edit Protocol title">{{ template.name }}</h2>
 
                 {% if can_edit %}
-                    <tr>
-                        <td colspan="5" class="p-0">
-                            <div class="collapse" id="edit-step-{{ step.id }}">
-                                <div class="border rounded p-3 m-2">
-                                    <h4 class="h6">Edit Step</h4>
+                    <form method="post"
+                          action="{{ url_for('views.pf67_patch006b_update_protocol_title', template_id=template.id) }}"
+                          class="pf67-protocol-title-editor pf67-protocol-edit-box"
+                          id="pf67-protocol-title-editor">
+                        <label class="form-label">Protocol Title</label>
+                        <input class="form-control" name="name" value="{{ template.name }}">
 
-                                    <form method="post" action="{{ url_for('views.edit_template_step', template_id=template.id, step_id=step.id) }}" class="pf67-template-step-form">
-                                        <div class="pf67-template-meta-grid mb-3">
-                                            <div>
-                                                <label class="form-label">Step name</label>
-                                                <input class="form-control" name="name" value="{{ step.name }}" required>
-                                            </div>
-
-                                            <div>
-                                                <label class="form-label">Step type</label>
-                                                <select class="form-select" name="step_type">
-                                                    {% for option in ["action", "wait", "observation", "subtemplate"] %}
-                                                        <option value="{{ option }}" {% if step.step_type == option %}selected{% endif %}>{{ option|title }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label class="form-label">Context</label>
-                                                <input class="form-control" name="context_tag" value="{{ step.context_tag }}">
-                                            </div>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label class="form-label">Instructions / HTML notes</label>
-                                            <textarea class="form-control pf67-rich-text" name="instructions_html">{{ step.instructions_html }}</textarea>
-                                        </div>
-
-                                        <h5 class="h6">Timing Window</h5>
-
-                                        <table class="table table-sm pf67-timing-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Boundary</th>
-                                                    <th>Value</th>
-                                                    <th>Unit</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {% set timing_fields = [
-                                                    ('minimum','Check', step.minimum_minutes, false),
-                                                    ('ideal','Ideal', step.ideal_minutes, false),
-                                                    ('limit','Limit', step.limit_minutes, true),
-                                                    ('detrimental','Risk', step.detrimental_minutes, false),
-                                                    ('failure','Failure', step.failure_minutes, false),
-                                                    ('estimated','Est.', step.estimated_duration_minutes, false)
-                                                ] %}
-
-                                                {% for field,label,stored_value,is_required in timing_fields %}
-                                                    {% set display_value = '' %}
-                                                    {% set display_unit = 'minutes' %}
-
-                                                    {% if stored_value %}
-                                                        {% if stored_value % 1440 == 0 %}
-                                                            {% set display_value = stored_value // 1440 %}
-                                                            {% set display_unit = 'days' %}
-                                                        {% elif stored_value % 60 == 0 %}
-                                                            {% set display_value = stored_value // 60 %}
-                                                            {% set display_unit = 'hours' %}
-                                                        {% else %}
-                                                            {% set display_value = stored_value %}
-                                                            {% set display_unit = 'minutes' %}
-                                                        {% endif %}
-                                                    {% endif %}
-
-                                                    <tr>
-                                                        <td>{{ label }}{% if is_required %} *{% endif %}</td>
-                                                        <td>
-                                                            <input class="form-control form-control-sm" name="{{ field }}_value" type="number" min="0" value="{{ display_value }}" data-pf67-value="1" data-pf67-field="{{ field }}" {% if is_required %}required{% endif %}>
-                                                        </td>
-                                                        <td>
-                                                            <select class="form-select form-select-sm" name="{{ field }}_unit" data-pf67-unit="1" data-pf67-field="{{ field }}">
-                                                                {% for unit in ["minutes", "hours", "days"] %}
-                                                                    <option value="{{ unit }}" {% if display_unit == unit %}selected{% endif %}>{{ unit|title }}</option>
-                                                                {% endfor %}
-                                                            </select>
-                                                        </td>
-                                                    </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                        </table>
-
-                                        <button class="btn btn-primary mt-3" type="submit">Save Step</button>
-                                        <button class="btn btn-secondary mt-3" type="button" data-bs-toggle="collapse" data-bs-target="#edit-step-{{ step.id }}">Cancel</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
+                        <div class="pf67-protocol-edit-actions">
+                            <button class="btn btn-success btn-sm" type="submit">Save Title</button>
+                            <button class="btn btn-outline-secondary btn-sm" type="button" data-pf67-inline-close="pf67-protocol-title-editor">Cancel</button>
+                        </div>
+                    </form>
                 {% endif %}
-            {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <p>No steps yet.</p>
-{% endif %}
 
-{% if can_edit %}
-    <hr>
-
-    <p>
-        <a data-bs-toggle="collapse" href="#add-step-panel">
-            Add Step
-        </a>
-    </p>
-
-    <div class="collapse" id="add-step-panel">
-        <div class="border rounded p-3">
-            <h3>Add Step</h3>
-
-            <div id="timing-warning" class="alert alert-warning d-none"></div>
-
-            <form method="post" action="{{ url_for('views.add_step', template_id=template.id) }}" id="step-form">
-                <div class="pf67-template-meta-grid mb-3">
-                    <div>
-                        <label class="form-label">Step name</label>
-                        <input class="form-control" name="name" required>
+                <div class="pf67-protocol-category-row">
+                    <div class="pf67-protocol-category-display"
+                         tabindex="0"
+                         {% if can_edit %}data-pf67-inline-open="pf67-protocol-category-editor" data-pf67-inline-hide-self="true"{% endif %}
+                         title="{% if can_edit %}Click to edit Protocol category{% endif %}">
+                        <span class="pf67-small text-muted">Category:</span>
+                        {% if template.category is defined and template.category %}
+                            <span class="pf67-category-badge">{{ template.category }}</span>
+                        {% else %}
+                            <span class="pf67-category-badge pf67-category-badge-empty">Uncategorized</span>
+                        {% endif %}
                     </div>
 
-                    <div>
-                        <label class="form-label">Step type</label>
-                        <select class="form-select" name="step_type">
-                            <option value="action">Action</option>
-                            <option value="wait">Wait</option>
-                            <option value="observation">Observation</option>
-                            <option value="subtemplate">Subtemplate placeholder</option>
-                        </select>
-                    </div>
+                    {% if can_edit %}
+                        <form method="post"
+                              action="{{ url_for('views.pf67_patch006b_update_protocol_category', template_id=template.id) }}"
+                              class="pf67-protocol-category-editor"
+                              id="pf67-protocol-category-editor">
+                            <span class="pf67-small text-muted">Category:</span>
 
-                    <div>
-                        <label class="form-label">Context</label>
-                        <input class="form-control" name="context_tag" placeholder="Cellar, lab, kitchen">
-                    </div>
+                            <input class="form-control form-control-sm"
+                                   list="pf67-protocol-category-options"
+                                   name="category"
+                                   value="{% if template.category is defined %}{{ template.category or '' }}{% endif %}"
+                                   placeholder="Type new category or select existing">
+
+                            <button class="btn btn-success btn-sm" type="submit">Save</button>
+                            <button class="btn btn-outline-secondary btn-sm" type="button" data-pf67-inline-close="pf67-protocol-category-editor">Cancel</button>
+                        </form>
+                    {% endif %}
                 </div>
+            </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Instructions / HTML notes</label>
-                    <textarea class="form-control pf67-rich-text" name="instructions_html"></textarea>
+            {% if can_edit %}
+                <div class="pf67-protocol-actions">
+                    <button class="btn btn-outline-success btn-sm" type="button" data-pf67-panel-open="start-flow-panel">Start Flow</button>
+                    <button class="btn btn-outline-primary btn-sm" type="button" data-pf67-panel-open="add-step-panel-bottom">Add Step</button>
                 </div>
-
-                <h5>Timing Window</h5>
-
-                <table class="table table-sm pf67-timing-table">
-                    <thead>
-                        <tr>
-                            <th>Boundary</th>
-                            <th>Value</th>
-                            <th>Unit</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for field,label,is_required in [
-                            ('minimum','Check', false),
-                            ('ideal','Ideal', false),
-                            ('limit','Limit', true),
-                            ('detrimental','Risk', false),
-                            ('failure','Failure', false),
-                            ('estimated','Est.', false)
-                        ] %}
-                            <tr>
-                                <td>{{ label }}{% if is_required %} *{% endif %}</td>
-                                <td>
-                                    <input class="form-control form-control-sm" name="{{ field }}_value" type="number" min="0" data-pf67-value="1" data-pf67-field="{{ field }}" {% if is_required %}required{% endif %}>
-                                </td>
-                                <td>
-                                    <select class="form-select form-select-sm" name="{{ field }}_unit" data-pf67-unit="1" data-pf67-field="{{ field }}">
-                                        <option value="minutes">Minutes</option>
-                                        <option value="hours">Hours</option>
-                                        <option value="days">Days</option>
-                                    </select>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-                <button class="btn btn-primary mt-3" type="submit">Add Step</button>
-                <button class="btn btn-outline-secondary mt-3" type="button" id="pf67-cancel-add-step">Cancel</button>
-            </form>
+            {% endif %}
         </div>
+
+        <div class="pf67-protocol-description-display"
+             tabindex="0"
+             {% if can_edit %}data-pf67-inline-open="pf67-protocol-description-editor" data-pf67-inline-hide-self="true"{% endif %}
+             title="{% if can_edit %}Click to edit Protocol description{% endif %}">
+            {% if template.description %}
+                {{ template.description | safe }}
+            {% else %}
+                <span class="text-muted">No Protocol description yet. Click to add one.</span>
+            {% endif %}
+        </div>
+
+        {% if can_edit %}
+            <form method="post"
+                  action="{{ url_for('views.pf67_patch006b_update_protocol_description', template_id=template.id) }}"
+                  class="pf67-protocol-description-editor pf67-protocol-edit-box"
+                  id="pf67-protocol-description-editor">
+                <h4>Edit Protocol Description</h4>
+                {{ pf67_lite_editor(
+                    "description",
+                    template.description or "",
+                    url_for('views.pf67_patch006_protocol_image_upload', template_id=template.id),
+                    url_for('views.pf67_patch006_protocol_image_list', template_id=template.id),
+                    "Write the Protocol overview, reference notes, and process context..."
+              ) }}
+
+                <div class="pf67-protocol-edit-actions">
+                    <button class="btn btn-success" type="submit">Save Description</button>
+                    <button class="btn btn-outline-secondary" type="button" data-pf67-inline-close="pf67-protocol-description-editor">Cancel</button>
+                </div>
+            </form>
+        {% endif %}
+
+        {% if can_edit %}
+            <div class="pf67-protocol-flow-panel pf67-protocol-edit-box" id="start-flow-panel">
+                <h4>Start Flow</h4>
+
+                <form method="post" action="{{ url_for('views.start_job', template_id=template.id) }}">
+                    <div class="mb-3">
+                        <label class="form-label">Flow name</label>
+                        <input class="form-control" name="job_name" value="{{ template.name }} Flow_{{ today_suffix }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Start date/time</label>
+                        <input class="form-control" type="datetime-local" name="started_at">
+                        <div class="form-text">Leave blank to start now. Timing model refinements are planned for Patch 007.</div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success" type="submit">Start Flow</button>
+                        <button class="btn btn-outline-secondary" type="button" data-pf67-panel-close="start-flow-panel">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        {% endif %}
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js" referrerpolicy="no-referrer"></script>
+    <div class="pf67-protocol-layout">
+        <aside class="pf67-protocol-toc" aria-label="Protocol steps table of contents">
+            <div class="pf67-protocol-toc-title">Steps</div>
 
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var valueInputs = document.querySelectorAll("input[data-pf67-value]");
-        var unitSelects = document.querySelectorAll("select[data-pf67-unit]");
-        var warningBox = document.getElementById("timing-warning");
+            {% if template.steps %}
+                {% for step in template.steps|sort(attribute="sort_order") %}
+                    <a class="pf67-protocol-toc-link" href="#template-step-{{ step.id }}">
+                        {% if step.name %}
+                            {{ step.name }}
+                        {% else %}
+                            Step {{ loop.index }}
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            {% else %}
+                <div class="text-muted pf67-small">No steps yet.</div>
+            {% endif %}
+        </aside>
 
-        if (window.tinymce) {
-            tinymce.init(pf67TinyOptions({
-                selector: ".pf67-rich-text",
-                plugins: "code link lists",
-                toolbar: "undo redo | bold italic | bullist numlist | link | code",
-                menubar: false,
-                branding: false,
-                height: 280
-            }));
+        <main class="pf67-protocol-main">
+            <div class="pf67-protocol-doc">
+                {% if template.steps %}
+                    {% for step in template.steps|sort(attribute="sort_order") %}
+                        <div class="pf67-protocol-step-row" id="template-step-{{ step.id }}">
+                            {% if can_edit %}
+                                {% if not loop.first %}
+                                    <div class="pf67-protocol-step-move pf67-protocol-step-move-up">
+                                        <form method="post" action="{{ url_for('views.move_template_step', template_id=template.id, step_id=step.id, direction='up') }}">
+                                            <button class="btn btn-outline-secondary btn-sm" type="submit" title="Move up">&uarr;</button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+
+                                {% if not loop.last %}
+                                    <div class="pf67-protocol-step-move pf67-protocol-step-move-down">
+                                        <form method="post" action="{{ url_for('views.move_template_step', template_id=template.id, step_id=step.id, direction='down') }}">
+                                            <button class="btn btn-outline-secondary btn-sm" type="submit" title="Move down">&darr;</button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+
+                            {% if not loop.first and step.ideal_minutes %}
+                                <div class="pf67-protocol-wait-before">
+                                    <div class="pf67-protocol-wait-primary">
+                                        {{ step.ideal_minutes|pf67_patch007c_wait_label }}
+                                    </div>
+
+                                    {% if step.minimum_minutes %}
+                                        <span class="pf67-protocol-wait-inline-tip">Check after {{ step.minimum_minutes|pf67_patch007c_duration_label }}</span>
+                                    {% endif %}
+                                </div>
+                            {% elif not loop.first and step.minimum_minutes %}
+                                <div class="pf67-protocol-wait-before">
+                                    <span class="pf67-protocol-wait-inline-tip">Check after {{ step.minimum_minutes|pf67_patch007c_duration_label }}</span>
+                                </div>
+                            {% endif %}
+
+                            <article class="pf67-protocol-step-display"
+                                     tabindex="0"
+                                     {% if can_edit %}data-pf67-inline-open="pf67-step-editor-{{ step.id }}" data-pf67-inline-hide-self="true"{% endif %}
+                                     title="{% if can_edit %}Click to edit this step{% endif %}">
+                                <div class="pf67-protocol-step-heading">
+                                    <span class="pf67-protocol-step-title">
+                                        {% if step.name %}
+                                            {{ step.name }}
+                                        {% else %}
+                                            Step {{ loop.index }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+
+                                <div class="pf67-protocol-step-body">
+                                    {% if step.instructions_html %}
+                                        {{ step.instructions_html | safe }}
+                                    {% else %}
+                                        <span class="text-muted">No instructions entered.</span>
+                                    {% endif %}
+                                </div>
+
+                            </article>
+
+                            {% if can_edit %}
+                                <form method="post"
+                                      action="{{ url_for('views.pf67_patch006b_update_protocol_step', template_id=template.id, step_id=step.id) }}"
+                                      class="pf67-protocol-step-editor pf67-protocol-edit-box"
+                                      id="pf67-step-editor-{{ step.id }}">
+                                    <h4>Edit Step</h4>
+
+                                    {% if not loop.first %}
+                                        <h5 class="pf67-protocol-timing-heading">Timing before this step</h5>
+<div class="row g-3 pf67-protocol-primary-timing-row">
+                                            <div class="col-md-6">
+                                            <label class="form-label">Ideal <span class="pf67-required-star">*</span></label>
+                                            <div class="pf67-protocol-duration-row">
+                                                <input class="form-control" type="number" min="0" name="ideal_value" value="{{ step.ideal_minutes|pf67_patch006b_duration_value }}">
+                                                <select class="form-select" name="ideal_unit">
+                                                    {% set unit = step.ideal_minutes|pf67_patch006b_duration_unit %}
+                                                    <option value="minutes" {% if unit == 'minutes' %}selected{% endif %}>minutes</option>
+                                                    <option value="hours" {% if unit == 'hours' %}selected{% endif %}>hours</option>
+                                                    <option value="days" {% if unit == 'days' %}selected{% endif %}>days</option>
+                                                </select>
+                                            </div>
+                                        <div class="col-md-6">
+                                                <label class="form-label">Check</label>
+                                            <div class="pf67-protocol-duration-row">
+                                                <input class="form-control" type="number" min="0" name="minimum_value" value="{{ step.minimum_minutes|pf67_patch006b_duration_value }}">
+                                                <select class="form-select" name="minimum_unit">
+                                                    {% set unit = step.minimum_minutes|pf67_patch006b_duration_unit %}
+                                                    <option value="minutes" {% if unit == 'minutes' %}selected{% endif %}>minutes</option>
+                                                    <option value="hours" {% if unit == 'hours' %}selected{% endif %}>hours</option>
+                                                    <option value="days" {% if unit == 'days' %}selected{% endif %}>days</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>
+
+                                    <details class="pf67-protocol-advanced-timing">
+                                        <summary>Advanced Timing: Limit, Risk, Failure</summary>
+
+                                        <div class="row g-3 mt-1">
+                                            <div class="col-md-4">
+                                                <label class="form-label">Limit</label>
+                                                <div class="pf67-protocol-duration-row">
+                                                    <input class="form-control" type="number" min="0" name="limit_value" value="{{ step.limit_minutes|pf67_patch006b_duration_value }}">
+                                                    <select class="form-select" name="limit_unit">
+                                                        {% set unit = step.limit_minutes|pf67_patch006b_duration_unit %}
+                                                        <option value="minutes" {% if unit == 'minutes' %}selected{% endif %}>minutes</option>
+                                                        <option value="hours" {% if unit == 'hours' %}selected{% endif %}>hours</option>
+                                                        <option value="days" {% if unit == 'days' %}selected{% endif %}>days</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <label class="form-label">Risk</label>
+                                                <div class="pf67-protocol-duration-row">
+                                                    <input class="form-control" type="number" min="0" name="detrimental_value" value="{{ step.detrimental_minutes|pf67_patch006b_duration_value }}">
+                                                    <select class="form-select" name="detrimental_unit">
+                                                        {% set unit = step.detrimental_minutes|pf67_patch006b_duration_unit %}
+                                                        <option value="minutes" {% if unit == 'minutes' %}selected{% endif %}>minutes</option>
+                                                        <option value="hours" {% if unit == 'hours' %}selected{% endif %}>hours</option>
+                                                        <option value="days" {% if unit == 'days' %}selected{% endif %}>days</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <label class="form-label">Failure</label>
+                                                <div class="pf67-protocol-duration-row">
+                                                    <input class="form-control" type="number" min="0" name="failure_value" value="{{ step.failure_minutes|pf67_patch006b_duration_value }}">
+                                                    <select class="form-select" name="failure_unit">
+                                                        {% set unit = step.failure_minutes|pf67_patch006b_duration_unit %}
+                                                        <option value="minutes" {% if unit == 'minutes' %}selected{% endif %}>minutes</option>
+                                                        <option value="hours" {% if unit == 'hours' %}selected{% endif %}>hours</option>
+                                                        <option value="days" {% if unit == 'days' %}selected{% endif %}>days</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </details>
+                                    {% endif %}
+
+
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Step Title</label>
+                                        <input class="form-control" name="name" value="{{ step.name or '' }}">
+                                        <div class="pf67-inline-help">If left blank, this step displays as Step {{ loop.index }} until you name it.</div>
+                                    </div>
+
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Type</label>
+                                            <select class="form-select" name="step_type">
+                                                {% set current_type = step.step_type or 'action' %}
+                                                <option value="action" {% if current_type == 'action' %}selected{% endif %}>Action</option>
+                                                <option value="wait" {% if current_type == 'wait' %}selected{% endif %}>Wait</option>
+                                                <option value="observation" {% if current_type == 'observation' %}selected{% endif %}>Observation</option>
+                                                <option value="subtemplate" {% if current_type == 'subtemplate' %}selected{% endif %}>Subtemplate</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">Area / Context</label>
+                                            <input class="form-control"
+                                                   list="pf67-protocol-context-options"
+                                                   name="context_tag"
+                                                   value="{{ step.context_tag or '' }}"
+                                                   placeholder="Optional: Kitchen, Fermentation Shelf, Packaging">
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Instructions</label>
+                                        {{ pf67_lite_editor(
+                                            "instructions_html",
+                                            step.instructions_html or "",
+                                            url_for('views.pf67_patch006_protocol_image_upload', template_id=template.id),
+                                            url_for('views.pf67_patch006_protocol_image_list', template_id=template.id),
+                                            "Write this step like an instruction paragraph..."
+                                      ) }}
+                                    </div>
+
+                                                                        <div class="pf67-protocol-edit-actions">
+                                        <button class="btn btn-success btn-sm" type="submit">Save Step</button>
+                                        <button class="btn btn-outline-secondary btn-sm" type="button" data-pf67-inline-close="pf67-step-editor-{{ step.id }}">Cancel</button>
+                                    </div>
+                                </form>
+
+                                <div class="pf67-protocol-insert-zone">
+                                    <button class="btn btn-outline-primary btn-sm" type="button" data-pf67-panel-open="add-step-panel-after-{{ step.id }}">
+                                        Add Step Here
+                                    </button>
+                                </div>
+
+                                <div class="pf67-protocol-add-panel pf67-protocol-edit-box" id="add-step-panel-after-{{ step.id }}">
+                                    <form method="post" action="{{ url_for('views.pf67_patch006b_add_protocol_step', template_id=template.id) }}">
+                                        <input type="hidden" name="after_step_id" value="{{ step.id }}">
+                                        <h4>Add Step Here</h4>
+                                        {% include "protocol_step_form_patch006d.html" %}
+                                    </form>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="pf67-protocol-empty-demo">
+                        <strong>No steps yet.</strong>
+                        <div class="pf67-small mt-1">
+                            Add the first step to begin turning this Protocol into a readable process document.
+                        </div>
+
+                        <div class="pf67-protocol-empty-demo-step" aria-label="Example protocol step preview">
+                            <h4>Example step title</h4>
+                            <p class="mb-0">
+                                Step instructions will read like a short process paragraph. Images, notes, and formatting can be embedded directly in the instruction body.
+                            </p>
+                            <div class="pf67-protocol-empty-demo-wait">
+                                In 12 hours <span class="pf67-protocol-wait-inline-tip">Check after 10 hours</span>
+                            </div>
+                            <p class="mb-0 pf67-small">
+                                Future enhancement: this area can become a richer guided demonstration for new Protocols.
+                            </p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if can_edit %}
+                <div class="pf67-protocol-bottom-actions">
+                    <button class="btn btn-outline-success btn-sm" type="button" data-pf67-panel-open="start-flow-panel">
+                        Start Flow
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" type="button" data-pf67-panel-open="add-step-panel-bottom">
+                        Add Step
+                    </button>
+                </div>
+
+                <div class="pf67-protocol-add-panel pf67-protocol-edit-box" id="add-step-panel-bottom">
+                    <form method="post" action="{{ url_for('views.pf67_patch006b_add_protocol_step', template_id=template.id) }}">
+                        <h4>Add Step</h4>
+                        {% include "protocol_step_form_patch006d.html" %}
+                    </form>
+                </div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch006DProtocolEditor() {
+    var uniqueCounter = 0;
+
+    function makeSelectorForElement(element) {
+        if (!element.id) {
+            uniqueCounter += 1;
+            element.id = "pf67-inline-opener-" + uniqueCounter;
         }
 
-        valueInputs.forEach(function(input) {
-            input.addEventListener("input", updateTimingWarning);
+        return "#" + element.id;
+    }
+
+    function syncEditor(editor) {
+        var surface = editor.querySelector(".pf67-lite-editor-surface");
+        var hidden = editor.querySelector(".pf67-lite-editor-hidden");
+        var source = editor.querySelector(".pf67-lite-editor-source");
+
+        if (!surface || !hidden) {
+            return;
+        }
+
+        if (editor.classList.contains("is-source-mode") && source) {
+            hidden.value = source.value;
+            surface.innerHTML = source.value;
+        } else {
+            hidden.value = surface.innerHTML;
+            if (source) {
+                source.value = surface.innerHTML;
+            }
+        }
+    }
+
+    function syncAllEditors() {
+        document.querySelectorAll("[data-pf67-lite-editor]").forEach(syncEditor);
+    }
+
+    function openInline(id, opener) {
+        var panel = document.getElementById(id);
+
+        if (!panel) {
+            return;
+        }
+
+        if (opener && opener.getAttribute("data-pf67-inline-hide-self") === "true") {
+            opener.classList.add("is-hidden");
+            panel.setAttribute("data-pf67-opener-selector", makeSelectorForElement(opener));
+        }
+
+        panel.classList.add("is-open");
+
+        var editor = panel.querySelector("[data-pf67-lite-editor]");
+        if (editor) {
+            syncEditor(editor);
+        }
+
+        var first = panel.querySelector("input, [contenteditable='true'], textarea, select, button");
+
+        if (first) {
+            first.focus();
+        }
+    }
+
+    function closeInline(id) {
+        var panel = document.getElementById(id);
+
+        if (!panel) {
+            return;
+        }
+
+        panel.classList.remove("is-open");
+
+        var selector = panel.getAttribute("data-pf67-opener-selector");
+        if (selector) {
+            var opener = document.querySelector(selector);
+            if (opener) {
+                opener.classList.remove("is-hidden");
+            }
+        }
+    }
+
+    function openPanel(id) {
+        var panel = document.getElementById(id);
+        if (!panel) {
+            return;
+        }
+        panel.classList.add("is-open");
+        var first = panel.querySelector("input, [contenteditable='true'], textarea, select, button");
+        if (first) {
+            first.focus();
+        }
+    }
+
+    function closePanel(id) {
+        var panel = document.getElementById(id);
+        if (!panel) {
+            return;
+        }
+        panel.classList.remove("is-open");
+    }
+
+    document.querySelectorAll("[data-pf67-inline-open]").forEach(function(element) {
+        element.addEventListener("click", function() {
+            openInline(element.getAttribute("data-pf67-inline-open"), element);
         });
 
-        unitSelects.forEach(function(select) {
-            select.addEventListener("change", updateTimingWarning);
-        });
-
-        function getMinutes(fieldName) {
-            var valueInput = document.querySelector("input[name='" + fieldName + "_value']");
-            var unitSelect = document.querySelector("select[name='" + fieldName + "_unit']");
-
-            if (!valueInput || !unitSelect) {
-                return null;
-            }
-
-            var rawValue = valueInput.value.trim();
-
-            if (rawValue === "") {
-                return null;
-            }
-
-            var number = parseInt(rawValue, 10);
-
-            if (isNaN(number)) {
-                return null;
-            }
-
-            if (unitSelect.value === "days") {
-                return number * 1440;
-            }
-
-            if (unitSelect.value === "hours") {
-                return number * 60;
-            }
-
-            return number;
-        }
-
-        function updateTimingWarning() {
-            if (!warningBox) {
-                return;
-            }
-
-            var checks = [
-                ["Check", getMinutes("minimum"), "Ideal", getMinutes("ideal")],
-                ["Ideal", getMinutes("ideal"), "Limit", getMinutes("limit")],
-                ["Limit", getMinutes("limit"), "Risk", getMinutes("detrimental")],
-                ["Risk", getMinutes("detrimental"), "Failure", getMinutes("failure")]
-            ];
-
-            var messages = [];
-
-            checks.forEach(function(check) {
-                var leftLabel = check[0];
-                var leftValue = check[1];
-                var rightLabel = check[2];
-                var rightValue = check[3];
-
-                if (leftValue !== null && rightValue !== null && leftValue > rightValue) {
-                    messages.push(leftLabel + " is greater than " + rightLabel + ".");
-                }
-            });
-
-            if (messages.length) {
-                warningBox.classList.remove("d-none");
-                warningBox.innerHTML = "<strong>Timing warning:</strong><br>" + messages.join("<br>");
-            } else {
-                warningBox.classList.add("d-none");
-                warningBox.innerHTML = "";
-            }
-        }
-
-        var cancelAddStep = document.getElementById("pf67-cancel-add-step");
-
-        if (cancelAddStep) {
-            cancelAddStep.addEventListener("click", function() {
-                var panel = document.getElementById("add-step-panel");
-                var form = document.getElementById("step-form");
-
-                if (form) {
-                    form.reset();
-                }
-
-                if (window.tinymce) {
-                    tinymce.get().forEach(function(editor) {
-                        editor.setContent("");
-                    });
-                }
-
-                if (panel && window.bootstrap) {
-                    var collapse = bootstrap.Collapse.getOrCreateInstance(panel, {
-                        toggle: false
-                    });
-
-                    collapse.hide();
-                }
-            });
-        }
-
-        var inlineTextControls = document.querySelectorAll(".pf67-inline-text-local");
-
-        inlineTextControls.forEach(function(control) {
-            var display = control.querySelector(".pf67-inline-text-local-display");
-            var editor = control.querySelector(".pf67-inline-text-editor");
-            var input = control.querySelector("input[type='text']");
-            var saveButton = control.querySelector(".pf67-inline-text-local-save");
-            var cancelButton = control.querySelector(".pf67-inline-text-local-cancel");
-            var hidden = document.querySelector(".pf67-inline-text-hidden");
-            var originalValue = input ? input.value : "";
-
-            if (!display || !editor || !input || !saveButton || !cancelButton || !hidden) {
-                return;
-            }
-
-            display.addEventListener("click", function(event) {
+        element.addEventListener("keydown", function(event) {
+            if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-                display.classList.add("d-none");
-                editor.classList.remove("d-none");
-                input.focus();
-            });
+                openInline(element.getAttribute("data-pf67-inline-open"), element);
+            }
+        });
+    });
 
-            cancelButton.addEventListener("click", function() {
-                input.value = originalValue;
-                editor.classList.add("d-none");
-                display.classList.remove("d-none");
-            });
+    document.querySelectorAll("[data-pf67-inline-close]").forEach(function(element) {
+        element.addEventListener("click", function() {
+            closeInline(element.getAttribute("data-pf67-inline-close"));
+        });
+    });
 
-            saveButton.addEventListener("click", function() {
-                originalValue = input.value;
-                hidden.value = input.value;
-                display.textContent = input.value;
-                editor.classList.add("d-none");
-                display.classList.remove("d-none");
+    document.querySelectorAll("[data-pf67-panel-open]").forEach(function(element) {
+        element.addEventListener("click", function() {
+            openPanel(element.getAttribute("data-pf67-panel-open"));
+        });
+    });
+
+    document.querySelectorAll("[data-pf67-panel-close]").forEach(function(element) {
+        element.addEventListener("click", function() {
+            closePanel(element.getAttribute("data-pf67-panel-close"));
+        });
+    });
+
+    document.querySelectorAll("[data-pf67-close-nearest-panel]").forEach(function(element) {
+        element.addEventListener("click", function() {
+            var panel = element.closest(".pf67-protocol-add-panel, .pf67-protocol-flow-panel");
+            if (panel) {
+                panel.classList.remove("is-open");
+            }
+        });
+    });
+
+    document.querySelectorAll("[data-pf67-lite-editor]").forEach(function(editor) {
+        var surface = editor.querySelector(".pf67-lite-editor-surface");
+        var source = editor.querySelector(".pf67-lite-editor-source");
+        var hidden = editor.querySelector(".pf67-lite-editor-hidden");
+
+        if (surface && hidden) {
+            hidden.value = surface.innerHTML;
+        }
+
+        if (source && surface) {
+            source.value = surface.innerHTML;
+        }
+
+        editor.querySelectorAll("[data-pf67-editor-command]").forEach(function(button) {
+            button.addEventListener("click", function(event) {
+                event.preventDefault();
+                surface.focus();
+                document.execCommand(button.getAttribute("data-pf67-editor-command"), false, null);
+                syncEditor(editor);
             });
         });
 
-        updateTimingWarning();
+        var linkButton = editor.querySelector("[data-pf67-editor-link]");
+        if (linkButton) {
+            linkButton.addEventListener("click", function(event) {
+                event.preventDefault();
+                var url = prompt("Enter link URL:");
+
+                if (!url) {
+                    return;
+                }
+
+                surface.focus();
+                document.execCommand("createLink", false, url);
+                syncEditor(editor);
+            });
+        }
+
+        var sourceButton = editor.querySelector("[data-pf67-editor-source]");
+        if (sourceButton) {
+            sourceButton.addEventListener("click", function(event) {
+                event.preventDefault();
+
+                if (editor.classList.contains("is-source-mode")) {
+                    if (source) {
+                        surface.innerHTML = source.value;
+                    }
+                    editor.classList.remove("is-source-mode");
+                } else {
+                    if (source) {
+                        source.value = surface.innerHTML;
+                    }
+                    editor.classList.add("is-source-mode");
+                    if (source) {
+                        source.focus();
+                    }
+                }
+
+                syncEditor(editor);
+            });
+        }
+
+        if (surface) {
+            surface.addEventListener("input", function() {
+                syncEditor(editor);
+            });
+
+            surface.addEventListener("blur", function() {
+                syncEditor(editor);
+            });
+        }
+
+        if (source) {
+            source.addEventListener("input", function() {
+                syncEditor(editor);
+            });
+        }
+
+        var imageButton = editor.querySelector("[data-pf67-editor-image]");
+        if (imageButton) {
+            imageButton.addEventListener("click", function(event) {
+                event.preventDefault();
+                var uploadUrl = editor.getAttribute("data-pf67-upload-url");
+
+                if (!uploadUrl) {
+                    alert("No upload route is configured for this editor.");
+                    return;
+                }
+
+                var input = document.createElement("input");
+                input.type = "file";
+                input.accept = "image/*";
+                input.setAttribute("capture", "environment");
+                input.style.display = "none";
+
+                input.addEventListener("change", function() {
+                    if (!input.files || !input.files[0]) {
+                        return;
+                    }
+
+                    uploadImage(uploadUrl, input.files[0])
+                        .then(function(location) {
+                            insertImage(surface, location);
+                            syncEditor(editor);
+                        })
+                        .catch(function(error) {
+                            alert(error.message || "Image upload failed.");
+                        })
+                        .finally(function() {
+                            if (input.parentNode) {
+                                input.parentNode.removeChild(input);
+                            }
+                        });
+                });
+
+                document.body.appendChild(input);
+                input.click();
+            });
+        }
+
+        var libraryButton = editor.querySelector("[data-pf67-editor-library]");
+        if (libraryButton) {
+            libraryButton.addEventListener("click", function(event) {
+                event.preventDefault();
+
+                var listUrl = editor.getAttribute("data-pf67-list-url");
+                var listPanel = editor.querySelector(".pf67-lite-editor-image-list");
+                var grid = editor.querySelector(".pf67-lite-editor-image-grid");
+
+                if (!listUrl || !listPanel || !grid) {
+                    alert("No Protocol image library is configured for this editor.");
+                    return;
+                }
+
+                fetch(listUrl, { credentials: "same-origin" })
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error("Unable to load Protocol images.");
+                        }
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        var images = data.images || [];
+                        grid.innerHTML = "";
+
+                        if (!images.length) {
+                            grid.innerHTML = '<div class="text-muted pf67-small">No images have been uploaded to this Protocol yet.</div>';
+                        }
+
+                        images.forEach(function(image) {
+                            var button = document.createElement("button");
+                            button.type = "button";
+                            button.className = "pf67-lite-editor-image-choice";
+                            button.innerHTML = '<img src="' + image.url + '" alt=""><span>' + escapeHtml(image.name || "Image") + '</span>';
+                            button.addEventListener("click", function() {
+                                insertImage(surface, image.url);
+                                syncEditor(editor);
+                                listPanel.classList.remove("is-open");
+                            });
+                            grid.appendChild(button);
+                        });
+
+                        listPanel.classList.toggle("is-open");
+                    })
+                    .catch(function(error) {
+                        alert(error.message || "Unable to load Protocol images.");
+                    });
+            });
+        }
     });
-    </script>
-{% endif %}
+
+    function insertImage(surface, url) {
+        if (!surface) {
+            return;
+        }
+
+        surface.focus();
+
+        var html = '<img src="' + url + '" alt="">';
+
+        try {
+            document.execCommand("insertHTML", false, html);
+        } catch (error) {
+            surface.innerHTML += html;
+        }
+    }
+
+    function uploadImage(uploadUrl, file) {
+        var formData = new FormData();
+        formData.append("file", file);
+
+        return fetch(uploadUrl, {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin"
+        })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error("Image upload failed.");
+                }
+
+                return response.json();
+            })
+            .then(function(json) {
+                if (!json || !json.location) {
+                    throw new Error("Upload response did not include image location.");
+                }
+
+                return json.location;
+            });
+    }
+
+    function escapeHtml(value) {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    document.querySelectorAll("form").forEach(function(form) {
+        form.addEventListener("submit", function() {
+            syncAllEditors();
+        });
+    });
+});
+</script>
 
 {% endblock %}

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}PF67 · Game Plan{% endblock %}
+{% block title %}PF67 · Dashboard{% endblock %}
 
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Game Plan</h2>
+    <h2>Dashboard</h2>
     <div class="text-muted pf67-small">Auto-refreshes when tasks change.</div>
 </div>
 
@@ -35,7 +35,7 @@
         {% endfor %}
     </div>
 {% else %}
-    <p>No game plan tasks.</p>
+    <p>No dashboard board tasks.</p>
 {% endif %}
 
 <script>

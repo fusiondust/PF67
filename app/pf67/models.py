@@ -10,6 +10,7 @@ class ProtocolTemplate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, default="")
+    category = db.Column(db.String(120), default="")
     current_version = db.Column(db.Integer, default=1)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -53,6 +54,8 @@ class Job(db.Model):
     template_version = db.Column(db.Integer, default=1)
 
     status = db.Column(db.String(50), default="active")
+
+    priority = db.Column(db.String(20), default="Normal")
     started_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime, nullable=True)
 
@@ -139,3 +142,20 @@ class Attachment(db.Model):
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     note = db.relationship("JobNote", backref="attachments")
+
+class ProtocolAttachment(db.Model):
+    __tablename__ = "protocol_attachments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    template_id = db.Column(db.Integer, db.ForeignKey("protocol_templates.id"), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+    storage_path = db.Column(db.String(500), nullable=False)
+    mime_type = db.Column(db.String(100), default="")
+    title = db.Column(db.String(200), default="")
+    caption = db.Column(db.Text, default="")
+    attachment_type = db.Column(db.String(80), default="Reference")
+    sort_order = db.Column(db.Integer, default=1)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    template = db.relationship("ProtocolTemplate", backref="protocol_attachments")
+

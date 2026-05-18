@@ -1,5 +1,6 @@
 from flask import Flask
 from .models import db
+from .schema_migrations import ensure_schema_updates
 from .views import views_bp
 from .api import api_bp
 from .calendar_feed import calendar_bp
@@ -24,4 +25,5 @@ def create_app():
     with app.app_context():
         db.create_all()
 
+        ensure_schema_updates()
     return app

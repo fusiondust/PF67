@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 - New Protocol{% endblock %}
+
+{% block content %}
+
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+
+<datalist id="pf67-protocol-category-options">
+    {% for category in pf67_patch006_protocol_categories() %}
+        <option value="{{ category }}"></option>
+    {% endfor %}
+</datalist>
+
+<div class="pf67-protocol-new-shell">
+    <h2>New Protocol</h2>
+    <p class="text-muted">Create a reusable process definition. You can start Flows from this Protocol after it is saved.</p>
+
+    <form method="post" action="{{ url_for('views.pf67_patch006_new_protocol') }}">
+        <div class="mb-3">
+            <label class="form-label">Protocol Title</label>
+            <input class="form-control" name="name" required autofocus>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Category</label>
+            <input class="form-control"
+                   list="pf67-protocol-category-options"
+                   name="category"
+                   placeholder="Type new category or select existing">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control pf67-new-protocol-editor" name="description" rows="8"></textarea>
+            <div class="pf67-inline-help">Images can be added after the Protocol is created.</div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit">Create Protocol</button>
+            <a class="btn btn-outline-secondary" href="{{ url_for('views.templates_page') }}">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch006NewProtocolEditor() {
+    if (window.tinymce) {
+        tinymce.init({
+            selector: "textarea.pf67-new-protocol-editor",
+            menubar: false,
+            branding: false,
+            promotion: false,
+            height: 260,
+            plugins: "autoresize link lists table code fullscreen",
+            toolbar: "undo redo | blocks bold italic bullist numlist | link table | code fullscreen"
+        });
+    }
+
+    document.querySelectorAll("form").forEach(function(form) {
+        form.addEventListener("submit", function() {
+            if (window.tinymce) {
+                tinymce.triggerSave();
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

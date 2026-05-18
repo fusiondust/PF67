@@ -1,29 +1,100 @@
 {% extends "base.html" %}
 
-{% block title %}PF67 · Templates{% endblock %}
+{% block title %}PF67 - Protocols{% endblock %}
 
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Templates</h2>
+<div class="pf67-page-shell">
+    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+        <div>
+            <h2>Protocols</h2>
+            <p class="text-muted mb-0">Reusable process definitions used to start scheduled or live Jobs.</p>
+        </div>
 
-    {% if can_edit %}
-        <a class="btn btn-primary" href="{{ url_for('views.new_template') }}">New Template</a>
+        {% if can_edit %}
+            <a class="btn btn-primary" href="{{ url_for('views.new_protocol_patch003') }}">New Protocol</a>
+        {% endif %}
+    </div>
+
+    {% if templates %}
+        {% set ns = namespace(categories=[]) %}
+        {% for template in templates %}
+            {% set cat = template.category if template.category is defined and template.category else "Uncategorized" %}
+            {% if cat not in ns.categories %}
+                {% set ns.categories = ns.categories + [cat] %}
+            {% endif %}
+        {% endfor %}
+
+        <div class="pf67-protocol-list-toolbar">
+            <div>
+                <label class="form-label mb-1">Filter by Category</label>
+                <select class="form-select form-select-sm" id="pf67-protocol-category-filter">
+                    <option value="">All Categories</option>
+                    {% for category in ns.categories|sort %}
+                        <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row g-3" id="pf67-protocol-list">
+            {% for template in templates %}
+                {% set cat = template.category if template.category is defined and template.category else "Uncategorized" %}
+                {% set cover = pf67_protocol_cover_image(template.id) %}
+
+                <div class="col-12 col-md-6 col-xl-4 pf67-protocol-list-item" data-category="{{ cat }}">
+                    <a class="card pf67-card pf67-protocol-card h-100 text-decoration-none text-body"
+                       href="{{ url_for('views.template_detail', template_id=template.id) }}">
+                        {% if cover %}
+                            <img class="pf67-protocol-card-cover" src="{{ cover }}" alt="">
+                        {% endif %}
+
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between gap-2 align-items-start">
+                                <h5 class="card-title mb-1">{{ template.name }}</h5>
+                                <span class="pf67-category-badge">{{ cat }}</span>
+                            </div>
+
+                            {% if template.description %}
+                                <p class="card-text text-muted mt-2 mb-0">{{ template.description }}</p>
+                            {% else %}
+                                <p class="card-text text-muted mt-2 mb-0">No description.</p>
+                            {% endif %}
+
+                            <div class="text-muted pf67-small mt-2">
+                                {{ template.steps|length }} step{% if template.steps|length != 1 %}s{% endif %}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card pf67-card">
+            <div class="card-body">
+                No protocols yet.
+            </div>
+        </div>
     {% endif %}
 </div>
 
-{% if templates %}
-    <div class="list-group">
-        {% for template in templates %}
-            <a class="list-group-item list-group-item-action"
-               href="{{ url_for('views.template_detail', template_id=template.id) }}">
-                <div class="fw-semibold">{{ template.name }}</div>
-                <div class="pf67-small text-muted">{{ template.description }}</div>
-            </a>
-        {% endfor %}
-    </div>
-{% else %}
-    <p>No templates yet.</p>
-{% endif %}
+<script>
+document.addEventListener("DOMContentLoaded", function pf67ProtocolFilterPatch003() {
+    var select = document.getElementById("pf67-protocol-category-filter");
+
+    if (!select) {
+        return;
+    }
+
+    select.addEventListener("change", function() {
+        var selected = select.value;
+
+        document.querySelectorAll(".pf67-protocol-list-item").forEach(function(item) {
+            var category = item.getAttribute("data-category") || "";
+            item.style.display = (!selected || category === selected) ? "" : "none";
+        });
+    });
+});
+</script>
 
 {% endblock %}

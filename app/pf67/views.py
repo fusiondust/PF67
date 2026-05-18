@@ -1630,13 +1630,13 @@ def job_report_pdf(job_id):
         from reportlab.lib.pagesizes import letter
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.units import inch
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Image, Table, TableStyle
+        from reportlab.platypus import SimpleDocProtocol, Paragraph, Spacer, PageBreak, Image, Table, TableStyle
     except Exception:
         return "ReportLab is required. Install it with: py -m pip install reportlab", 500
 
     buffer = BytesIO()
 
-    doc = SimpleDocTemplate(
+    doc = SimpleDocProtocol(
         buffer,
         pagesize=letter,
         rightMargin=0.65 * inch,
@@ -1677,7 +1677,7 @@ def job_report_pdf(job_id):
 
     meta_rows = [
         ["Status", job.status.title()],
-        ["Template Version", str(job.template_version)],
+        ["Protocol Version", str(job.template_version)],
         ["Started", display_exact_datetime(job.started_at)],
         ["Completed", display_exact_datetime(job.completed_at) if job.completed_at else ""],
         ["Generated", display_exact_datetime(datetime.utcnow())]
@@ -2191,7 +2191,7 @@ def calendar_events_for_jobs(job_ids, include_completed=True):
 
 BACKLOG_TYPES = ["Bug", "New", "Improve", "Question"]
 BACKLOG_PRIORITIES = ["None", "Low", "Medium", "High", "Critical"]
-BACKLOG_AREAS = ["Calendar", "Jobs", "Notes", "Templates", "PDF", "API", "Dev", "UI", "System", "Database"]
+BACKLOG_AREAS = ["Calendar", "Jobs", "Notes", "Protocols", "PDF", "API", "Dev", "UI", "System", "Database"]
 BACKLOG_STATUSES = ["New Addition", "Accepted", "In Progress", "Testing", "Done", "Deferred", "Rejected"]
 
 
@@ -4187,4 +4187,951 @@ def api_ai_backlog_service_rev_32_testing():
         "skipped_items": result["skipped_items"]
     })
 
+# === PF67 PATCH 002: Protocol category save fallback ===
+from flask import request, redirect, url_for
+from .models import db, ProtocolTemplate, StepTemplate
 
+try:
+    _pf67_patch_002_edit_required = edit_required
+except NameError:
+    def _pf67_patch_002_edit_required(func):
+        return func
+
+@views_bp.route("/templates/<int:template_id>/category", methods=["POST"])
+@_pf67_patch_002_edit_required
+def save_template_category_detail_v105c(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+    category = (request.form.get("category") or "").strip()
+
+    if hasattr(template, "category"):
+        template.category = category
+
+    db.session.commit()
+
+    try:
+        return redirect(url_for("views.template_detail", template_id=template.id))
+    except Exception:
+        return redirect("/templates/" + str(template.id))
+
+
+
+# === PF67 PATCH 002: Protocol timing-only edit fallback ===
+def _pf67_patch_002_minutes_from_form(prefix):
+    raw_value = (request.form.get(prefix + "_value") or "").strip()
+
+    if raw_value == "":
+        return None
+
+    try:
+        value = int(float(raw_value))
+    except Exception:
+        return None
+
+    if value < 0:
+        value = 0
+
+    return value
+
+@views_bp.route("/templates/<int:template_id>/steps/<int:step_id>/timing-v107", methods=["POST"])
+@_pf67_patch_002_edit_required
+def update_template_step_timing_v107(template_id, step_id):
+    step = StepTemplate.query.filter_by(id=step_id, template_id=template_id).first_or_404()
+
+    step.minimum_minutes = _pf67_patch_002_minutes_from_form("minimum")
+    step.ideal_minutes = _pf67_patch_002_minutes_from_form("ideal")
+    step.limit_minutes = _pf67_patch_002_minutes_from_form("limit")
+    step.detrimental_minutes = _pf67_patch_002_minutes_from_form("detrimental")
+    step.failure_minutes = _pf67_patch_002_minutes_from_form("failure")
+
+    db.session.commit()
+
+    try:
+        return redirect(url_for("views.template_detail", template_id=template_id) + "#template-step-" + str(step_id))
+    except Exception:
+        return redirect("/templates/" + str(template_id) + "#template-step-" + str(step_id))
+
+
+# === PF67 PATCH 003 PROTOCOL DOCUMENT EDITOR ===
+# UI says Protocols, but internal names remain ProtocolTemplate/StepTemplate for stability.
+import os as _pf67_p003_os
+import sqlite3 as _pf67_p003_sqlite3
+import uuid as _pf67_p003_uuid
+from datetime import datetime as _pf67_p003_datetime
+from pathlib import Path as _pf67_p003_Path
+from flask import request as _pf67_p003_request, redirect as _pf67_p003_redirect, url_for as _pf67_p003_url_for, current_app as _pf67_p003_current_app, render_template as _pf67_p003_render_template
+from werkzeug.utils import secure_filename as _pf67_p003_secure_filename
+from .models import db as _pf67_p003_db, ProtocolTemplate as _PF67P003ProtocolTemplate, StepTemplate as _PF67P003StepTemplate
+
+try:
+    _pf67_p003_edit_required = edit_required
+except NameError:
+    def _pf67_p003_edit_required(func):
+        return func
+
+
+def _pf67_p003_int_or_none(value):
+    value = (value or "").strip()
+    if value == "":
+        return None
+    try:
+        number = int(float(value))
+    except Exception:
+        return None
+    if number < 0:
+        number = 0
+    return number
+
+
+def _pf67_p003_db_path():
+    uri = _pf67_p003_current_app.config.get("SQLALCHEMY_DATABASE_URI", "")
+    if uri.startswith("sqlite:///"):
+        return uri.replace("sqlite:///", "", 1)
+    base_dir = _pf67_p003_current_app.config.get("BASE_DIR", _pf67_p003_current_app.root_path)
+    return str(_pf67_p003_Path(base_dir) / "db" / "pf67.sqlite3")
+
+
+def _pf67_p003_connect():
+    connection = _pf67_p003_sqlite3.connect(_pf67_p003_db_path())
+    connection.row_factory = _pf67_p003_sqlite3.Row
+    return connection
+
+
+def _pf67_p003_ensure_protocol_attachment_schema():
+    connection = _pf67_p003_connect()
+    try:
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS protocol_attachments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                template_id INTEGER NOT NULL,
+                filename TEXT NOT NULL,
+                storage_path TEXT NOT NULL,
+                mime_type TEXT NOT NULL DEFAULT '',
+                title TEXT NOT NULL DEFAULT '',
+                caption TEXT NOT NULL DEFAULT '',
+                attachment_type TEXT NOT NULL DEFAULT 'Reference',
+                sort_order INTEGER NOT NULL DEFAULT 1,
+                uploaded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        connection.commit()
+    finally:
+        connection.close()
+
+
+@views_bp.app_template_global("pf67_protocol_categories")
+def pf67_protocol_categories_patch003():
+    categories = []
+    try:
+        if hasattr(_PF67P003ProtocolTemplate, "category"):
+            rows = _PF67P003ProtocolTemplate.query.with_entities(_PF67P003ProtocolTemplate.category).all()
+            for row in rows:
+                value = (row[0] or "").strip()
+                if value and value not in categories:
+                    categories.append(value)
+    except Exception:
+        pass
+    categories.sort(key=lambda value: value.lower())
+    return categories
+
+
+@views_bp.app_template_global("pf67_protocol_images")
+def pf67_protocol_images_patch003(template_id):
+    _pf67_p003_ensure_protocol_attachment_schema()
+    connection = _pf67_p003_connect()
+    try:
+        rows = connection.execute(
+            """
+            SELECT * FROM protocol_attachments
+            WHERE template_id = ?
+            ORDER BY sort_order ASC, id ASC
+            """,
+            (template_id,)
+        ).fetchall()
+        images = []
+        for row in rows:
+            data = dict(row)
+            data["url"] = data.get("storage_path") or ""
+            images.append(data)
+        return images
+    finally:
+        connection.close()
+
+
+@views_bp.app_template_global("pf67_protocol_cover_image")
+def pf67_protocol_cover_image_patch003(template_id):
+    images = pf67_protocol_images_patch003(template_id)
+    if not images:
+        return ""
+    return images[0].get("url", "")
+
+
+@views_bp.route("/protocols/new", methods=["GET", "POST"])
+@_pf67_p003_edit_required
+def new_protocol_patch003():
+    if _pf67_p003_request.method == "POST":
+        name = (_pf67_p003_request.form.get("name") or "").strip()
+        description = (_pf67_p003_request.form.get("description") or "").strip()
+        category = (_pf67_p003_request.form.get("category") or "").strip()
+
+        if not name:
+            name = "Untitled Protocol"
+
+        template = _PF67P003ProtocolTemplate(name=name, description=description)
+        if hasattr(template, "category"):
+            template.category = category
+
+        _pf67_p003_db.session.add(template)
+        _pf67_p003_db.session.commit()
+        return _pf67_p003_redirect(_pf67_p003_url_for("views.template_detail", template_id=template.id))
+
+    return _pf67_p003_render_template("new_template.html")
+
+
+@views_bp.route("/templates/<int:template_id>/protocol-info-p003", methods=["POST"])
+@_pf67_p003_edit_required
+def update_protocol_info_patch003(template_id):
+    template = _PF67P003ProtocolTemplate.query.get_or_404(template_id)
+
+    name = (_pf67_p003_request.form.get("name") or "").strip()
+    description = (_pf67_p003_request.form.get("description") or "").strip()
+    category = (_pf67_p003_request.form.get("category") or "").strip()
+
+    if name:
+        template.name = name
+    template.description = description
+    if hasattr(template, "category"):
+        template.category = category
+
+    _pf67_p003_db.session.commit()
+    return _pf67_p003_redirect(_pf67_p003_url_for("views.template_detail", template_id=template.id))
+
+
+@views_bp.route("/templates/<int:template_id>/steps/add-p003", methods=["POST"])
+@_pf67_p003_edit_required
+def add_protocol_step_patch003(template_id):
+    template = _PF67P003ProtocolTemplate.query.get_or_404(template_id)
+    after_step_id = (_pf67_p003_request.form.get("after_step_id") or "").strip()
+
+    if after_step_id.isdigit():
+        after_step = _PF67P003StepTemplate.query.filter_by(id=int(after_step_id), template_id=template_id).first()
+    else:
+        after_step = None
+
+    if after_step:
+        insert_order = (after_step.sort_order or 0) + 1
+        later_steps = _PF67P003StepTemplate.query.filter(
+            _PF67P003StepTemplate.template_id == template_id,
+            _PF67P003StepTemplate.sort_order >= insert_order
+        ).all()
+        for later_step in later_steps:
+            later_step.sort_order = (later_step.sort_order or 0) + 1
+    else:
+        existing_orders = [step.sort_order or 0 for step in template.steps]
+        insert_order = (max(existing_orders) if existing_orders else 0) + 1
+
+    name = (_pf67_p003_request.form.get("name") or "").strip()
+    if not name:
+        name = ""
+
+    step = _PF67P003StepTemplate(
+        template_id=template.id,
+        sort_order=insert_order,
+        name=name,
+        step_type=(_pf67_p003_request.form.get("step_type") or "action").strip() or "action",
+        context_tag=(_pf67_p003_request.form.get("context_tag") or "").strip(),
+        instructions_html=(_pf67_p003_request.form.get("instructions_html") or "").strip(),
+        minimum_minutes=_pf67_p003_int_or_none(_pf67_p003_request.form.get("minimum_minutes")),
+        ideal_minutes=_pf67_p003_int_or_none(_pf67_p003_request.form.get("ideal_minutes")),
+        limit_minutes=_pf67_p003_int_or_none(_pf67_p003_request.form.get("limit_minutes")),
+        detrimental_minutes=_pf67_p003_int_or_none(_pf67_p003_request.form.get("detrimental_minutes")),
+        failure_minutes=_pf67_p003_int_or_none(_pf67_p003_request.form.get("failure_minutes"))
+    )
+
+    _pf67_p003_db.session.add(step)
+    _pf67_p003_db.session.commit()
+    return _pf67_p003_redirect(_pf67_p003_url_for("views.template_detail", template_id=template.id) + "#template-step-" + str(step.id))
+
+
+@views_bp.route("/templates/<int:template_id>/steps/<int:step_id>/edit-p003", methods=["POST"])
+@_pf67_p003_edit_required
+def update_protocol_step_patch003(template_id, step_id):
+    step = _PF67P003StepTemplate.query.filter_by(id=step_id, template_id=template_id).first_or_404()
+
+    step.name = (_pf67_p003_request.form.get("name") or "").strip()
+    step.step_type = (_pf67_p003_request.form.get("step_type") or "action").strip() or "action"
+    step.context_tag = (_pf67_p003_request.form.get("context_tag") or "").strip()
+    step.instructions_html = (_pf67_p003_request.form.get("instructions_html") or "").strip()
+
+    step.minimum_minutes = _pf67_p003_int_or_none(_pf67_p003_request.form.get("minimum_minutes"))
+    step.ideal_minutes = _pf67_p003_int_or_none(_pf67_p003_request.form.get("ideal_minutes"))
+    step.limit_minutes = _pf67_p003_int_or_none(_pf67_p003_request.form.get("limit_minutes"))
+    step.detrimental_minutes = _pf67_p003_int_or_none(_pf67_p003_request.form.get("detrimental_minutes"))
+    step.failure_minutes = _pf67_p003_int_or_none(_pf67_p003_request.form.get("failure_minutes"))
+
+    _pf67_p003_db.session.commit()
+    return _pf67_p003_redirect(_pf67_p003_url_for("views.template_detail", template_id=template_id) + "#template-step-" + str(step.id))
+
+
+@views_bp.route("/templates/<int:template_id>/protocol-image-p003", methods=["POST"])
+@_pf67_p003_edit_required
+def upload_protocol_image_patch003(template_id):
+    _PF67P003ProtocolTemplate.query.get_or_404(template_id)
+    _pf67_p003_ensure_protocol_attachment_schema()
+
+    file_obj = _pf67_p003_request.files.get("image")
+    if not file_obj or not file_obj.filename:
+        return _pf67_p003_redirect(_pf67_p003_url_for("views.template_detail", template_id=template_id))
+
+    original_name = _pf67_p003_secure_filename(file_obj.filename)
+    suffix = _pf67_p003_Path(original_name).suffix.lower()
+    if suffix not in [".jpg", ".jpeg", ".png", ".gif", ".webp"]:
+        suffix = ".jpg"
+
+    stored_name = _pf67_p003_uuid.uuid4().hex + suffix
+    relative_folder = _pf67_p003_Path("uploads") / "protocols" / str(template_id)
+    absolute_folder = _pf67_p003_Path(_pf67_p003_current_app.static_folder) / relative_folder
+    absolute_folder.mkdir(parents=True, exist_ok=True)
+    absolute_path = absolute_folder / stored_name
+    file_obj.save(str(absolute_path))
+
+    storage_path = "/static/" + str(relative_folder / stored_name).replace(_pf67_p003_os.sep, "/")
+    title = (_pf67_p003_request.form.get("title") or "").strip()
+    caption = (_pf67_p003_request.form.get("caption") or "").strip()
+    attachment_type = (_pf67_p003_request.form.get("attachment_type") or "Reference").strip() or "Reference"
+
+    connection = _pf67_p003_connect()
+    try:
+        row = connection.execute(
+            "SELECT COALESCE(MAX(sort_order), 0) + 1 FROM protocol_attachments WHERE template_id = ?",
+            (template_id,)
+        ).fetchone()
+        sort_order = row[0] if row else 1
+        connection.execute(
+            """
+            INSERT INTO protocol_attachments
+                (template_id, filename, storage_path, mime_type, title, caption, attachment_type, sort_order, uploaded_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                template_id,
+                original_name or stored_name,
+                storage_path,
+                file_obj.mimetype or "",
+                title,
+                caption,
+                attachment_type,
+                sort_order,
+                _pf67_p003_datetime.utcnow().isoformat(timespec="seconds")
+            )
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    return _pf67_p003_redirect(_pf67_p003_url_for("views.template_detail", template_id=template_id) + "#protocol-image-upload-panel")
+# === END PF67 PATCH 003 PROTOCOL DOCUMENT EDITOR ===
+
+# === PF67 PATCH 006 PROTOCOL DOCUMENT EDITOR ===
+import mimetypes
+import uuid
+from pathlib import Path as _Pf67Path
+from flask import request, redirect, url_for, jsonify, current_app, render_template
+from werkzeug.utils import secure_filename
+from .models import db, ProtocolTemplate, StepTemplate
+
+try:
+    _pf67_patch006_edit_required = edit_required
+except NameError:
+    def _pf67_patch006_edit_required(func):
+        return func
+
+
+def _pf67_patch006_int_or_none(value):
+    value = (value or "").strip()
+
+    if value == "":
+        return None
+
+    try:
+        parsed = int(float(value))
+    except Exception:
+        return None
+
+    if parsed < 0:
+        parsed = 0
+
+    return parsed
+
+
+def _pf67_patch006_form_minutes(name):
+    return _pf67_patch006_int_or_none(request.form.get(name))
+
+
+def _pf67_patch006_sort_order_for_new_step(template_id, after_step_id):
+    if after_step_id:
+        after_step = StepTemplate.query.filter_by(id=after_step_id, template_id=template_id).first()
+
+        if after_step:
+            base_order = after_step.sort_order or 0
+            later_steps = (
+                StepTemplate.query
+                .filter(StepTemplate.template_id == template_id)
+                .filter(StepTemplate.sort_order > base_order)
+                .order_by(StepTemplate.sort_order.asc())
+                .all()
+            )
+
+            for later_step in later_steps:
+                later_step.sort_order = (later_step.sort_order or 0) + 10
+
+            return base_order + 10
+
+    max_order = 0
+    for existing in StepTemplate.query.filter_by(template_id=template_id).all():
+        if existing.sort_order and existing.sort_order > max_order:
+            max_order = existing.sort_order
+
+    return max_order + 10
+
+
+def _pf67_patch006_protocol_upload_folder(template_id):
+    static_folder = current_app.static_folder
+
+    if not static_folder:
+        static_folder = str(_Pf67Path(current_app.root_path) / "static")
+
+    folder = _Pf67Path(static_folder) / "uploads" / "protocols" / str(template_id) / "editor"
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def _pf67_patch006_protocol_upload_url(template_id, filename):
+    return url_for("static", filename="uploads/protocols/" + str(template_id) + "/editor/" + filename)
+
+
+def _pf67_patch006_allowed_image(filename, mimetype):
+    allowed_extensions = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+    suffix = _Pf67Path(filename or "").suffix.lower()
+
+    if suffix not in allowed_extensions:
+        return False
+
+    if mimetype and not mimetype.startswith("image/"):
+        guessed = mimetypes.guess_type(filename)[0] or ""
+        return guessed.startswith("image/")
+
+    return True
+
+
+@views_bp.app_template_filter("pf67_patch006_human_minutes")
+def pf67_patch006_human_minutes(value):
+    try:
+        minutes = int(value or 0)
+    except Exception:
+        return ""
+
+    if minutes <= 0:
+        return ""
+
+    days = minutes // 1440
+    remainder = minutes % 1440
+    hours = remainder // 60
+    mins = remainder % 60
+
+    parts = []
+
+    if days:
+        label = "day" if days == 1 else "days"
+        parts.append(str(days) + " " + label)
+
+    if hours:
+        label = "hour" if hours == 1 else "hours"
+        parts.append(str(hours) + " " + label)
+
+    if mins or not parts:
+        label = "minute" if mins == 1 else "minutes"
+        parts.append(str(mins) + " " + label)
+
+    return " ".join(parts)
+
+
+@views_bp.app_template_global()
+def pf67_patch006_protocol_categories():
+    categories = []
+
+    try:
+        rows = ProtocolTemplate.query.order_by(ProtocolTemplate.category.asc()).all()
+        seen = set()
+        for row in rows:
+            category = (getattr(row, "category", "") or "").strip()
+            if category and category not in seen:
+                seen.add(category)
+                categories.append(category)
+    except Exception:
+        pass
+
+    return categories
+
+
+@views_bp.app_template_global()
+def pf67_patch006_protocol_contexts():
+    contexts = []
+
+    try:
+        rows = StepTemplate.query.order_by(StepTemplate.context_tag.asc()).all()
+        seen = set()
+        for row in rows:
+            context = (getattr(row, "context_tag", "") or "").strip()
+            if context and context not in seen:
+                seen.add(context)
+                contexts.append(context)
+    except Exception:
+        pass
+
+    return contexts
+
+
+@views_bp.route("/protocols/new", methods=["GET", "POST"])
+@_pf67_patch006_edit_required
+def pf67_patch006_new_protocol():
+    if request.method == "POST":
+        name = (request.form.get("name") or "").strip()
+        category = (request.form.get("category") or "").strip()
+        description = request.form.get("description") or ""
+
+        if not name:
+            name = "Untitled Protocol"
+
+        template = ProtocolTemplate(name=name, description=description)
+
+        if hasattr(template, "category"):
+            template.category = category
+
+        db.session.add(template)
+        db.session.commit()
+
+        return redirect(url_for("views.template_detail", template_id=template.id))
+
+    return render_template("new_protocol_patch006.html")
+
+
+@views_bp.route("/protocols/<int:template_id>/update-info", methods=["POST"])
+@_pf67_patch006_edit_required
+def pf67_patch006_update_protocol_info(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    name = (request.form.get("name") or "").strip()
+    category = (request.form.get("category") or "").strip()
+    description = request.form.get("description") or ""
+
+    if name:
+        template.name = name
+
+    if hasattr(template, "category"):
+        template.category = category
+
+    template.description = description
+
+    db.session.commit()
+
+    return redirect(url_for("views.template_detail", template_id=template.id))
+
+
+@views_bp.route("/protocols/<int:template_id>/steps/<int:step_id>/update-inline", methods=["POST"])
+@_pf67_patch006_edit_required
+def pf67_patch006_update_protocol_step(template_id, step_id):
+    step = StepTemplate.query.filter_by(id=step_id, template_id=template_id).first_or_404()
+
+    step.name = (request.form.get("name") or "").strip()
+    step.step_type = (request.form.get("step_type") or "action").strip()
+    step.context_tag = (request.form.get("context_tag") or "").strip()
+    step.instructions_html = request.form.get("instructions_html") or ""
+
+    step.minimum_minutes = _pf67_patch006_form_minutes("minimum_minutes")
+    step.ideal_minutes = _pf67_patch006_form_minutes("ideal_minutes")
+    step.limit_minutes = _pf67_patch006_form_minutes("limit_minutes")
+    step.detrimental_minutes = _pf67_patch006_form_minutes("detrimental_minutes")
+    step.failure_minutes = _pf67_patch006_form_minutes("failure_minutes")
+
+    db.session.commit()
+
+    return redirect(url_for("views.template_detail", template_id=template_id) + "#template-step-" + str(step.id))
+
+
+@views_bp.route("/protocols/<int:template_id>/steps/add-patch006", methods=["POST"])
+@_pf67_patch006_edit_required
+def pf67_patch006_add_protocol_step(template_id):
+    ProtocolTemplate.query.get_or_404(template_id)
+
+    after_step_id = _pf67_patch006_int_or_none(request.form.get("after_step_id"))
+    sort_order = _pf67_patch006_sort_order_for_new_step(template_id, after_step_id)
+
+    step = StepTemplate(
+        template_id=template_id,
+        name=(request.form.get("name") or "").strip(),
+        step_type=(request.form.get("step_type") or "action").strip(),
+        context_tag=(request.form.get("context_tag") or "").strip(),
+        instructions_html=request.form.get("instructions_html") or "",
+        minimum_minutes=_pf67_patch006_form_minutes("minimum_minutes"),
+        ideal_minutes=_pf67_patch006_form_minutes("ideal_minutes"),
+        limit_minutes=_pf67_patch006_form_minutes("limit_minutes"),
+        detrimental_minutes=_pf67_patch006_form_minutes("detrimental_minutes"),
+        failure_minutes=_pf67_patch006_form_minutes("failure_minutes"),
+        sort_order=sort_order,
+    )
+
+    db.session.add(step)
+    db.session.commit()
+
+    return redirect(url_for("views.template_detail", template_id=template_id) + "#template-step-" + str(step.id))
+
+
+@views_bp.route("/protocols/<int:template_id>/editor-images/upload", methods=["POST"])
+@_pf67_patch006_edit_required
+def pf67_patch006_protocol_image_upload(template_id):
+    ProtocolTemplate.query.get_or_404(template_id)
+
+    uploaded = request.files.get("file")
+
+    if not uploaded:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    original = secure_filename(uploaded.filename or "image")
+    if not _pf67_patch006_allowed_image(original, uploaded.mimetype or ""):
+        return jsonify({"error": "Only image uploads are allowed"}), 400
+
+    suffix = _Pf67Path(original).suffix.lower()
+    if not suffix:
+        suffix = ".jpg"
+
+    safe_stem = _Pf67Path(original).stem or "image"
+    filename = safe_stem[:40] + "_" + uuid.uuid4().hex[:12] + suffix
+
+    folder = _pf67_patch006_protocol_upload_folder(template_id)
+    destination = folder / filename
+    uploaded.save(str(destination))
+
+    return jsonify({
+        "location": _pf67_patch006_protocol_upload_url(template_id, filename),
+        "name": original,
+    })
+
+
+@views_bp.route("/protocols/<int:template_id>/editor-images/list", methods=["GET"])
+@_pf67_patch006_edit_required
+def pf67_patch006_protocol_image_list(template_id):
+    ProtocolTemplate.query.get_or_404(template_id)
+
+    folder = _pf67_patch006_protocol_upload_folder(template_id)
+    images = []
+
+    for path in sorted(folder.iterdir(), key=lambda item: item.stat().st_mtime, reverse=True):
+        if not path.is_file():
+            continue
+
+        if path.suffix.lower() not in [".jpg", ".jpeg", ".png", ".gif", ".webp"]:
+            continue
+
+        images.append({
+            "name": path.name,
+            "url": _pf67_patch006_protocol_upload_url(template_id, path.name),
+        })
+
+    return jsonify({"images": images})
+
+# === PF67 PATCH 006B LOCAL PROTOCOL EDITOR ===
+from flask import request, redirect, url_for, render_template
+from .models import db, ProtocolTemplate, StepTemplate
+
+try:
+    _pf67_patch006b_edit_required = edit_required
+except NameError:
+    def _pf67_patch006b_edit_required(func):
+        return func
+
+
+def _pf67_patch006b_int_or_none(value):
+    value = (value or "").strip()
+
+    if value == "":
+        return None
+
+    try:
+        parsed = int(float(value))
+    except Exception:
+        return None
+
+    if parsed < 0:
+        parsed = 0
+
+    return parsed
+
+
+def _pf67_patch006b_minutes_from_value_unit(value_name, unit_name):
+    value = _pf67_patch006b_int_or_none(request.form.get(value_name))
+
+    if value is None:
+        return None
+
+    unit = (request.form.get(unit_name) or "minutes").strip().lower()
+
+    if unit == "days":
+        return value * 1440
+
+    if unit == "hours":
+        return value * 60
+
+    return value
+
+
+def _pf67_patch006b_sort_order_for_new_step(template_id, after_step_id):
+    if after_step_id:
+        after_step = StepTemplate.query.filter_by(id=after_step_id, template_id=template_id).first()
+
+        if after_step:
+            base_order = after_step.sort_order or 0
+            later_steps = (
+                StepTemplate.query
+                .filter(StepTemplate.template_id == template_id)
+                .filter(StepTemplate.sort_order > base_order)
+                .order_by(StepTemplate.sort_order.asc())
+                .all()
+            )
+
+            for later_step in later_steps:
+                later_step.sort_order = (later_step.sort_order or 0) + 10
+
+            return base_order + 10
+
+    max_order = 0
+    for existing in StepTemplate.query.filter_by(template_id=template_id).all():
+        if existing.sort_order and existing.sort_order > max_order:
+            max_order = existing.sort_order
+
+    return max_order + 10
+
+
+@views_bp.app_template_filter("pf67_patch006b_human_minutes")
+def pf67_patch006b_human_minutes(value):
+    try:
+        minutes = int(value or 0)
+    except Exception:
+        return ""
+
+    if minutes <= 0:
+        return ""
+
+    days = minutes // 1440
+    remainder = minutes % 1440
+    hours = remainder // 60
+    mins = remainder % 60
+
+    parts = []
+
+    if days:
+        parts.append(str(days) + (" day" if days == 1 else " days"))
+
+    if hours:
+        parts.append(str(hours) + (" hour" if hours == 1 else " hours"))
+
+    if mins or not parts:
+        parts.append(str(mins) + (" minute" if mins == 1 else " minutes"))
+
+    return " ".join(parts)
+
+
+@views_bp.app_template_filter("pf67_patch006b_duration_unit")
+def pf67_patch006b_duration_unit(value):
+    try:
+        minutes = int(value or 0)
+    except Exception:
+        return "minutes"
+
+    if minutes > 0 and minutes % 1440 == 0:
+        return "days"
+
+    if minutes > 0 and minutes % 60 == 0:
+        return "hours"
+
+    return "minutes"
+
+
+@views_bp.app_template_filter("pf67_patch006b_duration_value")
+def pf67_patch006b_duration_value(value):
+    try:
+        minutes = int(value or 0)
+    except Exception:
+        return ""
+
+    if minutes <= 0:
+        return ""
+
+    if minutes % 1440 == 0:
+        return str(minutes // 1440)
+
+    if minutes % 60 == 0:
+        return str(minutes // 60)
+
+    return str(minutes)
+
+
+@views_bp.route("/protocols/new-local", methods=["GET", "POST"])
+@_pf67_patch006b_edit_required
+def pf67_patch006b_new_protocol():
+    if request.method == "POST":
+        name = (request.form.get("name") or "").strip()
+        category = (request.form.get("category") or "").strip()
+        description = request.form.get("description") or ""
+
+        if not name:
+            name = "Untitled Protocol"
+
+        template = ProtocolTemplate(name=name, description=description)
+
+        if hasattr(template, "category"):
+            template.category = category
+
+        db.session.add(template)
+        db.session.commit()
+
+        return redirect(url_for("views.template_detail", template_id=template.id))
+
+    return render_template("new_protocol_patch006b.html")
+
+
+@views_bp.route("/protocols/<int:template_id>/title-local", methods=["POST"])
+@_pf67_patch006b_edit_required
+def pf67_patch006b_update_protocol_title(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+    name = (request.form.get("name") or "").strip()
+
+    if name:
+        template.name = name
+        db.session.commit()
+
+    return redirect(url_for("views.template_detail", template_id=template.id))
+
+
+@views_bp.route("/protocols/<int:template_id>/category-local", methods=["POST"])
+@_pf67_patch006b_edit_required
+def pf67_patch006b_update_protocol_category(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+    category = (request.form.get("category") or "").strip()
+
+    if hasattr(template, "category"):
+        template.category = category
+        db.session.commit()
+
+    return redirect(url_for("views.template_detail", template_id=template.id))
+
+
+@views_bp.route("/protocols/<int:template_id>/description-local", methods=["POST"])
+@_pf67_patch006b_edit_required
+def pf67_patch006b_update_protocol_description(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+    template.description = request.form.get("description") or ""
+    db.session.commit()
+
+    return redirect(url_for("views.template_detail", template_id=template.id))
+
+
+@views_bp.route("/protocols/<int:template_id>/steps/<int:step_id>/update-local", methods=["POST"])
+@_pf67_patch006b_edit_required
+def pf67_patch006b_update_protocol_step(template_id, step_id):
+    step = StepTemplate.query.filter_by(id=step_id, template_id=template_id).first_or_404()
+
+    step.name = (request.form.get("name") or "").strip()
+    step.step_type = (request.form.get("step_type") or "action").strip()
+    step.context_tag = (request.form.get("context_tag") or "").strip()
+    step.instructions_html = request.form.get("instructions_html") or ""
+
+    if "minimum_value" in request.form or "minimum_unit" in request.form:
+        step.minimum_minutes = _pf67_patch006b_minutes_from_value_unit("minimum_value", "minimum_unit")
+    if "ideal_value" in request.form or "ideal_unit" in request.form:
+        step.ideal_minutes = _pf67_patch006b_minutes_from_value_unit("ideal_value", "ideal_unit")
+    if "limit_value" in request.form or "limit_unit" in request.form:
+        step.limit_minutes = _pf67_patch006b_minutes_from_value_unit("limit_value", "limit_unit")
+    if "detrimental_value" in request.form or "detrimental_unit" in request.form:
+        step.detrimental_minutes = _pf67_patch006b_minutes_from_value_unit("detrimental_value", "detrimental_unit")
+    if "failure_value" in request.form or "failure_unit" in request.form:
+        step.failure_minutes = _pf67_patch006b_minutes_from_value_unit("failure_value", "failure_unit")
+
+    db.session.commit()
+
+    return redirect(url_for("views.template_detail", template_id=template_id) + "#template-step-" + str(step.id))
+
+
+@views_bp.route("/protocols/<int:template_id>/steps/add-local", methods=["POST"])
+@_pf67_patch006b_edit_required
+def pf67_patch006b_add_protocol_step(template_id):
+    ProtocolTemplate.query.get_or_404(template_id)
+
+    after_step_id = _pf67_patch006b_int_or_none(request.form.get("after_step_id"))
+    sort_order = _pf67_patch006b_sort_order_for_new_step(template_id, after_step_id)
+
+    step = StepTemplate(
+        template_id=template_id,
+        name=(request.form.get("name") or "").strip(),
+        step_type=(request.form.get("step_type") or "action").strip(),
+        context_tag=(request.form.get("context_tag") or "").strip(),
+        instructions_html=request.form.get("instructions_html") or "",
+        minimum_minutes=_pf67_patch006b_minutes_from_value_unit("minimum_value", "minimum_unit"),
+        ideal_minutes=_pf67_patch006b_minutes_from_value_unit("ideal_value", "ideal_unit"),
+        limit_minutes=_pf67_patch006b_minutes_from_value_unit("limit_value", "limit_unit"),
+        detrimental_minutes=_pf67_patch006b_minutes_from_value_unit("detrimental_value", "detrimental_unit"),
+        failure_minutes=_pf67_patch006b_minutes_from_value_unit("failure_value", "failure_unit"),
+        sort_order=sort_order,
+    )
+
+    db.session.add(step)
+    db.session.commit()
+
+    return redirect(url_for("views.template_detail", template_id=template_id) + "#template-step-" + str(step.id))
+
+# === PF67 PATCH 007C TIMING WORDING FILTERS ===
+@views_bp.app_template_filter("pf67_patch007c_duration_label")
+def pf67_patch007c_duration_label(value):
+    try:
+        minutes = int(value or 0)
+    except Exception:
+        return ""
+
+    if minutes <= 0:
+        return ""
+
+    days = minutes // 1440
+    remainder = minutes % 1440
+    hours = remainder // 60
+    mins = remainder % 60
+
+    parts = []
+
+    if days:
+        parts.append(str(days) + (" day" if days == 1 else " days"))
+
+    if hours:
+        parts.append(str(hours) + (" hour" if hours == 1 else " hours"))
+
+    if mins or not parts:
+        parts.append(str(mins) + (" minute" if mins == 1 else " minutes"))
+
+    return " ".join(parts)
+
+
+@views_bp.app_template_filter("pf67_patch007c_wait_label")
+def pf67_patch007c_wait_label(value):
+    try:
+        minutes = int(value or 0)
+    except Exception:
+        return ""
+
+    if minutes <= 0:
+        return ""
+
+    label = pf67_patch007c_duration_label(minutes)
+
+    # One day reads naturally as "In 1 day"; 2+ days reads better as a process wait.
+    if minutes >= 2880:
+        return "Wait " + label
+
+    return "In " + label

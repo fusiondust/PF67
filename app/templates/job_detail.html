@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}PF67 · Job{% endblock %}
+{% block title %}PF67 · Flow{% endblock %}
 
 {% block content %}
 
@@ -11,7 +11,7 @@
                 <h2 class="mb-1">{{ job.name }}</h2>
 
                 <div class="pf67-small text-muted">
-                    Template v{{ job.template_version }}
+                    Protocol v{{ job.template_version }}
                     ·
                     Status:
                     {% if can_edit %}
