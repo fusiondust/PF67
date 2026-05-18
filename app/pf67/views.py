@@ -5135,3 +5135,165 @@ def pf67_patch007c_wait_label(value):
         return "Wait " + label
 
     return "In " + label
+
+# === PF67 PATCH 008A FLOW START DELETE CONTROLS ===
+from datetime import datetime as _pf67_008_datetime, timedelta as _pf67_008_timedelta
+from flask import request, redirect, url_for, flash
+from .models import db, ProtocolTemplate, StepTemplate, Job, JobStep
+
+try:
+    _pf67_patch008_edit_required = edit_required
+except NameError:
+    def _pf67_patch008_edit_required(func):
+        return func
+
+
+def _pf67_patch008_parse_datetime_local(value):
+    value = (value or "").strip()
+
+    if not value:
+        return None
+
+    try:
+        return _pf67_008_datetime.fromisoformat(value)
+    except Exception:
+        return None
+
+
+def _pf67_patch008_normalize_priority(value):
+    value = (value or "Normal").strip().title()
+    allowed = {"Low", "Normal", "High", "Critical"}
+
+    if value not in allowed:
+        value = "Normal"
+
+    return value
+
+
+def _pf67_patch008_set_if_hasattr(obj, attr, value):
+    if hasattr(obj, attr):
+        setattr(obj, attr, value)
+
+
+def _pf67_patch008_create_flow_from_template(template, job_name, first_step_anchor, priority):
+    if not job_name:
+        job_name = template.name + " - Flow"
+
+    job = Job()
+    _pf67_patch008_set_if_hasattr(job, "template_id", template.id)
+    _pf67_patch008_set_if_hasattr(job, "name", job_name)
+    _pf67_patch008_set_if_hasattr(job, "template_version", getattr(template, "current_version", 1))
+    _pf67_patch008_set_if_hasattr(job, "started_at", first_step_anchor)
+    _pf67_patch008_set_if_hasattr(job, "priority", priority)
+    _pf67_patch008_set_if_hasattr(job, "allow_ai_read", True)
+    _pf67_patch008_set_if_hasattr(job, "allow_ai_suggest", True)
+    _pf67_patch008_set_if_hasattr(job, "allow_ai_write", False)
+
+    db.session.add(job)
+    db.session.flush()
+
+    anchor_time = first_step_anchor
+    ordered_steps = list(sorted(template.steps, key=lambda step: step.sort_order or 0))
+
+    for index, step_template in enumerate(ordered_steps):
+        is_first_step = index == 0
+
+        job_step = JobStep()
+        _pf67_patch008_set_if_hasattr(job_step, "job_id", job.id)
+        _pf67_patch008_set_if_hasattr(job_step, "source_step_template_id", step_template.id)
+        _pf67_patch008_set_if_hasattr(job_step, "sort_order", step_template.sort_order)
+        _pf67_patch008_set_if_hasattr(job_step, "name", step_template.name)
+        _pf67_patch008_set_if_hasattr(job_step, "step_type", step_template.step_type)
+        _pf67_patch008_set_if_hasattr(job_step, "instructions_html", step_template.instructions_html)
+        _pf67_patch008_set_if_hasattr(job_step, "context_tag", step_template.context_tag)
+
+        # Step 1 timing belongs to the Flow start dialog. Preserve Protocol timing
+        # values on the Protocol step, but do not copy them into Flow Step 1.
+        _pf67_patch008_set_if_hasattr(job_step, "minimum_minutes", None if is_first_step else step_template.minimum_minutes)
+        _pf67_patch008_set_if_hasattr(job_step, "ideal_minutes", None if is_first_step else step_template.ideal_minutes)
+        _pf67_patch008_set_if_hasattr(job_step, "limit_minutes", None if is_first_step else step_template.limit_minutes)
+        _pf67_patch008_set_if_hasattr(job_step, "detrimental_minutes", None if is_first_step else step_template.detrimental_minutes)
+        _pf67_patch008_set_if_hasattr(job_step, "failure_minutes", None if is_first_step else step_template.failure_minutes)
+
+        _pf67_patch008_set_if_hasattr(job_step, "estimated_duration_minutes", getattr(step_template, "estimated_duration_minutes", None))
+        _pf67_patch008_set_if_hasattr(job_step, "anchor_time", anchor_time)
+
+        db.session.add(job_step)
+
+        if not is_first_step and step_template.ideal_minutes is not None:
+            anchor_time = anchor_time + _pf67_008_timedelta(minutes=step_template.ideal_minutes)
+
+    db.session.commit()
+    return job
+
+
+@views_bp.route("/protocols/<int:template_id>/start-flow-patch008", methods=["POST"])
+@_pf67_patch008_edit_required
+def pf67_patch008_start_flow(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    job_name = (request.form.get("job_name") or "").strip()
+    priority = _pf67_patch008_normalize_priority(request.form.get("priority"))
+    start_mode = (request.form.get("start_mode") or "now").strip()
+    selected_time = _pf67_patch008_parse_datetime_local(request.form.get("first_step_at"))
+
+    if start_mode == "now":
+        first_step_anchor = _pf67_008_datetime.utcnow()
+    else:
+        first_step_anchor = selected_time or _pf67_008_datetime.utcnow()
+
+    job = _pf67_patch008_create_flow_from_template(template, job_name, first_step_anchor, priority)
+
+    try:
+        return redirect(url_for("views.job_detail", job_id=job.id))
+    except Exception:
+        return redirect(url_for("views.jobs_page", view="active"))
+
+
+@views_bp.route("/protocols/<int:template_id>/steps/<int:step_id>/delete-patch008", methods=["POST"])
+@_pf67_patch008_edit_required
+def pf67_patch008_delete_protocol_step(template_id, step_id):
+    step = StepTemplate.query.filter_by(id=step_id, template_id=template_id).first_or_404()
+
+    db.session.delete(step)
+    db.session.flush()
+
+    remaining_steps = (
+        StepTemplate.query
+        .filter_by(template_id=template_id)
+        .order_by(StepTemplate.sort_order.asc(), StepTemplate.id.asc())
+        .all()
+    )
+
+    for index, remaining in enumerate(remaining_steps):
+        remaining.sort_order = (index + 1) * 10
+
+    db.session.commit()
+
+    return redirect(url_for("views.template_detail", template_id=template_id))
+
+
+@views_bp.route("/protocols/<int:template_id>/delete-patch008", methods=["POST"])
+@_pf67_patch008_edit_required
+def pf67_patch008_delete_protocol(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    existing_flows = 0
+    try:
+        existing_flows = Job.query.filter_by(template_id=template_id).count()
+    except Exception:
+        existing_flows = 0
+
+    if existing_flows:
+        try:
+            flash("This Protocol has existing Flows and was not deleted. Delete or archive related Flows first.", "warning")
+        except Exception:
+            pass
+
+        return redirect(url_for("views.template_detail", template_id=template_id))
+
+    StepTemplate.query.filter_by(template_id=template_id).delete()
+    db.session.delete(template)
+    db.session.commit()
+
+    return redirect(url_for("views.templates_page"))

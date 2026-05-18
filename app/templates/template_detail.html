@@ -110,6 +110,12 @@
                 <div class="pf67-protocol-actions">
                     <button class="btn btn-outline-success btn-sm" type="button" data-pf67-panel-open="start-flow-panel">Start Flow</button>
                     <button class="btn btn-outline-primary btn-sm" type="button" data-pf67-panel-open="add-step-panel-bottom">Add Step</button>
+                    <form class="pf67-protocol-delete-form"
+                          method="post"
+                          action="{{ url_for('views.pf67_patch008_delete_protocol', template_id=template.id) }}"
+                          onsubmit="return confirm('Delete this Protocol? This cannot be undone. Protocols with existing Flows are protected.');">
+                        <button class="btn btn-outline-danger btn-sm" type="submit">Delete Protocol</button>
+                    </form>
                 </div>
             {% endif %}
         </div>
@@ -150,19 +156,64 @@
             <div class="pf67-protocol-flow-panel pf67-protocol-edit-box" id="start-flow-panel">
                 <h4>Start Flow</h4>
 
-                <form method="post" action="{{ url_for('views.start_job', template_id=template.id) }}">
-                    <div class="mb-3">
-                        <label class="form-label">Flow name</label>
-                        <input class="form-control" name="job_name" value="{{ template.name }} Flow_{{ today_suffix }}">
+                <form method="post" action="{{ url_for('views.pf67_patch008_start_flow', template_id=template.id) }}">
+                    <div class="pf67-flow-start-grid">
+                        <div>
+                            <div class="mb-3">
+                                <label class="form-label">Flow Name</label>
+                                <input class="form-control" name="job_name" value="{{ template.name }} - {{ today_suffix }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Priority</label>
+                                <select class="form-select" name="priority">
+                                    <option value="Low">Low</option>
+                                    <option value="Normal" selected>Normal</option>
+                                    <option value="High">High</option>
+                                    <option value="Critical">Critical</option>
+                                </select>
+                                <div class="pf67-flow-start-note mt-1">
+                                    Priority will later help the Dashboard, Flow list, Calendar, and attention logic decide what rises to the top.
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Date/time for Step 1</label>
+                                <input class="form-control" type="datetime-local" name="first_step_at">
+                                <div class="pf67-flow-start-note mt-1">
+                                    Leave blank for Start now. This becomes the anchor for Step 1; later steps cascade from their Ideal wait values.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pf67-flow-start-options">
+                            <div class="pf67-flow-start-option">
+                                <label>
+                                    <input type="radio" name="start_mode" value="now" checked>
+                                    Start now
+                                </label>
+                                <div class="pf67-flow-start-note">Step 1 becomes due immediately.</div>
+                            </div>
+
+                            <div class="pf67-flow-start-option">
+                                <label>
+                                    <input type="radio" name="start_mode" value="scheduled">
+                                    Schedule first step
+                                </label>
+                                <div class="pf67-flow-start-note">Use the selected date/time as the future Step 1 anchor.</div>
+                            </div>
+
+                            <div class="pf67-flow-start-option">
+                                <label>
+                                    <input type="radio" name="start_mode" value="already_started">
+                                    Already started earlier
+                                </label>
+                                <div class="pf67-flow-start-note">Use the selected past date/time as the Flow anchor.</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Start date/time</label>
-                        <input class="form-control" type="datetime-local" name="started_at">
-                        <div class="form-text">Leave blank to start now. Timing model refinements are planned for Patch 007.</div>
-                    </div>
-
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 mt-3">
                         <button class="btn btn-success" type="submit">Start Flow</button>
                         <button class="btn btn-outline-secondary" type="button" data-pf67-panel-close="start-flow-panel">Cancel</button>
                     </div>
@@ -379,6 +430,11 @@
                                                                         <div class="pf67-protocol-edit-actions">
                                         <button class="btn btn-success btn-sm" type="submit">Save Step</button>
                                         <button class="btn btn-outline-secondary btn-sm" type="button" data-pf67-inline-close="pf67-step-editor-{{ step.id }}">Cancel</button>
+                                        <button class="btn btn-outline-danger btn-sm pf67-step-delete-button"
+                                                type="submit"
+                                                formmethod="post"
+                                                formaction="{{ url_for('views.pf67_patch008_delete_protocol_step', template_id=template.id, step_id=step.id) }}"
+                                                onclick="return confirm('Delete this step? This cannot be undone.');">Delete Step</button>
                                     </div>
                                 </form>
 

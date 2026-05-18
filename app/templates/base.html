@@ -3527,6 +3527,56 @@
             margin-left: 2px !important;
         }
 
+    
+        /* PF67 Patch 008A Flow Start Dialog */
+        .pf67-flow-start-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+            gap: 14px;
+            align-items: start;
+        }
+
+        .pf67-flow-start-options {
+            display: grid;
+            gap: 8px;
+        }
+
+        .pf67-flow-start-option {
+            border: 1px solid var(--bs-border-color);
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: rgba(108, 117, 125, 0.06);
+        }
+
+        .pf67-flow-start-option label {
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .pf67-flow-start-note {
+            font-size: 0.86rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .pf67-protocol-delete-form {
+            display: inline-block;
+            margin: 0;
+        }
+
+        .pf67-step-delete-button {
+            margin-left: auto;
+        }
+
+        @media (max-width: 850px) {
+            .pf67-flow-start-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pf67-step-delete-button {
+                margin-left: 0;
+            }
+        }
+
     </style>
 
     <script>
@@ -3638,7 +3688,7 @@
     {% block content %}{% endblock %}
 
     <div class="pf67-footer">
-        PF67 · <span class="pf67-footer-rev">Test Rev 007L Timing Label Font Cleanup</span>
+        PF67 · <span class="pf67-footer-rev">Test Rev 008A Flow Start Dialog</span>
         · App {{ pf67_revision }}
         · <span class="pf67-footer-loaded">Loaded <span id="pf67-loaded-stamp">...</span></span>
     </div>
@@ -3847,6 +3897,17 @@ document.addEventListener("DOMContentLoaded", function pf67Patch007KLoadedStamp(
 
 <script>
 document.addEventListener("DOMContentLoaded", function pf67Patch007LLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch008ALoadedStamp() {
     var loadedStamp = document.getElementById("pf67-loaded-stamp");
 
     if (loadedStamp) {
