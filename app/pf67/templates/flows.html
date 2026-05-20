@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Flows{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Flows</h1>
+    <a href="{{ url_for('main.create_flow') }}" class="btn btn-primary">+ New Flow</a>
+</div>
+
+<div class="filter-bar">
+    <input type="text" id="flowSearch" class="form-control" placeholder="Filter flows..." onkeyup="filterFlows()">
+</div>
+
+<table class="data-table" id="flowsTable">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Protocol</th>
+            <th>Status</th>
+            <th>Started</th>
+            <th>Current Step</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for flow in flows %}
+        <tr>
+            <td><a href="{{ url_for('main.view_flow', flow_id=flow.id) }}">{{ flow.name }}</a></td>
+            <td>{{ flow.protocol.name if flow.protocol else '-' }}</td>
+            <td><span class="status-badge status-{{ flow.status|lower }}">{{ flow.status }}</span></td>
+            <td>{{ flow.started_at.strftime('%Y-%m-%d %H:%M') if flow.started_at else '-' }}</td>
+            <td>{{ flow.current_step.name if flow.current_step else '-' }}</td>
+            <td>
+                <a href="{{ url_for('main.edit_flow', flow_id=flow.id) }}" class="btn btn-sm">Edit</a>
+                <a href="{{ url_for('main.delete_flow', flow_id=flow.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this flow?')">Delete</a>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="6" class="empty-state">No flows yet. Create your first one!</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+function filterFlows() {
+    const input = document.getElementById('flowSearch');
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById('flowsTable');
+    const rows = table.getElementsByTagName('tr');
+    
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        let match = false;
+        for (let j = 0; j < cells.length; j++) {
+            if (cells[j] && cells[j].textContent.toLowerCase().includes(filter)) {
+                match = true;
+                break;
+            }
+        }
+        rows[i].style.display = match ? '' : 'none';
+    }
+}
+</script>
+{% endblock %}
