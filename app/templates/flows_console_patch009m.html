@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Flows
+
+
+{% endblock %}
+
+{% block content %}
+
+<div class="pf67-flows-console-hero">
+    <div>
+        <div class="pf67-dashboard-kicker">ProtocolFlow67</div>
+        <h1>Flows</h1>
+        <p class="pf67-flows-console-description">
+            Track live and scheduled work created from Protocols. Counts give the quick pulse; refine the view when you need to focus on status, visibility, priority, or sequence.
+        </p>
+    </div>
+</div>
+
+<form class="pf67-flow-console-top-search"
+      method="get"
+      action="{{ url_for('views.pf67_patch009j_flows_console') }}">
+    <input class="form-control"
+           id="pf67-flow-q"
+           name="q"
+           type="search"
+           value="{{ filters.q if filters is defined and filters.q is defined else '' }}"
+           placeholder="Filter Flows..."
+           aria-label="Filter Flows">
+    <button class="btn btn-outline-secondary" type="submit">Filter</button>
+</form>
+
+<section class="pf67-flow-console-controls" data-pf67-flow-console>
+    <div class="pf67-flow-console-summary">
+        <span class="pf67-flow-console-pill">
+            <span>{{ total_count }}</span>
+            <span>Flows</span>
+        </span>
+        <span class="pf67-flow-console-pill">
+            <span>Active</span>
+            <span>{{ counts.active }}</span>
+        </span>
+        <span class="pf67-flow-console-pill">
+            <span>Scheduled</span>
+            <span>{{ counts.scheduled }}</span>
+        </span>
+        <span class="pf67-flow-console-pill">
+            <span>Completed</span>
+            <span>{{ counts.completed }}</span>
+        </span>
+        <span class="pf67-flow-console-pill">
+            <span>Public</span>
+            <span>{{ counts.public }}</span>
+        </span>
+        <span class="pf67-flow-console-pill">
+            <span>Private</span>
+            <span>{{ counts.private }}</span>
+        </span>
+    </div>
+
+    <details class="pf67-flow-console-refine">
+        <summary>Refine view</summary>
+
+        <div class="pf67-flow-console-refine-inner pf67-flow-console-refine-inner-009m">
+<div class="pf67-flow-filter-strip-009m">
+                <details class="pf67-flow-filter-menu-009m" data-pf67-filter-menu>
+                    <summary data-pf67-status-summary>Active</summary>
+                    <div class="pf67-flow-filter-menu-body-009m">
+                        <label class="pf67-flow-filter-check-009m">
+                            <input type="checkbox" data-pf67-status value="active" checked>
+                            <span>Active</span>
+                        </label>
+                        <label class="pf67-flow-filter-check-009m">
+                            <input type="checkbox" data-pf67-status value="scheduled">
+                            <span>Scheduled</span>
+                        </label>
+                        <label class="pf67-flow-filter-check-009m">
+                            <input type="checkbox" data-pf67-status value="completed">
+                            <span>Completed</span>
+                        </label>
+                        <label class="pf67-flow-filter-check-009m">
+                            <input type="checkbox" data-pf67-status value="all">
+                            <span>All</span>
+                        </label>
+                    </div>
+                </details>
+
+                <div class="pf67-visibility-segment-009m">
+                    <input type="radio" id="pf67-visibility-all" name="pf67-visibility-filter" value="all" data-pf67-visibility checked>
+                    <label for="pf67-visibility-all">All</label>
+
+                    <input type="radio" id="pf67-visibility-public" name="pf67-visibility-filter" value="public" data-pf67-visibility>
+                    <label for="pf67-visibility-public">Public</label>
+
+                    <input type="radio" id="pf67-visibility-private" name="pf67-visibility-filter" value="private" data-pf67-visibility>
+                    <label for="pf67-visibility-private">Private</label>
+                </div>
+
+                <details class="pf67-flow-filter-menu-009m" data-pf67-filter-menu>
+                    <summary data-pf67-priority-summary>All Priorities</summary>
+                    <div class="pf67-flow-filter-menu-body-009m">
+                        <label class="pf67-flow-filter-check-009m">
+                            <input type="checkbox" data-pf67-priority value="critical">
+                            <span>Critical</span>
+                        </label>
+                        <label class="pf67-flow-filter-check-009m">
+                            <input type="checkbox" data-pf67-priority value="high">
+                            <span>High</span>
+                        </label>
+                        <label class="pf67-flow-filter-check-009m">
+                            <input type="checkbox" data-pf67-priority value="normal">
+                            <span>Normal</span>
+                        </label>
+                        <label class="pf67-flow-filter-check-009m">
+                            <input type="checkbox" data-pf67-priority value="low">
+                            <span>Low</span>
+                        </label>
+                        <label class="pf67-flow-filter-check-009m">
+                            <input type="checkbox" data-pf67-priority value="all" checked>
+                            <span>All</span>
+                        </label>
+                    </div>
+                </details>
+            </div>
+
+            <div class="pf67-flow-sort-zone-009m">
+                <select class="form-select" data-pf67-flow-sort>
+                    <option value="started_desc" selected>Started Date Descending</option>
+                    <option value="started_asc">Started Date Ascending</option>
+                    <option value="estimated">Estimated Completion</option>
+                    <option value="priority">Priority</option>
+                    <option value="progress">Progress</option>
+                    <option value="name">Name</option>
+                </select>
+            </div>
+        </div>
+    </details>
+</section>
+
+{% if flows %}
+    <div class="pf67-flow-console-grid" data-pf67-flow-grid>
+        {% for item in flows %}
+            <article class="pf67-flow-console-card"
+                     data-pf67-flow-card
+                     data-status="{{ item.group_key }}"
+                     data-visibility="{% if item.is_private %}private{% else %}public{% endif %}"
+                     data-priority="{{ item.priority_value }}"
+                     data-search="{{ item.search_text }}"
+                     data-started="{{ item.started_sort }}"
+                     data-estimated="{{ item.estimated_sort }}"
+                     data-priority-rank="{{ item.priority_rank }}"
+                     data-progress="{{ item.progress_percent }}"
+                     data-name="{{ item.job.name|lower }}">
+                <div class="pf67-flow-console-card-title-row">
+                    <div>
+                        <a class="pf67-flow-console-card-title" href="{{ item.url }}">{{ item.job.name }}</a>
+                        <div class="pf67-flow-console-card-subtitle">
+                            Protocol:
+                            {% if item.template %}
+                                {{ item.template.name }}
+                            {% else %}
+                                No source Protocol
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <span class="pf67-flow-console-visibility">
+                        <span class="pf67-visibility-pill {% if item.is_private %}is-private{% else %}is-public{% endif %}"
+                              title="{% if item.is_private %}This Flow is private and hidden from the public interface. Open the Flow to change visibility.{% else %}This Flow is public and visible on the public interface. Open the Flow to change visibility.{% endif %}">
+                            {% if item.is_private %} Private {% else %} Public {% endif %}
+                        </span>
+                    </span>
+                </div>
+
+                <div class="pf67-flow-console-card-subtitle">
+                    {% if item.current_step %}
+                        Waiting on: {{ item.current_step.name }}
+                    {% elif item.group_label == "Completed" %}
+                        Completed
+                    {% else %}
+                        No open step.
+                    {% endif %}
+                </div>
+
+                <div class="pf67-progress-shell pf67-flow-console-progress">
+                    <div class="pf67-progress-track"
+                         role="progressbar"
+                         aria-valuenow="{{ item.progress_percent }}"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                        <div class="pf67-progress-fill" style="width: {{ item.progress_percent }}%;"></div>
+                    </div>
+                    <div class="pf67-progress-label">
+                        Roughly {{ item.progress_percent }}% complete{% if item.progress_basis %} · {{ item.progress_basis }}{% endif %}
+                    </div>
+                </div>
+
+                <div class="pf67-flow-console-meta">
+                    <span class="pf67-dashboard-pill">{{ item.group_label }}</span>
+                    <span class="pf67-dashboard-pill">Priority: {{ item.priority }}</span>
+                    {% if item.started_display %}
+                        <span class="pf67-dashboard-pill">Started {{ item.started_display }}</span>
+                    {% endif %}
+                    {% if item.estimated_completion %}
+                        <span class="pf67-dashboard-pill">Est. {{ item.estimated_completion }}</span>
+                    {% endif %}
+                    {% if item.time_label %}
+                        <span class="pf67-dashboard-pill">{{ item.time_label }}</span>
+                    {% endif %}
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+
+    <div class="pf67-flow-console-empty pf67-flow-console-hidden" data-pf67-flow-empty style="display:none;">
+        No Flows match the current filters.
+    </div>
+{% else %}
+    <div class="pf67-flow-console-empty">
+        No Flows are available yet.
+    </div>
+{% endif %}
+
+
+
+
+
+
+{% endblock %}

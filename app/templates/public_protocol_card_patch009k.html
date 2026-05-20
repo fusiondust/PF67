@@ -1,0 +1,41 @@
+{% set cover = template.description|pf67_patch009k_first_img_src %}
+{% set summary = template.description|pf67_patch009k_plain_summary(240) %}
+{% set category_value = template.category if template.category is defined and template.category else "No Category" %}
+{% set category_key = category_value|lower|replace(" ", "-") %}
+
+<div class="pf67-protocol-card"
+     data-pf67-public-protocol-card
+     data-category="{{ category_key }}"
+     data-name="{{ template.name|lower }}"
+     data-newest="{{ template.id }}">
+    <div class="pf67-protocol-card-inner">
+        <div class="pf67-protocol-card-top {% if not cover %}pf67-protocol-card-no-thumb{% endif %}">
+            {% if cover %}
+                <a class="pf67-protocol-card-thumb" data-pf67-public-return-source href="{{ url_for('views.pf67_patch009g_public_protocol_detail', template_id=template.id) }}">
+                    <img src="{{ cover }}" alt="">
+                </a>
+            {% endif %}
+
+            <div>
+                <h3 class="pf67-protocol-card-title">
+                    <a data-pf67-public-return-source href="{{ url_for('views.pf67_patch009g_public_protocol_detail', template_id=template.id) }}">{{ template.name }}</a>
+                </h3>
+
+                <div class="pf67-protocol-card-meta">
+                    <span class="pf67-protocol-card-pill">{{ category_value }}</span>
+                    <span class="pf67-protocol-card-pill">
+                        {{ template.steps|length }} step{% if template.steps|length != 1 %}s{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="pf67-protocol-card-description">
+            {% if summary %}
+                {{ summary }}
+            {% else %}
+                No description.
+            {% endif %}
+        </div>
+    </div>
+</div>

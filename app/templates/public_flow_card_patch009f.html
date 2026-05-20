@@ -1,0 +1,35 @@
+<a class="pf67-public-flow-card" href="{{ item.url }}">
+    <div class="pf67-dashboard-card-title">{{ item.job.name }}</div>
+    <div class="pf67-dashboard-card-subtitle">
+        {% if item.step %}
+            Waiting on: {{ item.step.name }}
+        {% elif item.group_label == "Completed" %}
+            Completed
+        {% else %}
+            No open step.
+        {% endif %}
+    </div>
+
+    <div class="pf67-progress-shell">
+        <div class="pf67-progress-track"
+             role="progressbar"
+             aria-valuenow="{{ item.progress_percent }}"
+             aria-valuemin="0"
+             aria-valuemax="100">
+            <div class="pf67-progress-fill" style="width: {{ item.progress_percent }}%;"></div>
+        </div>
+        <div class="pf67-progress-label">
+            Roughly {{ item.progress_percent }}% complete{% if item.progress_basis %} · {{ item.progress_basis }}{% endif %}
+        </div>
+    </div>
+
+    <div class="pf67-dashboard-meta">
+        <span class="pf67-dashboard-pill">{{ item.group_label }}</span>
+        {% if item.time_label %}
+            <span class="pf67-dashboard-pill">{{ item.time_label }}</span>
+        {% endif %}
+        {% if item.estimated_completion %}
+            <span class="pf67-dashboard-pill">Est. {{ item.estimated_completion }}</span>
+        {% endif %}
+    </div>
+</a>

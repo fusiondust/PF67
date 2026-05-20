@@ -5,12 +5,15 @@ db = SQLAlchemy()
 
 
 class ProtocolTemplate(db.Model):
+    protocol_role = db.Column(db.String(24), nullable=False, default="protocol")
+    can_start_flow = db.Column(db.Boolean, nullable=False, default=True)
     __tablename__ = "protocol_templates"
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, default="")
     category = db.Column(db.String(120), default="")
+    is_private = db.Column(db.Boolean, nullable=False, default=False)
     current_version = db.Column(db.Integer, default=1)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -23,6 +26,11 @@ class ProtocolTemplate(db.Model):
 
 
 class StepTemplate(db.Model):
+    step_kind = db.Column(db.String(24), nullable=False, default="step")
+    procedure_template_id = db.Column(db.Integer, nullable=True)
+    procedure_snapshot_title = db.Column(db.String(255), nullable=True)
+    procedure_snapshot_description = db.Column(db.Text, nullable=True)
+    procedure_snapshot_minutes = db.Column(db.Integer, nullable=False, default=0)
     __tablename__ = "step_templates"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -56,6 +64,7 @@ class Job(db.Model):
     status = db.Column(db.String(50), default="active")
 
     priority = db.Column(db.String(20), default="Normal")
+    is_private = db.Column(db.Boolean, nullable=False, default=False)
     started_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime, nullable=True)
 
@@ -68,7 +77,7 @@ class Job(db.Model):
         "JobStep",
         backref="job",
         cascade="all, delete-orphan",
-        order_by="JobStep.sort_order"
+        order_by="JobStep.sequence_order, JobStep.sort_order, JobStep.id"
     )
     notes = db.relationship(
         "JobNote",
@@ -79,6 +88,12 @@ class Job(db.Model):
 
 
 class JobStep(db.Model):
+    sequence_order = db.Column(db.Integer, nullable=False, default=0)
+    source_protocol_step_id = db.Column(db.Integer, nullable=True)
+    source_procedure_template_id = db.Column(db.Integer, nullable=True)
+    source_procedure_step_id = db.Column(db.Integer, nullable=True)
+    source_procedure_reference_step_id = db.Column(db.Integer, nullable=True)
+    is_procedure_derived = db.Column(db.Boolean, nullable=False, default=False)
     __tablename__ = "job_steps"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -159,3 +174,70 @@ class ProtocolAttachment(db.Model):
 
     template = db.relationship("ProtocolTemplate", backref="protocol_attachments")
 
+# === PF67 PATCH 011A FLOW STEP SEQUENCE ORDERING ===
+try:
+    from sqlalchemy import event as _pf67_patch011a_event
+    from sqlalchemy.orm import Session as _PF67Patch011ASession
+except Exception:
+    _pf67_patch011a_event = None
+    _PF67Patch011ASession = None
+
+
+def _pf67_patch011a_is_flow_step_object(obj):
+    name = obj.__class__.__name__.lower()
+
+    if "step" not in name:
+        return False
+
+    if not hasattr(obj, "sequence_order"):
+        return False
+
+    return hasattr(obj, "job_id") or hasattr(obj, "flow_id") or hasattr(obj, "job") or hasattr(obj, "flow")
+
+
+def _pf67_patch011a_parent_key(obj):
+    for attr in ["flow_id", "job_id"]:
+        if hasattr(obj, attr):
+            try:
+                value = getattr(obj, attr)
+                if value:
+                    return attr + ":" + str(value)
+            except Exception:
+                pass
+
+    for attr in ["flow", "job"]:
+        if hasattr(obj, attr):
+            try:
+                value = getattr(obj, attr)
+                if value is not None:
+                    return attr + ":" + str(id(value))
+            except Exception:
+                pass
+
+    return "orphan:" + obj.__class__.__name__
+
+
+if _pf67_patch011a_event is not None and _PF67Patch011ASession is not None:
+    @_pf67_patch011a_event.listens_for(_PF67Patch011ASession, "before_flush")
+    def _pf67_patch011a_assign_sequence_order(session, flush_context, instances):
+        counters = {}
+
+        for obj in list(session.new):
+            if not _pf67_patch011a_is_flow_step_object(obj):
+                continue
+
+            try:
+                existing = int(getattr(obj, "sequence_order") or 0)
+            except Exception:
+                existing = 0
+
+            if existing:
+                continue
+
+            parent_key = _pf67_patch011a_parent_key(obj)
+            counters[parent_key] = counters.get(parent_key, 0) + 1
+
+            try:
+                setattr(obj, "sequence_order", counters[parent_key] * 1000)
+            except Exception:
+                pass

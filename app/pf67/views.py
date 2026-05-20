@@ -5193,7 +5193,7 @@ def _pf67_patch008_create_flow_from_template(template, job_name, first_step_anch
     db.session.flush()
 
     anchor_time = first_step_anchor
-    ordered_steps = list(sorted(template.steps, key=lambda step: step.sort_order or 0))
+    ordered_steps = list(pf67_patch011a2_sequence_flow_steps(template))
 
     for index, step_template in enumerate(ordered_steps):
         is_first_step = index == 0
@@ -5201,7 +5201,8 @@ def _pf67_patch008_create_flow_from_template(template, job_name, first_step_anch
         job_step = JobStep()
         _pf67_patch008_set_if_hasattr(job_step, "job_id", job.id)
         _pf67_patch008_set_if_hasattr(job_step, "source_step_template_id", step_template.id)
-        _pf67_patch008_set_if_hasattr(job_step, "sort_order", step_template.sort_order)
+        _pf67_patch008_set_if_hasattr(job_step, "sort_order", getattr(step_template, "_pf67_flow_sort_order", (index + 1) * 10))
+        _pf67_patch008_set_if_hasattr(job_step, "sequence_order", getattr(step_template, "_pf67_flow_sequence_order", (index + 1) * 1000))
         _pf67_patch008_set_if_hasattr(job_step, "name", step_template.name)
         _pf67_patch008_set_if_hasattr(job_step, "step_type", step_template.step_type)
         _pf67_patch008_set_if_hasattr(job_step, "instructions_html", step_template.instructions_html)
@@ -5297,3 +5298,6534 @@ def pf67_patch008_delete_protocol(template_id):
     db.session.commit()
 
     return redirect(url_for("views.templates_page"))
+
+# === PF67 PATCH 008B PROTOCOL LIST COVER CARDS ===
+import re as _pf67_008b_re
+import html as _pf67_008b_html
+
+
+@views_bp.app_template_filter("pf67_patch008b_first_img_src")
+def pf67_patch008b_first_img_src(value):
+    html_value = value or ""
+
+    if not html_value:
+        return ""
+
+    pattern = r"<img\b[^>]*\bsrc\s*=\s*(?:\"([^\"]+)\"|'([^']+)'|([^>\s]+))"
+    match = _pf67_008b_re.search(
+        pattern,
+        html_value,
+        flags=_pf67_008b_re.IGNORECASE,
+    )
+
+    if not match:
+        return ""
+
+    src = match.group(1) or match.group(2) or match.group(3) or ""
+    return _pf67_008b_html.unescape(src.strip())
+
+
+@views_bp.app_template_filter("pf67_patch008b_plain_summary")
+def pf67_patch008b_plain_summary(value, max_length=240):
+    html_value = value or ""
+
+    if not html_value:
+        return ""
+
+    # Remove image tags completely so alt/src/html markup never leaks into the card text.
+    html_value = _pf67_008b_re.sub(
+        r"<img\b[^>]*>",
+        " ",
+        html_value,
+        flags=_pf67_008b_re.IGNORECASE,
+    )
+
+    html_value = _pf67_008b_re.sub(
+        r"<(script|style)\b.*?</\1>",
+        " ",
+        html_value,
+        flags=_pf67_008b_re.IGNORECASE | _pf67_008b_re.DOTALL,
+    )
+
+    text_value = _pf67_008b_re.sub(r"<[^>]+>", " ", html_value)
+    text_value = _pf67_008b_html.unescape(text_value)
+    text_value = _pf67_008b_re.sub(r"\s+", " ", text_value).strip()
+
+    try:
+        max_length = int(max_length)
+    except Exception:
+        max_length = 240
+
+    if max_length > 0 and len(text_value) > max_length:
+        text_value = text_value[: max_length - 1].rstrip() + "…"
+
+    return text_value
+
+# === PF67 PATCH 009A DASHBOARD PUBLIC VISIBILITY ===
+from datetime import datetime as _pf67_009_datetime, timedelta as _pf67_009_timedelta
+from flask import request, redirect, url_for, render_template
+from .models import db, ProtocolTemplate, StepTemplate, Job, JobStep
+
+
+try:
+    _pf67_patch009_edit_required = edit_required
+except NameError:
+    def _pf67_patch009_edit_required(func):
+        return func
+
+
+def _pf67_patch009_form_bool(name):
+    return str(request.form.get(name, "")).lower() in ["1", "true", "yes", "on"]
+
+
+def _pf67_patch009_set_if_hasattr(obj, attr, value):
+    if hasattr(obj, attr):
+        setattr(obj, attr, value)
+
+
+def _pf67_patch009_parse_datetime_local(value):
+    value = (value or "").strip()
+
+    if not value:
+        return None
+
+    try:
+        return _pf67_009_datetime.fromisoformat(value)
+    except Exception:
+        return None
+
+
+def _pf67_patch009_normalize_priority(value):
+    value = (value or "Normal").strip().title()
+    allowed = {"Low", "Normal", "High", "Critical"}
+
+    if value not in allowed:
+        value = "Normal"
+
+    return value
+
+
+def _pf67_patch009_job_is_public(job):
+    if getattr(job, "is_private", False):
+        return False
+
+    template = getattr(job, "template", None)
+
+    if template is not None and getattr(template, "is_private", False):
+        return False
+
+    return True
+
+
+def _pf67_patch009_current_open_step(job):
+    steps = list(getattr(job, "steps", []) or [])
+    steps.sort(key=lambda step: (step.sort_order or 0, step.id or 0))
+
+    for step in steps:
+        if not getattr(step, "completed_at", None):
+            return step
+
+    return None
+
+
+def _pf67_patch009_status_label(status):
+    try:
+        return status_label(status)
+    except Exception:
+        return (status or "active").replace("_", " ").title()
+
+
+def _pf67_patch009_step_status(step):
+    if step is None:
+        return "active"
+
+    try:
+        return calculate_step_status(step)
+    except Exception:
+        return "waiting"
+
+
+def _pf67_patch009_time_label(step):
+    if step is None:
+        return ""
+
+    try:
+        return step_compact_time_label(step, _pf67_patch009_step_status(step)) or ""
+    except Exception:
+        anchor = getattr(step, "anchor_time", None)
+        if anchor:
+            try:
+                return anchor.strftime("%Y-%m-%d %I:%M %p")
+            except Exception:
+                return ""
+    return ""
+
+
+def _pf67_patch009_estimated_completion(job):
+    steps = list(getattr(job, "steps", []) or [])
+    times = []
+
+    for step in steps:
+        completed = getattr(step, "completed_at", None)
+        anchor = getattr(step, "anchor_time", None)
+        ideal = getattr(step, "ideal_minutes", None)
+
+        if completed:
+            times.append(completed)
+        elif anchor and ideal is not None:
+            times.append(anchor + _pf67_009_timedelta(minutes=ideal))
+        elif anchor:
+            times.append(anchor)
+
+    if not times:
+        return ""
+
+    value = max(times)
+
+    try:
+        return display_short_datetime(value)
+    except Exception:
+        return value.strftime("%Y-%m-%d %I:%M %p")
+
+
+def _pf67_patch009_create_flow_from_template(template, job_name, first_step_anchor, priority, is_private):
+    if not job_name:
+        job_name = template.name + " - Flow"
+
+    job = Job()
+    _pf67_patch009_set_if_hasattr(job, "template_id", template.id)
+    _pf67_patch009_set_if_hasattr(job, "name", job_name)
+    _pf67_patch009_set_if_hasattr(job, "template_version", getattr(template, "current_version", 1))
+    _pf67_patch009_set_if_hasattr(job, "started_at", first_step_anchor)
+    _pf67_patch009_set_if_hasattr(job, "priority", priority)
+    _pf67_patch009_set_if_hasattr(job, "is_private", bool(is_private))
+    _pf67_patch009_set_if_hasattr(job, "allow_ai_read", True)
+    _pf67_patch009_set_if_hasattr(job, "allow_ai_suggest", True)
+    _pf67_patch009_set_if_hasattr(job, "allow_ai_write", False)
+
+    db.session.add(job)
+    db.session.flush()
+
+    anchor_time = first_step_anchor
+    ordered_steps = list(pf67_patch011a2_sequence_flow_steps(template))
+
+    for index, step_template in enumerate(ordered_steps):
+        is_first_step = index == 0
+
+        job_step = JobStep()
+        _pf67_patch009_set_if_hasattr(job_step, "job_id", job.id)
+        _pf67_patch009_set_if_hasattr(job_step, "source_step_template_id", step_template.id)
+        _pf67_patch009_set_if_hasattr(job_step, "sort_order", getattr(step_template, "_pf67_flow_sort_order", (index + 1) * 10))
+        _pf67_patch009_set_if_hasattr(job_step, "sequence_order", getattr(step_template, "_pf67_flow_sequence_order", (index + 1) * 1000))
+        _pf67_patch009_set_if_hasattr(job_step, "name", step_template.name)
+        _pf67_patch009_set_if_hasattr(job_step, "step_type", step_template.step_type)
+        _pf67_patch009_set_if_hasattr(job_step, "instructions_html", step_template.instructions_html)
+        _pf67_patch009_set_if_hasattr(job_step, "context_tag", step_template.context_tag)
+        _pf67_patch009_set_if_hasattr(job_step, "minimum_minutes", None if is_first_step else step_template.minimum_minutes)
+        _pf67_patch009_set_if_hasattr(job_step, "ideal_minutes", None if is_first_step else step_template.ideal_minutes)
+        _pf67_patch009_set_if_hasattr(job_step, "limit_minutes", None if is_first_step else step_template.limit_minutes)
+        _pf67_patch009_set_if_hasattr(job_step, "detrimental_minutes", None if is_first_step else step_template.detrimental_minutes)
+        _pf67_patch009_set_if_hasattr(job_step, "failure_minutes", None if is_first_step else step_template.failure_minutes)
+        _pf67_patch009_set_if_hasattr(job_step, "estimated_duration_minutes", getattr(step_template, "estimated_duration_minutes", None))
+        _pf67_patch009_set_if_hasattr(job_step, "anchor_time", anchor_time)
+
+        db.session.add(job_step)
+
+        if not is_first_step and step_template.ideal_minutes is not None:
+            anchor_time = anchor_time + _pf67_009_timedelta(minutes=step_template.ideal_minutes)
+
+    db.session.commit()
+    return job
+
+
+@views_bp.route("/protocols/new-patch009", methods=["GET", "POST"])
+@_pf67_patch009_edit_required
+def pf67_patch009_new_protocol():
+    if request.method == "POST":
+        name = (request.form.get("name") or "").strip()
+        category = (request.form.get("category") or "").strip()
+        description = request.form.get("description") or ""
+        is_private = _pf67_patch009_form_bool("is_private")
+
+        if not name:
+            name = "Untitled Protocol"
+
+        template = ProtocolTemplate(name=name, description=description)
+
+        _pf67_patch009_set_if_hasattr(template, "category", category)
+        _pf67_patch009_set_if_hasattr(template, "is_private", is_private)
+
+        db.session.add(template)
+        db.session.commit()
+
+        return redirect(url_for("views.template_detail", template_id=template.id))
+
+    return render_template("new_protocol_patch009.html")
+
+
+@views_bp.route("/protocols/<int:template_id>/privacy-patch009", methods=["POST"])
+@_pf67_patch009_edit_required
+def pf67_patch009_update_protocol_privacy(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+    is_private = _pf67_patch009_form_bool("is_private")
+    _pf67_patch009_set_if_hasattr(template, "is_private", is_private)
+    db.session.commit()
+    return redirect(url_for("views.template_detail", template_id=template.id))
+
+
+@views_bp.route("/protocols/<int:template_id>/start-flow-patch009", methods=["POST"])
+@_pf67_patch009_edit_required
+def pf67_patch009_start_flow(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    job_name = (request.form.get("job_name") or "").strip()
+    priority = _pf67_patch009_normalize_priority(request.form.get("priority"))
+    start_mode = (request.form.get("start_mode") or "now").strip()
+    selected_time = _pf67_patch009_parse_datetime_local(request.form.get("first_step_at"))
+
+    if start_mode == "now":
+        first_step_anchor = _pf67_009_datetime.utcnow()
+    else:
+        first_step_anchor = selected_time or _pf67_009_datetime.utcnow()
+
+    is_private = _pf67_patch009_form_bool("is_private") or bool(getattr(template, "is_private", False))
+    job = _pf67_patch009_create_flow_from_template(template, job_name, first_step_anchor, priority, is_private)
+
+    try:
+        return redirect(url_for("views.job_detail", job_id=job.id))
+    except Exception:
+        return redirect(url_for("views.jobs_page", view="active"))
+
+
+@views_bp.route("/public")
+def pf67_patch009g_public_dashboard():
+    return render_template("public_dashboard_patch009g.html")
+
+# === PF67 PATCH 009B FLOW PRIVACY EDITOR ===
+from flask import request, redirect, url_for
+from .models import db, Job
+
+
+try:
+    _pf67_patch009b_edit_required = edit_required
+except NameError:
+    def _pf67_patch009b_edit_required(func):
+        return func
+
+
+def _pf67_patch009b_form_bool(name):
+    return str(request.form.get(name, "")).lower() in ["1", "true", "yes", "on"]
+
+
+@views_bp.route("/flows/<int:job_id>/privacy-patch009b", methods=["POST"])
+@_pf67_patch009b_edit_required
+def pf67_patch009b_update_flow_privacy(job_id):
+    job = Job.query.get_or_404(job_id)
+
+    if hasattr(job, "is_private"):
+        job.is_private = _pf67_patch009b_form_bool("is_private")
+        db.session.commit()
+
+    try:
+        return redirect(url_for("views.job_detail", job_id=job.id))
+    except Exception:
+        return redirect(url_for("views.jobs_page", view="active"))
+
+# === PF67 PATCH 009C PUBLIC PROTOCOL VISIBILITY ===
+from flask import render_template, url_for
+from .models import ProtocolTemplate, Job
+
+
+def _pf67_patch009c_public_protocol_list():
+    rows = (
+        ProtocolTemplate.query
+        .order_by(ProtocolTemplate.name.asc())
+        .all()
+    )
+
+    return [template for template in rows if not getattr(template, "is_private", False)]
+
+
+def _pf67_patch009c_public_flow_items():
+    try:
+        rows = (
+            Job.query
+            .filter(Job.status.in_(["active", "pending"]))
+            .order_by(Job.started_at.desc(), Job.id.desc())
+            .all()
+        )
+    except Exception:
+        rows = Job.query.order_by(Job.id.desc()).all()
+
+    public_flows = []
+
+    for job in rows:
+        try:
+            is_public = _pf67_patch009_job_is_public(job)
+        except Exception:
+            is_public = not getattr(job, "is_private", False)
+
+        if not is_public:
+            continue
+
+        try:
+            step = _pf67_patch009_current_open_step(job)
+        except Exception:
+            step = None
+
+        try:
+            status = _pf67_patch009_step_status(step)
+        except Exception:
+            status = "active"
+
+        try:
+            status_label_value = _pf67_patch009_status_label(status)
+        except Exception:
+            status_label_value = (status or "active").replace("_", " ").title()
+
+        try:
+            time_label_value = _pf67_patch009_time_label(step)
+        except Exception:
+            time_label_value = ""
+
+        try:
+            estimated_value = _pf67_patch009_estimated_completion(job)
+        except Exception:
+            estimated_value = ""
+
+        template = getattr(job, "template", None)
+
+        if template is not None and not getattr(template, "is_private", False):
+            try:
+                url = url_for("views.pf67_patch009c_public_protocol_detail", template_id=template.id)
+            except Exception:
+                url = "#"
+        else:
+            url = "#"
+
+        public_flows.append({
+            "job": job,
+            "step": step,
+            "status": status,
+            "status_label": status_label_value,
+            "time_label": time_label_value,
+            "estimated_completion": estimated_value,
+            "url": url,
+        })
+
+    return public_flows
+
+
+@views_bp.route("/public/protocols")
+def pf67_patch009g_public_protocols():
+    return render_template("public_protocols_patch009g.html")
+
+@views_bp.route("/public/protocols/<int:template_id>")
+def pf67_patch009g_public_protocol_detail(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    if getattr(template, "is_private", False):
+        return render_template("public_protocols_patch009g.html"), 404
+
+    return render_template(
+        "public_protocol_detail_patch009g.html",
+        template=template,
+    )
+
+# === PF67 PATCH 009D VISIBILITY PILL ROUTES ===
+from flask import request, redirect, url_for
+from .models import db, ProtocolTemplate, Job
+
+
+try:
+    _pf67_patch009d_edit_required = edit_required
+except NameError:
+    def _pf67_patch009d_edit_required(func):
+        return func
+
+
+def _pf67_patch009d_form_bool(name):
+    return str(request.form.get(name, "")).lower() in ["1", "true", "yes", "on"]
+
+
+def _pf67_patch009d_public_protocol_list():
+    try:
+        return _pf67_patch009c_public_protocol_list()
+    except Exception:
+        rows = ProtocolTemplate.query.order_by(ProtocolTemplate.name.asc()).all()
+        return [template for template in rows if not getattr(template, "is_private", False)]
+
+
+@views_bp.route("/protocols/<int:template_id>/visibility-toggle-patch009d", methods=["POST"])
+@_pf67_patch009d_edit_required
+def pf67_patch009d_toggle_protocol_visibility(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    if hasattr(template, "is_private"):
+        template.is_private = _pf67_patch009d_form_bool("is_private")
+        db.session.commit()
+
+    return redirect(request.referrer or url_for("views.templates_page"))
+
+
+@views_bp.route("/flows/<int:job_id>/visibility-toggle-patch009d", methods=["POST"])
+@_pf67_patch009d_edit_required
+def pf67_patch009d_toggle_flow_visibility(job_id):
+    job = Job.query.get_or_404(job_id)
+
+    if hasattr(job, "is_private"):
+        job.is_private = _pf67_patch009d_form_bool("is_private")
+        db.session.commit()
+
+    try:
+        return redirect(request.referrer or url_for("views.job_detail", job_id=job.id))
+    except Exception:
+        return redirect(url_for("views.jobs_page", view="active"))
+
+# === PF67 PATCH 009E PUBLIC DASHBOARD AND PROGRESS ===
+from datetime import datetime as _pf67_009e_datetime
+from flask import render_template, request, redirect, url_for
+from .models import db, ProtocolTemplate, Job
+
+
+def _pf67_patch009e_public_protocol_list():
+    rows = ProtocolTemplate.query.order_by(ProtocolTemplate.name.asc()).all()
+    return [template for template in rows if not getattr(template, "is_private", False)]
+
+
+def _pf67_patch009e_job_is_public(job):
+    if getattr(job, "is_private", False):
+        return False
+
+    template = getattr(job, "template", None)
+
+    if template is not None and getattr(template, "is_private", False):
+        return False
+
+    return True
+
+
+def _pf67_patch009e_current_open_step(job):
+    steps = list(getattr(job, "steps", []) or [])
+    steps.sort(key=lambda step: (step.sort_order or 0, step.id or 0))
+
+    for step in steps:
+        if not getattr(step, "completed_at", None):
+            return step
+
+    return None
+
+
+def _pf67_patch009e_status_label(status):
+    try:
+        return status_label(status)
+    except Exception:
+        return (status or "active").replace("_", " ").title()
+
+
+def _pf67_patch009e_step_status(step):
+    if step is None:
+        return "active"
+
+    try:
+        return calculate_step_status(step)
+    except Exception:
+        return "waiting"
+
+
+def _pf67_patch009e_time_label(step):
+    if step is None:
+        return ""
+
+    try:
+        return step_compact_time_label(step, _pf67_patch009e_step_status(step)) or ""
+    except Exception:
+        anchor = getattr(step, "anchor_time", None)
+        if anchor:
+            try:
+                return anchor.strftime("%Y-%m-%d %I:%M %p")
+            except Exception:
+                return ""
+
+    return ""
+
+
+def _pf67_patch009e_estimated_completion(job):
+    steps = list(getattr(job, "steps", []) or [])
+    times = []
+
+    for step in steps:
+        completed = getattr(step, "completed_at", None)
+        anchor = getattr(step, "anchor_time", None)
+        ideal = getattr(step, "ideal_minutes", None)
+
+        if completed:
+            times.append(completed)
+        elif anchor and ideal is not None:
+            from datetime import timedelta
+            times.append(anchor + timedelta(minutes=ideal))
+        elif anchor:
+            times.append(anchor)
+
+    if not times:
+        return ""
+
+    value = max(times)
+
+    try:
+        return display_short_datetime(value)
+    except Exception:
+        return value.strftime("%Y-%m-%d %I:%M %p")
+
+
+def _pf67_patch009e_progress(job):
+    steps = list(getattr(job, "steps", []) or [])
+    steps.sort(key=lambda step: (step.sort_order or 0, step.id or 0))
+
+    now = _pf67_009e_datetime.utcnow()
+    started = getattr(job, "started_at", None)
+    completion_candidates = []
+
+    for step in steps:
+        anchor = getattr(step, "anchor_time", None)
+        ideal = getattr(step, "ideal_minutes", None)
+        completed = getattr(step, "completed_at", None)
+
+        if completed:
+            completion_candidates.append(completed)
+        elif anchor and ideal is not None:
+            from datetime import timedelta
+            completion_candidates.append(anchor + timedelta(minutes=ideal))
+        elif anchor:
+            completion_candidates.append(anchor)
+
+    if started and completion_candidates:
+        end = max(completion_candidates)
+
+        if end and end > started:
+            total = (end - started).total_seconds()
+            elapsed = (now - started).total_seconds()
+            percent = int(round(max(0, min(100, (elapsed / total) * 100))))
+            return percent, "time estimate"
+
+    if steps:
+        completed_count = len([step for step in steps if getattr(step, "completed_at", None)])
+        percent = int(round((completed_count / len(steps)) * 100))
+        return percent, "step estimate"
+
+    return 0, "estimate"
+
+
+def _pf67_patch009e_public_flow_items():
+    try:
+        rows = (
+            Job.query
+            .filter(Job.status.in_(["active", "pending"]))
+            .order_by(Job.started_at.desc(), Job.id.desc())
+            .all()
+        )
+    except Exception:
+        rows = Job.query.order_by(Job.id.desc()).all()
+
+    public_flows = []
+
+    for job in rows:
+        if not _pf67_patch009e_job_is_public(job):
+            continue
+
+        step = _pf67_patch009e_current_open_step(job)
+        status = _pf67_patch009e_step_status(step)
+        progress_percent, progress_basis = _pf67_patch009e_progress(job)
+        template = getattr(job, "template", None)
+
+        if template is not None and not getattr(template, "is_private", False):
+            try:
+                url = url_for("views.pf67_patch009c_public_protocol_detail", template_id=template.id)
+            except Exception:
+                url = "#"
+        else:
+            url = "#"
+
+        public_flows.append({
+            "job": job,
+            "step": step,
+            "status": status,
+            "status_label": _pf67_patch009e_status_label(status),
+            "time_label": _pf67_patch009e_time_label(step),
+            "estimated_completion": _pf67_patch009e_estimated_completion(job),
+            "progress_percent": progress_percent,
+            "progress_basis": progress_basis,
+            "url": url,
+        })
+
+    return public_flows
+
+
+@views_bp.route("/public/flows")
+def pf67_patch009g_public_flows():
+    return render_template("public_flows_list_patch009g.html")
+
+# === PF67 PATCH 009F PUBLIC ROUTE FIX HELPERS ===
+from datetime import datetime as _pf67_009f_datetime, timedelta as _pf67_009f_timedelta
+from flask import render_template, request, redirect, url_for
+from .models import db, ProtocolTemplate, Job
+
+
+def _pf67_patch009f_public_protocol_list():
+    rows = ProtocolTemplate.query.order_by(ProtocolTemplate.name.asc()).all()
+    return [template for template in rows if not getattr(template, "is_private", False)]
+
+
+def _pf67_patch009f_job_template(job):
+    template = getattr(job, "template", None)
+
+    if template is not None:
+        return template
+
+    template_id = getattr(job, "template_id", None)
+
+    if template_id:
+        try:
+            return ProtocolTemplate.query.get(template_id)
+        except Exception:
+            return None
+
+    return None
+
+
+def _pf67_patch009f_job_is_public(job):
+    if bool(getattr(job, "is_private", False)):
+        return False
+
+    template = _pf67_patch009f_job_template(job)
+
+    if template is not None and bool(getattr(template, "is_private", False)):
+        return False
+
+    return True
+
+
+def _pf67_patch009f_current_open_step(job):
+    steps = list(getattr(job, "steps", []) or [])
+    steps.sort(key=lambda step: (step.sort_order or 0, step.id or 0))
+
+    for step in steps:
+        if not getattr(step, "completed_at", None):
+            return step
+
+    return None
+
+
+def _pf67_patch009f_status_label(status):
+    try:
+        return status_label(status)
+    except Exception:
+        return (status or "active").replace("_", " ").title()
+
+
+def _pf67_patch009f_step_status(step):
+    if step is None:
+        return "active"
+
+    try:
+        return calculate_step_status(step)
+    except Exception:
+        return "waiting"
+
+
+def _pf67_patch009f_time_label(step):
+    if step is None:
+        return ""
+
+    try:
+        return step_compact_time_label(step, _pf67_patch009f_step_status(step)) or ""
+    except Exception:
+        anchor = getattr(step, "anchor_time", None)
+        if anchor:
+            try:
+                return anchor.strftime("%Y-%m-%d %I:%M %p")
+            except Exception:
+                return ""
+
+    return ""
+
+
+def _pf67_patch009f_estimated_completion(job):
+    steps = list(getattr(job, "steps", []) or [])
+    times = []
+
+    for step in steps:
+        completed = getattr(step, "completed_at", None)
+        anchor = getattr(step, "anchor_time", None)
+        ideal = getattr(step, "ideal_minutes", None)
+
+        if completed:
+            times.append(completed)
+        elif anchor and ideal is not None:
+            times.append(anchor + _pf67_009f_timedelta(minutes=ideal))
+        elif anchor:
+            times.append(anchor)
+
+    if not times:
+        return ""
+
+    value = max(times)
+
+    try:
+        return display_short_datetime(value)
+    except Exception:
+        return value.strftime("%Y-%m-%d %I:%M %p")
+
+
+def _pf67_patch009f_progress(job):
+    steps = list(getattr(job, "steps", []) or [])
+    steps.sort(key=lambda step: (step.sort_order or 0, step.id or 0))
+
+    now = _pf67_009f_datetime.utcnow()
+    started = getattr(job, "started_at", None)
+    completion_candidates = []
+
+    for step in steps:
+        completed = getattr(step, "completed_at", None)
+        anchor = getattr(step, "anchor_time", None)
+        ideal = getattr(step, "ideal_minutes", None)
+
+        if completed:
+            completion_candidates.append(completed)
+        elif anchor and ideal is not None:
+            completion_candidates.append(anchor + _pf67_009f_timedelta(minutes=ideal))
+        elif anchor:
+            completion_candidates.append(anchor)
+
+    if started and completion_candidates:
+        end = max(completion_candidates)
+
+        if end and end > started:
+            total = (end - started).total_seconds()
+            elapsed = (now - started).total_seconds()
+            percent = int(round(max(0, min(100, (elapsed / total) * 100))))
+            return percent, "time estimate"
+
+    if steps:
+        completed_count = len([step for step in steps if getattr(step, "completed_at", None)])
+        percent = int(round((completed_count / len(steps)) * 100))
+        return percent, "step estimate"
+
+    return 0, "estimate"
+
+
+def _pf67_patch009f_flow_group(job):
+    status = (getattr(job, "status", "") or "").lower()
+    started = getattr(job, "started_at", None)
+    now = _pf67_009f_datetime.utcnow()
+
+    if status in ["completed", "archived", "done"]:
+        return "completed", "Completed"
+
+    if started and started > now:
+        return "scheduled", "Scheduled"
+
+    if status in ["pending", "scheduled"]:
+        return "scheduled", "Scheduled"
+
+    return "active", "Active"
+
+
+def _pf67_patch009f_flow_url(job):
+    template = _pf67_patch009f_job_template(job)
+
+    if template is not None and not getattr(template, "is_private", False):
+        try:
+            return url_for("views.pf67_patch009f_public_protocol_detail", template_id=template.id)
+        except Exception:
+            pass
+
+    return "#"
+
+
+def _pf67_patch009f_public_flow_items():
+    try:
+        rows = (
+            Job.query
+            .order_by(Job.started_at.desc(), Job.id.desc())
+            .all()
+        )
+    except Exception:
+        rows = Job.query.order_by(Job.id.desc()).all()
+
+    active = []
+    scheduled = []
+    completed = []
+
+    for job in rows:
+        if not _pf67_patch009f_job_is_public(job):
+            continue
+
+        step = _pf67_patch009f_current_open_step(job)
+        status = _pf67_patch009f_step_status(step)
+        progress_percent, progress_basis = _pf67_patch009f_progress(job)
+        group_key, group_label = _pf67_patch009f_flow_group(job)
+
+        item = {
+            "job": job,
+            "step": step,
+            "status": status,
+            "status_label": _pf67_patch009f_status_label(status),
+            "time_label": _pf67_patch009f_time_label(step),
+            "estimated_completion": _pf67_patch009f_estimated_completion(job),
+            "progress_percent": progress_percent,
+            "progress_basis": progress_basis,
+            "group_key": group_key,
+            "group_label": group_label,
+            "url": _pf67_patch009f_flow_url(job),
+        }
+
+        if group_key == "completed":
+            completed.append(item)
+        elif group_key == "scheduled":
+            scheduled.append(item)
+        else:
+            active.append(item)
+
+    return active, scheduled, completed
+
+# === PF67 PATCH 009G PUBLIC ROOT HELPERS ===
+from datetime import datetime as _pf67_009g_datetime, timedelta as _pf67_009g_timedelta
+from flask import render_template, request, redirect, url_for
+from .models import db, ProtocolTemplate, Job
+
+
+@views_bp.app_template_global("pf67_patch009g_public_protocol_list")
+def pf67_patch009g_public_protocol_list():
+    rows = ProtocolTemplate.query.order_by(ProtocolTemplate.name.asc()).all()
+    return [template for template in rows if not bool(getattr(template, "is_private", False))]
+
+
+def _pf67_patch009g_job_template(job):
+    template = getattr(job, "template", None)
+
+    if template is not None:
+        return template
+
+    template_id = getattr(job, "template_id", None)
+
+    if template_id:
+        try:
+            return ProtocolTemplate.query.get(template_id)
+        except Exception:
+            return None
+
+    return None
+
+
+def _pf67_patch009g_job_is_public(job):
+    if bool(getattr(job, "is_private", False)):
+        return False
+
+    template = _pf67_patch009g_job_template(job)
+
+    if template is not None and bool(getattr(template, "is_private", False)):
+        return False
+
+    return True
+
+
+def _pf67_patch009g_current_open_step(job):
+    steps = list(getattr(job, "steps", []) or [])
+    steps.sort(key=lambda step: (step.sort_order or 0, step.id or 0))
+
+    for step in steps:
+        if not getattr(step, "completed_at", None):
+            return step
+
+    return None
+
+
+def _pf67_patch009g_status_label(status):
+    try:
+        return status_label(status)
+    except Exception:
+        return (status or "active").replace("_", " ").title()
+
+
+def _pf67_patch009g_step_status(step):
+    if step is None:
+        return "active"
+
+    try:
+        return calculate_step_status(step)
+    except Exception:
+        return "waiting"
+
+
+def _pf67_patch009g_time_label(step):
+    if step is None:
+        return ""
+
+    try:
+        return step_compact_time_label(step, _pf67_patch009g_step_status(step)) or ""
+    except Exception:
+        anchor = getattr(step, "anchor_time", None)
+        if anchor:
+            try:
+                return anchor.strftime("%Y-%m-%d %I:%M %p")
+            except Exception:
+                return ""
+
+    return ""
+
+
+def _pf67_patch009g_estimated_completion(job):
+    steps = list(getattr(job, "steps", []) or [])
+    times = []
+
+    for step in steps:
+        completed = getattr(step, "completed_at", None)
+        anchor = getattr(step, "anchor_time", None)
+        ideal = getattr(step, "ideal_minutes", None)
+
+        if completed:
+            times.append(completed)
+        elif anchor and ideal is not None:
+            times.append(anchor + _pf67_009g_timedelta(minutes=ideal))
+        elif anchor:
+            times.append(anchor)
+
+    if not times:
+        return ""
+
+    value = max(times)
+
+    try:
+        return display_short_datetime(value)
+    except Exception:
+        return value.strftime("%Y-%m-%d %I:%M %p")
+
+
+def _pf67_patch009g_progress(job):
+    steps = list(getattr(job, "steps", []) or [])
+    steps.sort(key=lambda step: (step.sort_order or 0, step.id or 0))
+
+    now = _pf67_009g_datetime.utcnow()
+    started = getattr(job, "started_at", None)
+    completion_candidates = []
+
+    for step in steps:
+        completed = getattr(step, "completed_at", None)
+        anchor = getattr(step, "anchor_time", None)
+        ideal = getattr(step, "ideal_minutes", None)
+
+        if completed:
+            completion_candidates.append(completed)
+        elif anchor and ideal is not None:
+            completion_candidates.append(anchor + _pf67_009g_timedelta(minutes=ideal))
+        elif anchor:
+            completion_candidates.append(anchor)
+
+    if started and completion_candidates:
+        end = max(completion_candidates)
+
+        if end and end > started:
+            total = (end - started).total_seconds()
+            elapsed = (now - started).total_seconds()
+            percent = int(round(max(0, min(100, (elapsed / total) * 100))))
+            return percent, "time estimate"
+
+    if steps:
+        completed_count = len([step for step in steps if getattr(step, "completed_at", None)])
+        percent = int(round((completed_count / len(steps)) * 100))
+        return percent, "step estimate"
+
+    return 0, "estimate"
+
+
+def _pf67_patch009g_flow_group(job):
+    status = (getattr(job, "status", "") or "").lower()
+    started = getattr(job, "started_at", None)
+    now = _pf67_009g_datetime.utcnow()
+
+    if status in ["completed", "complete", "archived", "done"]:
+        return "completed", "Completed"
+
+    if started and started > now:
+        return "scheduled", "Scheduled"
+
+    if status in ["pending", "scheduled"]:
+        return "scheduled", "Scheduled"
+
+    return "active", "Active"
+
+
+def _pf67_patch009g_flow_url(job):
+    template = _pf67_patch009g_job_template(job)
+
+    if template is not None and not getattr(template, "is_private", False):
+        try:
+            return url_for("views.pf67_patch009g_public_protocol_detail", template_id=template.id)
+        except Exception:
+            pass
+
+    return "#"
+
+
+def _pf67_patch009g_public_flow_groups():
+    try:
+        rows = (
+            Job.query
+            .order_by(Job.started_at.desc(), Job.id.desc())
+            .all()
+        )
+    except Exception:
+        rows = Job.query.order_by(Job.id.desc()).all()
+
+    active = []
+    scheduled = []
+    completed = []
+
+    for job in rows:
+        if not _pf67_patch009g_job_is_public(job):
+            continue
+
+        step = _pf67_patch009g_current_open_step(job)
+        status = _pf67_patch009g_step_status(step)
+        progress_percent, progress_basis = _pf67_patch009g_progress(job)
+        group_key, group_label = _pf67_patch009g_flow_group(job)
+
+        item = {
+            "job": job,
+            "step": step,
+            "status": status,
+            "status_label": _pf67_patch009g_status_label(status),
+            "time_label": _pf67_patch009g_time_label(step),
+            "estimated_completion": _pf67_patch009g_estimated_completion(job),
+            "progress_percent": progress_percent,
+            "progress_basis": progress_basis,
+            "group_key": group_key,
+            "group_label": group_label,
+            "url": _pf67_patch009g_flow_url(job),
+        }
+
+        if group_key == "completed":
+            completed.append(item)
+        elif group_key == "scheduled":
+            scheduled.append(item)
+        else:
+            active.append(item)
+
+    return active, scheduled, completed
+
+
+@views_bp.app_template_global("pf67_patch009g_public_dashboard_data")
+def pf67_patch009g_public_dashboard_data():
+    active_flows, scheduled_flows, completed_flows = _pf67_patch009g_public_flow_groups()
+
+    return {
+        "active_flows": active_flows,
+        "scheduled_flows": scheduled_flows,
+        "completed_flows": completed_flows,
+        "public_protocols": pf67_patch009g_public_protocol_list(),
+    }
+
+# === PF67 PATCH 009I ROBUST PROTOCOL THUMBNAILS ===
+import re as _pf67_009i_re
+import html as _pf67_009i_html
+
+
+def _pf67_patch009i_find_first_img_src(value):
+    html_value = value or ""
+
+    if not html_value:
+        return ""
+
+    # The lightweight editor can leave normal HTML, while old previews/backups can leave escaped HTML.
+    candidates = [
+        str(html_value),
+        _pf67_009i_html.unescape(str(html_value)),
+    ]
+
+    patterns = [
+        r"<img\b[^>]*\bsrc\s*=\s*\"([^\"]+)\"",
+        r"<img\b[^>]*\bsrc\s*=\s*'([^']+)'",
+        r"<img\b[^>]*\bsrc\s*=\s*([^>\s]+)",
+    ]
+
+    for candidate in candidates:
+        for pattern in patterns:
+            match = _pf67_009i_re.search(pattern, candidate, flags=_pf67_009i_re.IGNORECASE)
+
+            if match:
+                src = (match.group(1) or "").strip()
+                src = src.strip('"').strip("'")
+                return _pf67_009i_html.unescape(src)
+
+    return ""
+
+
+@views_bp.app_template_filter("pf67_patch009i_first_img_src")
+def pf67_patch009i_first_img_src(value):
+    return _pf67_patch009i_find_first_img_src(value)
+
+
+# Re-register the older 008B filter name too, because the Protocols list already calls it.
+@views_bp.app_template_filter("pf67_patch008b_first_img_src")
+def pf67_patch008b_first_img_src_009i(value):
+    return _pf67_patch009i_find_first_img_src(value)
+
+
+@views_bp.app_template_filter("pf67_patch009i_plain_summary")
+def pf67_patch009i_plain_summary(value, max_length=240):
+    html_value = _pf67_009i_html.unescape(str(value or ""))
+
+    if not html_value:
+        return ""
+
+    html_value = _pf67_009i_re.sub(
+        r"<(script|style)\b.*?</\1>",
+        " ",
+        html_value,
+        flags=_pf67_009i_re.IGNORECASE | _pf67_009i_re.DOTALL,
+    )
+
+    html_value = _pf67_009i_re.sub(
+        r"<img\b[^>]*>",
+        " ",
+        html_value,
+        flags=_pf67_009i_re.IGNORECASE,
+    )
+
+    text_value = _pf67_009i_re.sub(r"<[^>]+>", " ", html_value)
+    text_value = _pf67_009i_html.unescape(text_value)
+    text_value = _pf67_009i_re.sub(r"\s+", " ", text_value).strip()
+
+    try:
+        max_length = int(max_length)
+    except Exception:
+        max_length = 240
+
+    if max_length > 0 and len(text_value) > max_length:
+        text_value = text_value[: max_length - 1].rstrip() + "…"
+
+    return text_value
+
+# === PF67 PATCH 009J BACKEND FLOWS CONSOLE ===
+from datetime import datetime as _pf67_009j_datetime, timedelta as _pf67_009j_timedelta
+from flask import request, redirect, url_for, render_template
+from .models import db, ProtocolTemplate, Job
+
+
+try:
+    _pf67_patch009j_edit_required = edit_required
+except NameError:
+    def _pf67_patch009j_edit_required(func):
+        return func
+
+
+def _pf67_patch009j_form_bool(name):
+    return str(request.form.get(name, "")).lower() in ["1", "true", "yes", "on"]
+
+
+def _pf67_patch009j_job_template(job):
+    template = getattr(job, "template", None)
+
+    if template is not None:
+        return template
+
+    template_id = getattr(job, "template_id", None)
+
+    if template_id:
+        try:
+            return ProtocolTemplate.query.get(template_id)
+        except Exception:
+            return None
+
+    return None
+
+
+def _pf67_patch009j_current_open_step(job):
+    steps = list(getattr(job, "steps", []) or [])
+    steps.sort(key=lambda step: (step.sort_order or 0, step.id or 0))
+
+    for step in steps:
+        if not getattr(step, "completed_at", None):
+            return step
+
+    return None
+
+
+def _pf67_patch009j_step_status(step):
+    if step is None:
+        return "active"
+
+    try:
+        return calculate_step_status(step)
+    except Exception:
+        return "waiting"
+
+
+def _pf67_patch009j_time_label(step):
+    if step is None:
+        return ""
+
+    try:
+        return step_compact_time_label(step, _pf67_patch009j_step_status(step)) or ""
+    except Exception:
+        anchor = getattr(step, "anchor_time", None)
+        if anchor:
+            try:
+                return anchor.strftime("%Y-%m-%d %I:%M %p")
+            except Exception:
+                return ""
+
+    return ""
+
+
+def _pf67_patch009j_short_datetime(value):
+    if not value:
+        return ""
+
+    try:
+        return display_short_datetime(value)
+    except Exception:
+        try:
+            return value.strftime("%Y-%m-%d %I:%M %p")
+        except Exception:
+            return str(value)
+
+
+def _pf67_patch009j_estimated_completion(job):
+    steps = list(getattr(job, "steps", []) or [])
+    times = []
+
+    for step in steps:
+        completed = getattr(step, "completed_at", None)
+        anchor = getattr(step, "anchor_time", None)
+        ideal = getattr(step, "ideal_minutes", None)
+
+        if completed:
+            times.append(completed)
+        elif anchor and ideal is not None:
+            times.append(anchor + _pf67_009j_timedelta(minutes=ideal))
+        elif anchor:
+            times.append(anchor)
+
+    if not times:
+        return None
+
+    return max(times)
+
+
+def _pf67_patch009j_progress(job):
+    steps = list(getattr(job, "steps", []) or [])
+    steps.sort(key=lambda step: (step.sort_order or 0, step.id or 0))
+
+    now = _pf67_009j_datetime.utcnow()
+    started = getattr(job, "started_at", None)
+    end = _pf67_patch009j_estimated_completion(job)
+
+    if started and end and end > started:
+        total = (end - started).total_seconds()
+        elapsed = (now - started).total_seconds()
+        percent = int(round(max(0, min(100, (elapsed / total) * 100))))
+        return percent, "time estimate"
+
+    if steps:
+        completed_count = len([step for step in steps if getattr(step, "completed_at", None)])
+        percent = int(round((completed_count / len(steps)) * 100))
+        return percent, "step estimate"
+
+    return 0, "estimate"
+
+
+def _pf67_patch009j_flow_group(job):
+    status = (getattr(job, "status", "") or "").lower()
+    started = getattr(job, "started_at", None)
+    now = _pf67_009j_datetime.utcnow()
+
+    if status in ["completed", "complete", "archived", "done"]:
+        return "completed", "Completed"
+
+    if started and started > now:
+        return "scheduled", "Scheduled"
+
+    if status in ["pending", "scheduled"]:
+        return "scheduled", "Scheduled"
+
+    return "active", "Active"
+
+
+def _pf67_patch009j_priority_rank(priority):
+    priority = (priority or "Normal").strip().lower()
+
+    if priority == "critical":
+        return 4
+
+    if priority == "high":
+        return 3
+
+    if priority == "normal":
+        return 2
+
+    if priority == "low":
+        return 1
+
+    return 2
+
+
+def _pf67_patch009j_item(job):
+    template = _pf67_patch009j_job_template(job)
+    current_step = _pf67_patch009j_current_open_step(job)
+    progress_percent, progress_basis = _pf67_patch009j_progress(job)
+    estimated_completion = _pf67_patch009j_estimated_completion(job)
+    group_key, group_label = _pf67_patch009j_flow_group(job)
+    priority = getattr(job, "priority", None) or "Normal"
+
+    try:
+        detail_url = url_for("views.job_detail", job_id=job.id)
+    except Exception:
+        try:
+            detail_url = url_for("views.jobs_page")
+        except Exception:
+            detail_url = "#"
+
+    return {
+        "job": job,
+        "template": template,
+        "current_step": current_step,
+        "group_key": group_key,
+        "group_label": group_label,
+        "priority": priority,
+        "priority_rank": _pf67_patch009j_priority_rank(priority),
+        "is_private": bool(getattr(job, "is_private", False)),
+        "progress_percent": progress_percent,
+        "progress_basis": progress_basis,
+        "started_value": getattr(job, "started_at", None),
+        "started_display": _pf67_patch009j_short_datetime(getattr(job, "started_at", None)),
+        "estimated_value": estimated_completion,
+        "estimated_completion": _pf67_patch009j_short_datetime(estimated_completion),
+        "time_label": _pf67_patch009j_time_label(current_step),
+        "url": detail_url,
+        "search_text": (
+            (getattr(job, "name", "") or "") + " " +
+            ((getattr(template, "name", "") or "") if template is not None else "")
+        ).lower(),
+    }
+
+
+def _pf67_patch009j_apply_filters(items, filters):
+    result = []
+
+    for item in items:
+        status_filter = filters["status"]
+        visibility_filter = filters["visibility"]
+        priority_filter = filters["priority"]
+        query = filters["q"].strip().lower()
+
+        if status_filter != "all" and item["group_key"] != status_filter:
+            continue
+
+        if visibility_filter == "public" and item["is_private"]:
+            continue
+
+        if visibility_filter == "private" and not item["is_private"]:
+            continue
+
+        if priority_filter != "all" and item["priority"].strip().lower() != priority_filter:
+            continue
+
+        if query and query not in item["search_text"]:
+            continue
+
+        result.append(item)
+
+    return result
+
+
+def _pf67_patch009j_sort_items(items, sort_value):
+    if sort_value == "started_asc":
+        return sorted(items, key=lambda item: item["started_value"] or _pf67_009j_datetime.min)
+
+    if sort_value == "estimated":
+        return sorted(items, key=lambda item: item["estimated_value"] or _pf67_009j_datetime.max)
+
+    if sort_value == "priority":
+        return sorted(items, key=lambda item: (item["priority_rank"], item["started_value"] or _pf67_009j_datetime.min), reverse=True)
+
+    if sort_value == "progress":
+        return sorted(items, key=lambda item: item["progress_percent"], reverse=True)
+
+    if sort_value == "name":
+        return sorted(items, key=lambda item: (item["job"].name or "").lower())
+
+    return sorted(items, key=lambda item: item["started_value"] or _pf67_009j_datetime.min, reverse=True)
+
+
+@views_bp.route("/flows-console-patch009j")
+@_pf67_patch009j_edit_required
+def pf67_patch009j_flows_console():
+    filters = {
+        "status": (request.args.get("status") or "active").strip().lower(),
+        "visibility": (request.args.get("visibility") or "all").strip().lower(),
+        "priority": (request.args.get("priority") or "all").strip().lower(),
+        "sort": (request.args.get("sort") or "started_desc").strip().lower(),
+        "q": (request.args.get("q") or "").strip(),
+    }
+
+    valid_statuses = {"all", "active", "scheduled", "completed"}
+    valid_visibility = {"all", "public", "private"}
+    valid_priority = {"all", "critical", "high", "normal", "low"}
+    valid_sorts = {"started_desc", "started_asc", "estimated", "priority", "progress", "name"}
+
+    if filters["status"] not in valid_statuses:
+        filters["status"] = "active"
+
+    if filters["visibility"] not in valid_visibility:
+        filters["visibility"] = "all"
+
+    if filters["priority"] not in valid_priority:
+        filters["priority"] = "all"
+
+    if filters["sort"] not in valid_sorts:
+        filters["sort"] = "started_desc"
+
+    rows = Job.query.order_by(Job.id.desc()).all()
+    all_items = [_pf67_patch009j_item(job) for job in rows]
+
+    counts = {
+        "active": len([item for item in all_items if item["group_key"] == "active"]),
+        "scheduled": len([item for item in all_items if item["group_key"] == "scheduled"]),
+        "completed": len([item for item in all_items if item["group_key"] == "completed"]),
+        "public": len([item for item in all_items if not item["is_private"]]),
+        "private": len([item for item in all_items if item["is_private"]]),
+    }
+
+    filtered = _pf67_patch009j_apply_filters(all_items, filters)
+    filtered = _pf67_patch009j_sort_items(filtered, filters["sort"])
+
+    status_options = [
+        ("active", "Active"),
+        ("scheduled", "Scheduled"),
+        ("completed", "Completed"),
+        ("all", "All"),
+    ]
+
+    visibility_options = [
+        ("all", "All"),
+        ("public", "Public"),
+        ("private", "Private"),
+    ]
+
+    priority_options = [
+        ("all", "All"),
+        ("critical", "Critical"),
+        ("high", "High"),
+        ("normal", "Normal"),
+        ("low", "Low"),
+    ]
+
+    sort_options = [
+        ("started_desc", "Started Date Descending"),
+        ("started_asc", "Started Date Ascending"),
+        ("estimated", "Estimated Completion"),
+        ("priority", "Priority"),
+        ("progress", "Progress"),
+        ("name", "Name"),
+    ]
+
+    return render_template(
+        "flows_console_patch009j.html",
+        flows=filtered,
+        filters=filters,
+        counts=counts,
+        total_count=len(filtered),
+        status_options=status_options,
+        visibility_options=visibility_options,
+        priority_options=priority_options,
+        sort_options=sort_options,
+    )
+
+
+@views_bp.route("/flows/<int:job_id>/visibility-toggle-patch009j", methods=["POST"])
+@_pf67_patch009j_edit_required
+def pf67_patch009j_toggle_flow_visibility(job_id):
+    job = Job.query.get_or_404(job_id)
+
+    if hasattr(job, "is_private"):
+        job.is_private = _pf67_patch009j_form_bool("is_private")
+        db.session.commit()
+
+    return redirect(request.referrer or url_for("views.pf67_patch009j_flows_console"))
+
+# === PF67 PATCH 009K PUBLIC PROTOCOL THUMBNAILS ===
+import re as _pf67_009k_re
+import html as _pf67_009k_html
+
+
+def _pf67_patch009k_find_first_img_src(value):
+    html_value = value or ""
+
+    if not html_value:
+        return ""
+
+    candidates = [
+        str(html_value),
+        _pf67_009k_html.unescape(str(html_value)),
+    ]
+
+    patterns = [
+        r"<img\b[^>]*\bsrc\s*=\s*\"([^\"]+)\"",
+        r"<img\b[^>]*\bsrc\s*=\s*'([^']+)'",
+        r"<img\b[^>]*\bsrc\s*=\s*([^>\s]+)",
+    ]
+
+    for candidate in candidates:
+        for pattern in patterns:
+            match = _pf67_009k_re.search(pattern, candidate, flags=_pf67_009k_re.IGNORECASE)
+
+            if match:
+                src = (match.group(1) or "").strip()
+                src = src.strip('"').strip("'")
+                return _pf67_009k_html.unescape(src)
+
+    return ""
+
+
+@views_bp.app_template_filter("pf67_patch009k_first_img_src")
+def pf67_patch009k_first_img_src(value):
+    return _pf67_patch009k_find_first_img_src(value)
+
+
+@views_bp.app_template_filter("pf67_patch009k_plain_summary")
+def pf67_patch009k_plain_summary(value, max_length=240):
+    html_value = _pf67_009k_html.unescape(str(value or ""))
+
+    if not html_value:
+        return ""
+
+    html_value = _pf67_009k_re.sub(
+        r"<(script|style)\b.*?</\1>",
+        " ",
+        html_value,
+        flags=_pf67_009k_re.IGNORECASE | _pf67_009k_re.DOTALL,
+    )
+
+    html_value = _pf67_009k_re.sub(
+        r"<img\b[^>]*>",
+        " ",
+        html_value,
+        flags=_pf67_009k_re.IGNORECASE,
+    )
+
+    text_value = _pf67_009k_re.sub(r"<[^>]+>", " ", html_value)
+    text_value = _pf67_009k_html.unescape(text_value)
+    text_value = _pf67_009k_re.sub(r"\s+", " ", text_value).strip()
+
+    try:
+        max_length = int(max_length)
+    except Exception:
+        max_length = 240
+
+    if max_length > 0 and len(text_value) > max_length:
+        text_value = text_value[: max_length - 1].rstrip() + "…"
+
+    return text_value
+
+# === PF67 PATCH 009L BACKEND FLOW FILTER POLISH ===
+from datetime import datetime as _pf67_009l_datetime, timedelta as _pf67_009l_timedelta
+from flask import request, redirect, url_for, render_template
+from .models import db, ProtocolTemplate, Job
+
+
+try:
+    _pf67_patch009l_edit_required = edit_required
+except NameError:
+    def _pf67_patch009l_edit_required(func):
+        return func
+
+
+def _pf67_patch009l_job_template(job):
+    template = getattr(job, "template", None)
+
+    if template is not None:
+        return template
+
+    template_id = getattr(job, "template_id", None)
+
+    if template_id:
+        try:
+            return ProtocolTemplate.query.get(template_id)
+        except Exception:
+            return None
+
+    return None
+
+
+def _pf67_patch009l_current_open_step(job):
+    steps = list(getattr(job, "steps", []) or [])
+    steps.sort(key=lambda step: (step.sort_order or 0, step.id or 0))
+
+    for step in steps:
+        if not getattr(step, "completed_at", None):
+            return step
+
+    return None
+
+
+def _pf67_patch009l_step_status(step):
+    if step is None:
+        return "active"
+
+    try:
+        return calculate_step_status(step)
+    except Exception:
+        return "waiting"
+
+
+def _pf67_patch009l_time_label(step):
+    if step is None:
+        return ""
+
+    try:
+        return step_compact_time_label(step, _pf67_patch009l_step_status(step)) or ""
+    except Exception:
+        anchor = getattr(step, "anchor_time", None)
+        if anchor:
+            try:
+                return anchor.strftime("%Y-%m-%d %I:%M %p")
+            except Exception:
+                return ""
+
+    return ""
+
+
+def _pf67_patch009l_short_datetime(value):
+    if not value:
+        return ""
+
+    try:
+        return display_short_datetime(value)
+    except Exception:
+        try:
+            return value.strftime("%Y-%m-%d %I:%M %p")
+        except Exception:
+            return str(value)
+
+
+def _pf67_patch009l_estimated_completion(job):
+    steps = list(getattr(job, "steps", []) or [])
+    times = []
+
+    for step in steps:
+        completed = getattr(step, "completed_at", None)
+        anchor = getattr(step, "anchor_time", None)
+        ideal = getattr(step, "ideal_minutes", None)
+
+        if completed:
+            times.append(completed)
+        elif anchor and ideal is not None:
+            times.append(anchor + _pf67_009l_timedelta(minutes=ideal))
+        elif anchor:
+            times.append(anchor)
+
+    if not times:
+        return None
+
+    return max(times)
+
+
+def _pf67_patch009l_progress(job):
+    steps = list(getattr(job, "steps", []) or [])
+    steps.sort(key=lambda step: (step.sort_order or 0, step.id or 0))
+
+    now = _pf67_009l_datetime.utcnow()
+    started = getattr(job, "started_at", None)
+    end = _pf67_patch009l_estimated_completion(job)
+
+    if started and end and end > started:
+        total = (end - started).total_seconds()
+        elapsed = (now - started).total_seconds()
+        percent = int(round(max(0, min(100, (elapsed / total) * 100))))
+        return percent, "time estimate"
+
+    if steps:
+        completed_count = len([step for step in steps if getattr(step, "completed_at", None)])
+        percent = int(round((completed_count / len(steps)) * 100))
+        return percent, "step estimate"
+
+    return 0, "estimate"
+
+
+def _pf67_patch009l_flow_group(job):
+    status = (getattr(job, "status", "") or "").lower()
+    started = getattr(job, "started_at", None)
+    now = _pf67_009l_datetime.utcnow()
+
+    if status in ["completed", "complete", "archived", "done"]:
+        return "completed", "Completed"
+
+    if started and started > now:
+        return "scheduled", "Scheduled"
+
+    if status in ["pending", "scheduled"]:
+        return "scheduled", "Scheduled"
+
+    return "active", "Active"
+
+
+def _pf67_patch009l_priority_rank(priority):
+    priority = (priority or "Normal").strip().lower()
+
+    if priority == "critical":
+        return 4
+
+    if priority == "high":
+        return 3
+
+    if priority == "normal":
+        return 2
+
+    if priority == "low":
+        return 1
+
+    return 2
+
+
+def _pf67_patch009l_item(job):
+    template = _pf67_patch009l_job_template(job)
+    current_step = _pf67_patch009l_current_open_step(job)
+    progress_percent, progress_basis = _pf67_patch009l_progress(job)
+    estimated_completion = _pf67_patch009l_estimated_completion(job)
+    group_key, group_label = _pf67_patch009l_flow_group(job)
+    priority = getattr(job, "priority", None) or "Normal"
+
+    try:
+        detail_url = url_for("views.job_detail", job_id=job.id)
+    except Exception:
+        try:
+            detail_url = url_for("views.jobs_page")
+        except Exception:
+            detail_url = "#"
+
+    return {
+        "job": job,
+        "template": template,
+        "current_step": current_step,
+        "group_key": group_key,
+        "group_label": group_label,
+        "priority": priority,
+        "priority_value": priority.strip().lower(),
+        "priority_rank": _pf67_patch009l_priority_rank(priority),
+        "is_private": bool(getattr(job, "is_private", False)),
+        "progress_percent": progress_percent,
+        "progress_basis": progress_basis,
+        "started_value": getattr(job, "started_at", None),
+        "started_display": _pf67_patch009l_short_datetime(getattr(job, "started_at", None)),
+        "estimated_value": estimated_completion,
+        "estimated_completion": _pf67_patch009l_short_datetime(estimated_completion),
+        "time_label": _pf67_patch009l_time_label(current_step),
+        "url": detail_url,
+        "search_text": (
+            (getattr(job, "name", "") or "") + " " +
+            ((getattr(template, "name", "") or "") if template is not None else "")
+        ).lower(),
+    }
+
+
+def _pf67_patch009l_selected_list(name, allowed_values, default_values):
+    values = request.args.getlist(name)
+
+    # Compatibility with older single-value query string such as ?status=active.
+    single = request.args.get(name)
+
+    if single and single not in values:
+        values.append(single)
+
+    cleaned = []
+
+    for value in values:
+        value = (value or "").strip().lower()
+
+        if value in allowed_values and value not in cleaned:
+            cleaned.append(value)
+
+    if not cleaned:
+        cleaned = list(default_values)
+
+    if "all" in cleaned:
+        cleaned = ["all"]
+
+    return cleaned
+
+
+def _pf67_patch009l_label_for_values(values, labels, all_label):
+    if "all" in values:
+        return all_label
+
+    selected_labels = [labels.get(value, value.title()) for value in values]
+
+    if len(selected_labels) == 1:
+        return selected_labels[0]
+
+    if len(selected_labels) == 2:
+        return selected_labels[0] + " + " + selected_labels[1]
+
+    return str(len(selected_labels)) + " selected"
+
+
+def _pf67_patch009l_apply_filters(items, filters):
+    result = []
+
+    status_values = filters["status_values"]
+    priority_values = filters["priority_values"]
+
+    for item in items:
+        visibility_filter = filters["visibility"]
+        query = filters["q"].strip().lower()
+
+        if "all" not in status_values and item["group_key"] not in status_values:
+            continue
+
+        if visibility_filter == "public" and item["is_private"]:
+            continue
+
+        if visibility_filter == "private" and not item["is_private"]:
+            continue
+
+        if "all" not in priority_values and item["priority_value"] not in priority_values:
+            continue
+
+        if query and query not in item["search_text"]:
+            continue
+
+        result.append(item)
+
+    return result
+
+
+def _pf67_patch009l_sort_items(items, sort_value):
+    if sort_value == "started_asc":
+        return sorted(items, key=lambda item: item["started_value"] or _pf67_009l_datetime.min)
+
+    if sort_value == "estimated":
+        return sorted(items, key=lambda item: item["estimated_value"] or _pf67_009l_datetime.max)
+
+    if sort_value == "priority":
+        return sorted(items, key=lambda item: (item["priority_rank"], item["started_value"] or _pf67_009l_datetime.min), reverse=True)
+
+    if sort_value == "progress":
+        return sorted(items, key=lambda item: item["progress_percent"], reverse=True)
+
+    if sort_value == "name":
+        return sorted(items, key=lambda item: (item["job"].name or "").lower())
+
+    return sorted(items, key=lambda item: item["started_value"] or _pf67_009l_datetime.min, reverse=True)
+
+
+@views_bp.route("/flows-console-patch009l")
+@_pf67_patch009l_edit_required
+def pf67_patch009l_flows_console():
+    status_labels = {
+        "active": "Active",
+        "scheduled": "Scheduled",
+        "completed": "Completed",
+        "all": "All",
+    }
+
+    priority_labels = {
+        "critical": "Critical",
+        "high": "High",
+        "normal": "Normal",
+        "low": "Low",
+        "all": "All",
+    }
+
+    filters = {
+        "status_values": _pf67_patch009l_selected_list("status", {"active", "scheduled", "completed", "all"}, ["active"]),
+        "visibility": (request.args.get("visibility") or "all").strip().lower(),
+        "priority_values": _pf67_patch009l_selected_list("priority", {"critical", "high", "normal", "low", "all"}, ["all"]),
+        "sort": (request.args.get("sort") or "started_desc").strip().lower(),
+        "q": (request.args.get("q") or "").strip(),
+    }
+
+    valid_visibility = {"all", "public", "private"}
+    valid_sorts = {"started_desc", "started_asc", "estimated", "priority", "progress", "name"}
+
+    if filters["visibility"] not in valid_visibility:
+        filters["visibility"] = "all"
+
+    if filters["sort"] not in valid_sorts:
+        filters["sort"] = "started_desc"
+
+    rows = Job.query.order_by(Job.id.desc()).all()
+    all_items = [_pf67_patch009l_item(job) for job in rows]
+
+    counts = {
+        "active": len([item for item in all_items if item["group_key"] == "active"]),
+        "scheduled": len([item for item in all_items if item["group_key"] == "scheduled"]),
+        "completed": len([item for item in all_items if item["group_key"] == "completed"]),
+        "public": len([item for item in all_items if not item["is_private"]]),
+        "private": len([item for item in all_items if item["is_private"]]),
+    }
+
+    filtered = _pf67_patch009l_apply_filters(all_items, filters)
+    filtered = _pf67_patch009l_sort_items(filtered, filters["sort"])
+
+    status_options = [
+        ("active", "Active"),
+        ("scheduled", "Scheduled"),
+        ("completed", "Completed"),
+        ("all", "All"),
+    ]
+
+    visibility_options = [
+        ("all", "All"),
+        ("public", "Public"),
+        ("private", "Private"),
+    ]
+
+    priority_options = [
+        ("critical", "Critical"),
+        ("high", "High"),
+        ("normal", "Normal"),
+        ("low", "Low"),
+        ("all", "All"),
+    ]
+
+    sort_options = [
+        ("started_desc", "Started Date Descending"),
+        ("started_asc", "Started Date Ascending"),
+        ("estimated", "Estimated Completion"),
+        ("priority", "Priority"),
+        ("progress", "Progress"),
+        ("name", "Name"),
+    ]
+
+    filter_labels = {
+        "status": _pf67_patch009l_label_for_values(filters["status_values"], status_labels, "All Statuses"),
+        "priority": _pf67_patch009l_label_for_values(filters["priority_values"], priority_labels, "All Priorities"),
+    }
+
+    return render_template(
+        "flows_console_patch009l.html",
+        flows=filtered,
+        filters=filters,
+        filter_labels=filter_labels,
+        counts=counts,
+        total_count=len(filtered),
+        status_options=status_options,
+        visibility_options=visibility_options,
+        priority_options=priority_options,
+        sort_options=sort_options,
+    )
+
+# === PF67 PATCH 009M INSTANT BACKEND FLOW FILTERS ===
+from datetime import datetime as _pf67_009m_datetime, timedelta as _pf67_009m_timedelta
+from flask import url_for, render_template
+from .models import ProtocolTemplate, Job
+
+
+try:
+    _pf67_patch009m_edit_required = edit_required
+except NameError:
+    def _pf67_patch009m_edit_required(func):
+        return func
+
+
+def _pf67_patch009m_job_template(job):
+    template = getattr(job, "template", None)
+
+    if template is not None:
+        return template
+
+    template_id = getattr(job, "template_id", None)
+
+    if template_id:
+        try:
+            return ProtocolTemplate.query.get(template_id)
+        except Exception:
+            return None
+
+    return None
+
+
+def _pf67_patch009m_current_open_step(job):
+    steps = list(getattr(job, "steps", []) or [])
+    steps.sort(key=lambda step: (step.sort_order or 0, step.id or 0))
+
+    for step in steps:
+        if not getattr(step, "completed_at", None):
+            return step
+
+    return None
+
+
+def _pf67_patch009m_step_status(step):
+    if step is None:
+        return "active"
+
+    try:
+        return calculate_step_status(step)
+    except Exception:
+        return "waiting"
+
+
+def _pf67_patch009m_time_label(step):
+    if step is None:
+        return ""
+
+    try:
+        return step_compact_time_label(step, _pf67_patch009m_step_status(step)) or ""
+    except Exception:
+        anchor = getattr(step, "anchor_time", None)
+        if anchor:
+            try:
+                return anchor.strftime("%Y-%m-%d %I:%M %p")
+            except Exception:
+                return ""
+
+    return ""
+
+
+def _pf67_patch009m_short_datetime(value):
+    if not value:
+        return ""
+
+    try:
+        return display_short_datetime(value)
+    except Exception:
+        try:
+            return value.strftime("%Y-%m-%d %I:%M %p")
+        except Exception:
+            return str(value)
+
+
+def _pf67_patch009m_timestamp_ms(value, fallback=0):
+    if not value:
+        return fallback
+
+    try:
+        return int(value.timestamp() * 1000)
+    except Exception:
+        return fallback
+
+
+def _pf67_patch009m_estimated_completion(job):
+    steps = list(getattr(job, "steps", []) or [])
+    times = []
+
+    for step in steps:
+        completed = getattr(step, "completed_at", None)
+        anchor = getattr(step, "anchor_time", None)
+        ideal = getattr(step, "ideal_minutes", None)
+
+        if completed:
+            times.append(completed)
+        elif anchor and ideal is not None:
+            times.append(anchor + _pf67_009m_timedelta(minutes=ideal))
+        elif anchor:
+            times.append(anchor)
+
+    if not times:
+        return None
+
+    return max(times)
+
+
+def _pf67_patch009m_progress(job):
+    steps = list(getattr(job, "steps", []) or [])
+    steps.sort(key=lambda step: (step.sort_order or 0, step.id or 0))
+
+    now = _pf67_009m_datetime.utcnow()
+    started = getattr(job, "started_at", None)
+    end = _pf67_patch009m_estimated_completion(job)
+
+    if started and end and end > started:
+        total = (end - started).total_seconds()
+        elapsed = (now - started).total_seconds()
+        percent = int(round(max(0, min(100, (elapsed / total) * 100))))
+        return percent, "time estimate"
+
+    if steps:
+        completed_count = len([step for step in steps if getattr(step, "completed_at", None)])
+        percent = int(round((completed_count / len(steps)) * 100))
+        return percent, "step estimate"
+
+    return 0, "estimate"
+
+
+def _pf67_patch009m_flow_group(job):
+    status = (getattr(job, "status", "") or "").lower()
+    started = getattr(job, "started_at", None)
+    now = _pf67_009m_datetime.utcnow()
+
+    if status in ["completed", "complete", "archived", "done"]:
+        return "completed", "Completed"
+
+    if started and started > now:
+        return "scheduled", "Scheduled"
+
+    if status in ["pending", "scheduled"]:
+        return "scheduled", "Scheduled"
+
+    return "active", "Active"
+
+
+def _pf67_patch009m_priority_rank(priority):
+    priority = (priority or "Normal").strip().lower()
+
+    if priority == "critical":
+        return 4
+
+    if priority == "high":
+        return 3
+
+    if priority == "normal":
+        return 2
+
+    if priority == "low":
+        return 1
+
+    return 2
+
+
+def _pf67_patch009m_item(job):
+    template = _pf67_patch009m_job_template(job)
+    current_step = _pf67_patch009m_current_open_step(job)
+    progress_percent, progress_basis = _pf67_patch009m_progress(job)
+    estimated_completion = _pf67_patch009m_estimated_completion(job)
+    group_key, group_label = _pf67_patch009m_flow_group(job)
+    priority = getattr(job, "priority", None) or "Normal"
+
+    try:
+        detail_url = url_for("views.job_detail", job_id=job.id)
+    except Exception:
+        try:
+            detail_url = url_for("views.jobs_page")
+        except Exception:
+            detail_url = "#"
+
+    started_value = getattr(job, "started_at", None)
+
+    return {
+        "job": job,
+        "template": template,
+        "current_step": current_step,
+        "group_key": group_key,
+        "group_label": group_label,
+        "priority": priority,
+        "priority_value": priority.strip().lower(),
+        "priority_rank": _pf67_patch009m_priority_rank(priority),
+        "is_private": bool(getattr(job, "is_private", False)),
+        "progress_percent": progress_percent,
+        "progress_basis": progress_basis,
+        "started_value": started_value,
+        "started_sort": _pf67_patch009m_timestamp_ms(started_value, 0),
+        "started_display": _pf67_patch009m_short_datetime(started_value),
+        "estimated_value": estimated_completion,
+        "estimated_sort": _pf67_patch009m_timestamp_ms(estimated_completion, 9999999999999),
+        "estimated_completion": _pf67_patch009m_short_datetime(estimated_completion),
+        "time_label": _pf67_patch009m_time_label(current_step),
+        "url": detail_url,
+        "search_text": (
+            (getattr(job, "name", "") or "") + " " +
+            ((getattr(template, "name", "") or "") if template is not None else "")
+        ).lower(),
+    }
+
+
+@views_bp.route("/flows-console-patch009m")
+@_pf67_patch009m_edit_required
+def pf67_patch009m_flows_console():
+    rows = Job.query.order_by(Job.id.desc()).all()
+    flows = [_pf67_patch009m_item(job) for job in rows]
+
+    counts = {
+        "active": len([item for item in flows if item["group_key"] == "active"]),
+        "scheduled": len([item for item in flows if item["group_key"] == "scheduled"]),
+        "completed": len([item for item in flows if item["group_key"] == "completed"]),
+        "public": len([item for item in flows if not item["is_private"]]),
+        "private": len([item for item in flows if item["is_private"]]),
+    }
+
+    return render_template(
+        "flows_console_patch009m.html",
+        flows=flows,
+        counts=counts,
+        total_count=len(flows),
+    )
+
+# === PF67 PATCH 010A PROCEDURES FOUNDATION ===
+from flask import request, redirect, url_for, render_template
+from .models import db, ProtocolTemplate
+
+
+try:
+    _pf67_patch010a_edit_required = edit_required
+except NameError:
+    def _pf67_patch010a_edit_required(func):
+        return func
+
+
+def _pf67_patch010a_is_procedure(template):
+    return (getattr(template, "protocol_role", None) or "protocol") == "procedure"
+
+
+def _pf67_patch010a_public_protocol_query():
+    rows = ProtocolTemplate.query.order_by(ProtocolTemplate.name.asc()).all()
+
+    return [
+        template for template in rows
+        if not getattr(template, "is_private", False)
+        and not _pf67_patch010a_is_procedure(template)
+    ]
+
+
+@views_bp.app_template_global("pf67_patch009g_public_protocol_list")
+def pf67_patch009g_public_protocol_list():
+    return _pf67_patch010a_public_protocol_query()
+
+
+@views_bp.app_template_global("pf67_patch010a_role_label")
+def pf67_patch010a_role_label(template):
+    if _pf67_patch010a_is_procedure(template):
+        return "Procedure"
+
+    return "Protocol"
+
+
+@views_bp.app_template_global("pf67_patch009g_public_dashboard_data")
+def pf67_patch009g_public_dashboard_data():
+    active_flows = []
+    scheduled_flows = []
+    completed_flows = []
+
+    try:
+        active_flows, scheduled_flows, completed_flows = _pf67_patch009g_public_flow_groups()
+    except Exception:
+        try:
+            active_flows, scheduled_flows, completed_flows = _pf67_patch009f_public_flow_items()
+        except Exception:
+            pass
+
+    return {
+        "active_flows": active_flows,
+        "scheduled_flows": scheduled_flows,
+        "completed_flows": completed_flows,
+        "public_protocols": _pf67_patch010a_public_protocol_query(),
+    }
+
+
+@views_bp.route("/procedures/new-patch010a")
+@_pf67_patch010a_edit_required
+def pf67_patch010a_new_procedure():
+    procedure = ProtocolTemplate(
+        name="New Procedure",
+        description="",
+        category="Procedure",
+    )
+
+    if hasattr(procedure, "protocol_role"):
+        procedure.protocol_role = "procedure"
+
+    if hasattr(procedure, "can_start_flow"):
+        procedure.can_start_flow = True
+
+    if hasattr(procedure, "is_private"):
+        procedure.is_private = True
+
+    db.session.add(procedure)
+    db.session.commit()
+
+    return redirect(url_for("views.template_detail", template_id=procedure.id))
+
+
+@views_bp.route("/protocols/<int:template_id>/role-patch010a", methods=["POST"])
+@_pf67_patch010a_edit_required
+def pf67_patch010a_set_protocol_role(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+    requested_role = (request.form.get("protocol_role") or "protocol").strip().lower()
+
+    if requested_role not in ["protocol", "procedure"]:
+        requested_role = "protocol"
+
+    if hasattr(template, "protocol_role"):
+        template.protocol_role = requested_role
+        db.session.commit()
+
+    return redirect(url_for("views.templates_page", role=requested_role))
+
+# === PF67 PATCH 010B INSERT PROCEDURES ===
+import html as _pf67_010b_html
+import re as _pf67_010b_re
+from flask import request, redirect, url_for, render_template
+from .models import db, ProtocolTemplate
+
+
+try:
+    _pf67_patch010b_edit_required = edit_required
+except NameError:
+    def _pf67_patch010b_edit_required(func):
+        return func
+
+
+def _pf67_patch010b_is_procedure(template):
+    return (getattr(template, "protocol_role", None) or "protocol") == "procedure"
+
+
+def _pf67_patch010b_step_model():
+    try:
+        return ProtocolTemplate.steps.property.mapper.class_
+    except Exception:
+        return None
+
+
+def _pf67_patch010b_column_names(model):
+    try:
+        return set(model.__table__.columns.keys())
+    except Exception:
+        return set()
+
+
+def _pf67_patch010b_plain_text(value):
+    html_value = _pf67_010b_html.unescape(str(value or ""))
+    html_value = _pf67_010b_re.sub(
+        r"<(script|style)\b.*?</\1>",
+        " ",
+        html_value,
+        flags=_pf67_010b_re.IGNORECASE | _pf67_010b_re.DOTALL,
+    )
+    html_value = _pf67_010b_re.sub(r"<[^>]+>", " ", html_value)
+    html_value = _pf67_010b_html.unescape(html_value)
+    return _pf67_010b_re.sub(r"\s+", " ", html_value).strip()
+
+
+@views_bp.app_template_filter("pf67_patch010b_plain_summary")
+def pf67_patch010b_plain_summary(value, max_length=220):
+    text_value = _pf67_patch010b_plain_text(value)
+
+    try:
+        max_length = int(max_length)
+    except Exception:
+        max_length = 220
+
+    if max_length > 0 and len(text_value) > max_length:
+        text_value = text_value[: max_length - 1].rstrip() + "…"
+
+    return text_value
+
+
+def _pf67_patch010b_duration_label(minutes):
+    try:
+        minutes = int(minutes or 0)
+    except Exception:
+        minutes = 0
+
+    if minutes <= 0:
+        return ""
+
+    days = minutes // 1440
+    rem = minutes % 1440
+    hours = rem // 60
+    mins = rem % 60
+    parts = []
+
+    if days:
+        parts.append(str(days) + " day" + ("" if days == 1 else "s"))
+
+    if hours:
+        parts.append(str(hours) + " hour" + ("" if hours == 1 else "s"))
+
+    if mins:
+        parts.append(str(mins) + " minute" + ("" if mins == 1 else "s"))
+
+    return " ".join(parts)
+
+
+def _pf67_patch010b_procedure_minutes(procedure):
+    steps = list(getattr(procedure, "steps", []) or [])
+    steps.sort(key=lambda step: (getattr(step, "sort_order", 0) or 0, getattr(step, "id", 0) or 0))
+
+    total = 0
+
+    for index, step in enumerate(steps):
+        # PF67 timing model treats the first step's timing as the Flow start offset, not internal wait.
+        if index == 0:
+            continue
+
+        try:
+            value = int(getattr(step, "ideal_minutes", 0) or 0)
+        except Exception:
+            value = 0
+
+        if value > 0:
+            total += value
+
+    return total
+
+
+def _pf67_patch010b_procedure_block_html(procedure, minutes):
+    title = _pf67_010b_html.escape(getattr(procedure, "name", "") or "Procedure")
+    description = getattr(procedure, "description", "") or ""
+    clean_description = _pf67_patch010b_plain_text(description)
+    safe_description = _pf67_010b_html.escape(clean_description) if clean_description else "No description."
+    duration = _pf67_patch010b_duration_label(minutes)
+    procedure_url = url_for("views.template_detail", template_id=procedure.id)
+
+    duration_html = ""
+
+    if duration:
+        duration_html = '<span class="pf67-procedure-reference-pill">Estimated procedure time: ' + _pf67_010b_html.escape(duration) + '</span>'
+
+    return (
+        '<div class="pf67-procedure-reference" data-pf67-procedure-id="' + str(procedure.id) + '">'
+        '<div class="pf67-procedure-reference-title">Procedure: ' + title + '</div>'
+        '<div class="pf67-procedure-reference-description">' + safe_description + '</div>'
+        '<div class="pf67-procedure-reference-meta">'
+        + duration_html +
+        '<a class="pf67-procedure-reference-pill pf67-procedure-admin-link" href="' + procedure_url + '">Open Procedure</a>'
+        '</div>'
+        '</div>'
+    )
+
+
+def _pf67_patch010b_set_if_present(obj, columns, name, value):
+    if name in columns and hasattr(obj, name):
+        setattr(obj, name, value)
+
+
+def _pf67_patch010b_template_fk_column(columns):
+    if "template_id" in columns:
+        return "template_id"
+
+    if "protocol_template_id" in columns:
+        return "protocol_template_id"
+
+    return None
+
+
+def _pf67_patch010b_next_sort_order(template):
+    steps = list(getattr(template, "steps", []) or [])
+    values = []
+
+    for step in steps:
+        try:
+            values.append(int(getattr(step, "sort_order", 0) or 0))
+        except Exception:
+            pass
+
+    if not values:
+        return 10
+
+    return max(values) + 10
+
+
+@views_bp.route("/protocols/<int:template_id>/insert-procedure-patch010b", methods=["GET", "POST"])
+@_pf67_patch010b_edit_required
+def pf67_patch010b_insert_procedure(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    if request.method == "POST":
+        try:
+            procedure_id = int(request.form.get("procedure_id") or 0)
+        except Exception:
+            procedure_id = 0
+
+        procedure = ProtocolTemplate.query.get_or_404(procedure_id)
+
+        if not _pf67_patch010b_is_procedure(procedure):
+            return redirect(url_for("views.template_detail", template_id=template.id))
+
+        StepModel = _pf67_patch010b_step_model()
+
+        if StepModel is None:
+            return redirect(url_for("views.template_detail", template_id=template.id))
+
+        columns = _pf67_patch010b_column_names(StepModel)
+        step = StepModel()
+        fk_column = _pf67_patch010b_template_fk_column(columns)
+        minutes = _pf67_patch010b_procedure_minutes(procedure)
+        description = _pf67_patch010b_plain_text(getattr(procedure, "description", "") or "")
+
+        if fk_column:
+            setattr(step, fk_column, template.id)
+
+        _pf67_patch010b_set_if_present(step, columns, "name", "Procedure: " + (getattr(procedure, "name", "") or "Procedure"))
+        _pf67_patch010b_set_if_present(step, columns, "title", "Procedure: " + (getattr(procedure, "name", "") or "Procedure"))
+        _pf67_patch010b_set_if_present(step, columns, "instructions_html", _pf67_patch010b_procedure_block_html(procedure, minutes))
+        _pf67_patch010b_set_if_present(step, columns, "instructions", description)
+        _pf67_patch010b_set_if_present(step, columns, "sort_order", _pf67_patch010b_next_sort_order(template))
+        _pf67_patch010b_set_if_present(step, columns, "step_kind", "procedure")
+        _pf67_patch010b_set_if_present(step, columns, "procedure_template_id", procedure.id)
+        _pf67_patch010b_set_if_present(step, columns, "procedure_snapshot_title", getattr(procedure, "name", "") or "Procedure")
+        _pf67_patch010b_set_if_present(step, columns, "procedure_snapshot_description", description)
+        _pf67_patch010b_set_if_present(step, columns, "procedure_snapshot_minutes", minutes)
+
+        # Do not set ideal_minutes here. 010C will expand timing properly into Flow steps.
+        db.session.add(step)
+        db.session.commit()
+
+        return redirect(url_for("views.template_detail", template_id=template.id))
+
+    procedures = [
+        candidate for candidate in ProtocolTemplate.query.order_by(ProtocolTemplate.name.asc()).all()
+        if _pf67_patch010b_is_procedure(candidate) and candidate.id != template.id
+    ]
+
+    return render_template(
+        "insert_procedure_patch010b.html",
+        template=template,
+        procedures=procedures,
+    )
+
+# === PF67 PATCH 010B2 PROCEDURE REFERENCE CLEANUP ===
+import html as _pf67_010b2_html
+import re as _pf67_010b2_re
+from flask import request, redirect, url_for, render_template, jsonify
+from .models import db, ProtocolTemplate
+
+
+try:
+    _pf67_patch010b2_edit_required = edit_required
+except NameError:
+    def _pf67_patch010b2_edit_required(func):
+        return func
+
+
+def _pf67_patch010b2_is_procedure(template):
+    return (getattr(template, "protocol_role", None) or "protocol") == "procedure"
+
+
+def _pf67_patch010b2_step_model():
+    try:
+        return ProtocolTemplate.steps.property.mapper.class_
+    except Exception:
+        return None
+
+
+def _pf67_patch010b2_column_names(model):
+    try:
+        return set(model.__table__.columns.keys())
+    except Exception:
+        return set()
+
+
+def _pf67_patch010b2_plain_text(value):
+    html_value = _pf67_010b2_html.unescape(str(value or ""))
+    html_value = _pf67_010b2_re.sub(
+        r"<(script|style)\b.*?</\1>",
+        " ",
+        html_value,
+        flags=_pf67_010b2_re.IGNORECASE | _pf67_010b2_re.DOTALL,
+    )
+    html_value = _pf67_010b2_re.sub(r"<img\b[^>]*>", " ", html_value, flags=_pf67_010b2_re.IGNORECASE)
+    html_value = _pf67_010b2_re.sub(r"<[^>]+>", " ", html_value)
+    html_value = _pf67_010b2_html.unescape(html_value)
+    return _pf67_010b2_re.sub(r"\s+", " ", html_value).strip()
+
+
+def _pf67_patch010b2_first_img_src_raw(value):
+    html_value = value or ""
+
+    if not html_value:
+        return ""
+
+    candidates = [
+        str(html_value),
+        _pf67_010b2_html.unescape(str(html_value)),
+    ]
+
+    patterns = [
+        r"<img\b[^>]*\bsrc\s*=\s*\"([^\"]+)\"",
+        r"<img\b[^>]*\bsrc\s*=\s*'([^']+)'",
+        r"<img\b[^>]*\bsrc\s*=\s*([^>\s]+)",
+    ]
+
+    for candidate in candidates:
+        for pattern in patterns:
+            match = _pf67_010b2_re.search(pattern, candidate, flags=_pf67_010b2_re.IGNORECASE)
+
+            if match:
+                src = (match.group(1) or "").strip()
+                src = src.strip('"').strip("'")
+                return _pf67_010b2_html.unescape(src)
+
+    return ""
+
+
+@views_bp.app_template_filter("pf67_patch010b2_plain_summary")
+def pf67_patch010b2_plain_summary(value, max_length=220):
+    text_value = _pf67_patch010b2_plain_text(value)
+
+    try:
+        max_length = int(max_length)
+    except Exception:
+        max_length = 220
+
+    if max_length > 0 and len(text_value) > max_length:
+        text_value = text_value[: max_length - 1].rstrip() + "…"
+
+    return text_value
+
+
+@views_bp.app_template_filter("pf67_patch010b2_first_img_src")
+def pf67_patch010b2_first_img_src(value):
+    return _pf67_patch010b2_first_img_src_raw(value)
+
+
+def _pf67_patch010b2_duration_label(minutes):
+    try:
+        minutes = int(minutes or 0)
+    except Exception:
+        minutes = 0
+
+    if minutes <= 0:
+        return ""
+
+    days = minutes // 1440
+    rem = minutes % 1440
+    hours = rem // 60
+    mins = rem % 60
+    parts = []
+
+    if days:
+        parts.append(str(days) + " day" + ("" if days == 1 else "s"))
+
+    if hours:
+        parts.append(str(hours) + " hour" + ("" if hours == 1 else "s"))
+
+    if mins:
+        parts.append(str(mins) + " minute" + ("" if mins == 1 else "s"))
+
+    return " ".join(parts)
+
+
+@views_bp.app_template_global("pf67_patch010b2_duration_label")
+def pf67_patch010b2_duration_label(minutes):
+    return _pf67_patch010b2_duration_label(minutes)
+
+
+def _pf67_patch010b2_procedure_minutes(procedure):
+    steps = list(getattr(procedure, "steps", []) or [])
+    steps.sort(key=lambda step: (getattr(step, "sort_order", 0) or 0, getattr(step, "id", 0) or 0))
+    total = 0
+
+    for index, step in enumerate(steps):
+        if index == 0:
+            continue
+
+        try:
+            value = int(getattr(step, "ideal_minutes", 0) or 0)
+        except Exception:
+            value = 0
+
+        if value > 0:
+            total += value
+
+    return total
+
+
+@views_bp.app_template_global("pf67_patch010b2_procedure_minutes")
+def pf67_patch010b2_procedure_minutes(procedure):
+    return _pf67_patch010b2_procedure_minutes(procedure)
+
+
+def _pf67_patch010b2_set_if_present(obj, columns, name, value):
+    if name in columns and hasattr(obj, name):
+        setattr(obj, name, value)
+
+
+def _pf67_patch010b2_template_fk_column(columns):
+    if "template_id" in columns:
+        return "template_id"
+
+    if "protocol_template_id" in columns:
+        return "protocol_template_id"
+
+    return None
+
+
+def _pf67_patch010b2_next_sort_order(template):
+    steps = list(getattr(template, "steps", []) or [])
+    values = []
+
+    for step in steps:
+        try:
+            values.append(int(getattr(step, "sort_order", 0) or 0))
+        except Exception:
+            pass
+
+    if not values:
+        return 10
+
+    return max(values) + 10
+
+
+def _pf67_patch010b2_marker(procedure_id):
+    return '<div data-pf67-procedure-reference="true" data-procedure-id="' + str(procedure_id) + '"></div>'
+
+
+@views_bp.route("/templates/<int:template_id>/role-patch010b2.json")
+def pf67_patch010b2_template_role_json(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    return jsonify({
+        "id": template.id,
+        "role": "procedure" if _pf67_patch010b2_is_procedure(template) else "protocol",
+        "label": "Procedure" if _pf67_patch010b2_is_procedure(template) else "Protocol",
+    })
+
+
+@views_bp.route("/procedures/<int:procedure_id>/reference-patch010b2.json")
+def pf67_patch010b2_procedure_reference_json(procedure_id):
+    procedure = ProtocolTemplate.query.get_or_404(procedure_id)
+    minutes = _pf67_patch010b2_procedure_minutes(procedure)
+    description = getattr(procedure, "description", "") or ""
+
+    return jsonify({
+        "id": procedure.id,
+        "title": getattr(procedure, "name", "") or "Procedure",
+        "description": _pf67_patch010b2_plain_text(description) or "No description.",
+        "thumbnail": _pf67_patch010b2_first_img_src_raw(description),
+        "duration_minutes": minutes,
+        "duration_label": _pf67_patch010b2_duration_label(minutes),
+        "edit_url": url_for("views.template_detail", template_id=procedure.id),
+    })
+
+
+@views_bp.route("/protocols/<int:template_id>/insert-procedure-patch010b2", methods=["GET", "POST"])
+@_pf67_patch010b2_edit_required
+def pf67_patch010b2_insert_procedure(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    if request.method == "POST":
+        try:
+            procedure_id = int(request.form.get("procedure_id") or 0)
+        except Exception:
+            procedure_id = 0
+
+        procedure = ProtocolTemplate.query.get_or_404(procedure_id)
+
+        if not _pf67_patch010b2_is_procedure(procedure):
+            return redirect(url_for("views.template_detail", template_id=template.id))
+
+        StepModel = _pf67_patch010b2_step_model()
+
+        if StepModel is None:
+            return redirect(url_for("views.template_detail", template_id=template.id))
+
+        columns = _pf67_patch010b2_column_names(StepModel)
+        step = StepModel()
+        fk_column = _pf67_patch010b2_template_fk_column(columns)
+        minutes = _pf67_patch010b2_procedure_minutes(procedure)
+        description = _pf67_patch010b2_plain_text(getattr(procedure, "description", "") or "")
+
+        if fk_column:
+            setattr(step, fk_column, template.id)
+
+        _pf67_patch010b2_set_if_present(step, columns, "name", "Procedure: " + (getattr(procedure, "name", "") or "Procedure"))
+        _pf67_patch010b2_set_if_present(step, columns, "title", "Procedure: " + (getattr(procedure, "name", "") or "Procedure"))
+        _pf67_patch010b2_set_if_present(step, columns, "instructions_html", _pf67_patch010b2_marker(procedure.id))
+        _pf67_patch010b2_set_if_present(step, columns, "instructions", "")
+        _pf67_patch010b2_set_if_present(step, columns, "sort_order", _pf67_patch010b2_next_sort_order(template))
+        _pf67_patch010b2_set_if_present(step, columns, "step_kind", "procedure")
+        _pf67_patch010b2_set_if_present(step, columns, "procedure_template_id", procedure.id)
+        _pf67_patch010b2_set_if_present(step, columns, "procedure_snapshot_title", getattr(procedure, "name", "") or "Procedure")
+        _pf67_patch010b2_set_if_present(step, columns, "procedure_snapshot_description", description)
+        _pf67_patch010b2_set_if_present(step, columns, "procedure_snapshot_minutes", minutes)
+
+        db.session.add(step)
+        db.session.commit()
+
+        return redirect(url_for("views.template_detail", template_id=template.id))
+
+    procedures = [
+        candidate for candidate in ProtocolTemplate.query.order_by(ProtocolTemplate.name.asc()).all()
+        if _pf67_patch010b2_is_procedure(candidate) and candidate.id != template.id
+    ]
+
+    return render_template(
+        "insert_procedure_patch010b2.html",
+        template=template,
+        procedures=procedures,
+    )
+
+# === PF67 PATCH 010B3 INLINE PROCEDURE STEPS ===
+import html as _pf67_010b3_html
+import re as _pf67_010b3_re
+from flask import request, redirect, url_for, render_template, jsonify
+from .models import db, ProtocolTemplate
+
+
+try:
+    _pf67_patch010b3_edit_required = edit_required
+except NameError:
+    def _pf67_patch010b3_edit_required(func):
+        return func
+
+
+def _pf67_patch010b3_is_procedure(template):
+    return (getattr(template, "protocol_role", None) or "protocol") == "procedure"
+
+
+def _pf67_patch010b3_step_model():
+    try:
+        return ProtocolTemplate.steps.property.mapper.class_
+    except Exception:
+        return None
+
+
+def _pf67_patch010b3_column_names(model):
+    try:
+        return set(model.__table__.columns.keys())
+    except Exception:
+        return set()
+
+
+def _pf67_patch010b3_plain_text(value):
+    html_value = _pf67_010b3_html.unescape(str(value or ""))
+    html_value = _pf67_010b3_re.sub(
+        r"<(script|style)\b.*?</\1>",
+        " ",
+        html_value,
+        flags=_pf67_010b3_re.IGNORECASE | _pf67_010b3_re.DOTALL,
+    )
+    html_value = _pf67_010b3_re.sub(r"<img\b[^>]*>", " ", html_value, flags=_pf67_010b3_re.IGNORECASE)
+    html_value = _pf67_010b3_re.sub(r"<[^>]+>", " ", html_value)
+    html_value = _pf67_010b3_html.unescape(html_value)
+    return _pf67_010b3_re.sub(r"\s+", " ", html_value).strip()
+
+
+def _pf67_patch010b3_first_img_src_raw(value):
+    html_value = value or ""
+
+    if not html_value:
+        return ""
+
+    candidates = [
+        str(html_value),
+        _pf67_010b3_html.unescape(str(html_value)),
+    ]
+
+    patterns = [
+        r"<img\b[^>]*\bsrc\s*=\s*\"([^\"]+)\"",
+        r"<img\b[^>]*\bsrc\s*=\s*'([^']+)'",
+        r"<img\b[^>]*\bsrc\s*=\s*([^>\s]+)",
+    ]
+
+    for candidate in candidates:
+        for pattern in patterns:
+            match = _pf67_010b3_re.search(pattern, candidate, flags=_pf67_010b3_re.IGNORECASE)
+
+            if match:
+                src = (match.group(1) or "").strip()
+                src = src.strip('"').strip("'")
+                return _pf67_010b3_html.unescape(src)
+
+    return ""
+
+
+@views_bp.app_template_filter("pf67_patch010b3_plain_summary")
+def pf67_patch010b3_plain_summary(value, max_length=220):
+    text_value = _pf67_patch010b3_plain_text(value)
+
+    try:
+        max_length = int(max_length)
+    except Exception:
+        max_length = 220
+
+    if max_length > 0 and len(text_value) > max_length:
+        text_value = text_value[: max_length - 1].rstrip() + "..."
+
+    return text_value
+
+
+@views_bp.app_template_filter("pf67_patch010b3_first_img_src")
+def pf67_patch010b3_first_img_src(value):
+    return _pf67_patch010b3_first_img_src_raw(value)
+
+
+def _pf67_patch010b3_duration_label(minutes):
+    try:
+        minutes = int(minutes or 0)
+    except Exception:
+        minutes = 0
+
+    if minutes <= 0:
+        return ""
+
+    days = minutes // 1440
+    rem = minutes % 1440
+    hours = rem // 60
+    mins = rem % 60
+    parts = []
+
+    if days:
+        parts.append(str(days) + " day" + ("" if days == 1 else "s"))
+
+    if hours:
+        parts.append(str(hours) + " hour" + ("" if hours == 1 else "s"))
+
+    if mins:
+        parts.append(str(mins) + " minute" + ("" if mins == 1 else "s"))
+
+    return " ".join(parts)
+
+
+@views_bp.app_template_global("pf67_patch010b3_duration_label")
+def pf67_patch010b3_duration_label(minutes):
+    return _pf67_patch010b3_duration_label(minutes)
+
+
+def _pf67_patch010b3_procedure_minutes(procedure):
+    steps = list(getattr(procedure, "steps", []) or [])
+    steps.sort(key=lambda step: (getattr(step, "sort_order", 0) or 0, getattr(step, "id", 0) or 0))
+    total = 0
+
+    for index, step in enumerate(steps):
+        if index == 0:
+            continue
+
+        try:
+            value = int(getattr(step, "ideal_minutes", 0) or 0)
+        except Exception:
+            value = 0
+
+        if value > 0:
+            total += value
+
+    return total
+
+
+@views_bp.app_template_global("pf67_patch010b3_procedure_minutes")
+def pf67_patch010b3_procedure_minutes(procedure):
+    return _pf67_patch010b3_procedure_minutes(procedure)
+
+
+def _pf67_patch010b3_step_wait_label(step, index):
+    if index == 0:
+        return "Starts when Procedure begins"
+
+    try:
+        ideal = int(getattr(step, "ideal_minutes", 0) or 0)
+    except Exception:
+        ideal = 0
+
+    if ideal > 0:
+        return "Wait " + _pf67_patch010b3_duration_label(ideal)
+
+    return ""
+
+
+def _pf67_patch010b3_step_title(step, index):
+    for name in ["name", "title"]:
+        value = getattr(step, name, None)
+        if value:
+            return str(value)
+
+    return "Step " + str(index + 1)
+
+
+def _pf67_patch010b3_step_summary(step):
+    for name in ["instructions_html", "instructions", "description"]:
+        value = getattr(step, name, None)
+        if value:
+            return _pf67_patch010b3_plain_text(value)
+
+    return ""
+
+
+def _pf67_patch010b3_set_if_present(obj, columns, name, value):
+    if name in columns and hasattr(obj, name):
+        setattr(obj, name, value)
+
+
+def _pf67_patch010b3_template_fk_column(columns):
+    if "template_id" in columns:
+        return "template_id"
+
+    if "protocol_template_id" in columns:
+        return "protocol_template_id"
+
+    return None
+
+
+def _pf67_patch010b3_next_sort_order(template):
+    steps = list(getattr(template, "steps", []) or [])
+    values = []
+
+    for step in steps:
+        try:
+            values.append(int(getattr(step, "sort_order", 0) or 0))
+        except Exception:
+            pass
+
+    if not values:
+        return 10
+
+    return max(values) + 10
+
+
+def _pf67_patch010b3_marker(procedure_id):
+    return '<div data-pf67-procedure-reference="true" data-procedure-id="' + str(procedure_id) + '"></div>'
+
+
+@views_bp.route("/templates/<int:template_id>/role-patch010b3.json")
+def pf67_patch010b3_template_role_json(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    return jsonify({
+        "id": template.id,
+        "role": "procedure" if _pf67_patch010b3_is_procedure(template) else "protocol",
+        "label": "Procedure" if _pf67_patch010b3_is_procedure(template) else "Protocol",
+    })
+
+
+@views_bp.route("/procedures/<int:procedure_id>/reference-patch010b3.json")
+def pf67_patch010b3_procedure_reference_json(procedure_id):
+    procedure = ProtocolTemplate.query.get_or_404(procedure_id)
+    minutes = _pf67_patch010b3_procedure_minutes(procedure)
+    description = getattr(procedure, "description", "") or ""
+    steps = list(getattr(procedure, "steps", []) or [])
+    steps.sort(key=lambda step: (getattr(step, "sort_order", 0) or 0, getattr(step, "id", 0) or 0))
+
+    step_payload = []
+
+    for index, step in enumerate(steps):
+        step_payload.append({
+            "id": getattr(step, "id", index + 1),
+            "index": index,
+            "title": _pf67_patch010b3_step_title(step, index),
+            "summary": _pf67_patch010b3_step_summary(step),
+            "wait_label": _pf67_patch010b3_step_wait_label(step, index),
+        })
+
+    return jsonify({
+        "id": procedure.id,
+        "title": getattr(procedure, "name", "") or "Procedure",
+        "description": _pf67_patch010b3_plain_text(description) or "No description.",
+        "thumbnail": _pf67_patch010b3_first_img_src_raw(description),
+        "duration_minutes": minutes,
+        "duration_label": _pf67_patch010b3_duration_label(minutes),
+        "edit_url": url_for("views.template_detail", template_id=procedure.id),
+        "steps": step_payload,
+    })
+
+
+@views_bp.route("/protocols/<int:template_id>/insert-procedure-patch010b3", methods=["GET", "POST"])
+@_pf67_patch010b3_edit_required
+def pf67_patch010b3_insert_procedure(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    if request.method == "POST":
+        try:
+            procedure_id = int(request.form.get("procedure_id") or 0)
+        except Exception:
+            procedure_id = 0
+
+        procedure = ProtocolTemplate.query.get_or_404(procedure_id)
+
+        if not _pf67_patch010b3_is_procedure(procedure):
+            return redirect(url_for("views.template_detail", template_id=template.id))
+
+        StepModel = _pf67_patch010b3_step_model()
+
+        if StepModel is None:
+            return redirect(url_for("views.template_detail", template_id=template.id))
+
+        columns = _pf67_patch010b3_column_names(StepModel)
+        step = StepModel()
+        fk_column = _pf67_patch010b3_template_fk_column(columns)
+        minutes = _pf67_patch010b3_procedure_minutes(procedure)
+        description = _pf67_patch010b3_plain_text(getattr(procedure, "description", "") or "")
+
+        if fk_column:
+            setattr(step, fk_column, template.id)
+
+        _pf67_patch010b3_set_if_present(step, columns, "name", "Procedure: " + (getattr(procedure, "name", "") or "Procedure"))
+        _pf67_patch010b3_set_if_present(step, columns, "title", "Procedure: " + (getattr(procedure, "name", "") or "Procedure"))
+        _pf67_patch010b3_set_if_present(step, columns, "instructions_html", _pf67_patch010b3_marker(procedure.id))
+        _pf67_patch010b3_set_if_present(step, columns, "instructions", "")
+        _pf67_patch010b3_set_if_present(step, columns, "sort_order", _pf67_patch010b3_next_sort_order(template))
+        _pf67_patch010b3_set_if_present(step, columns, "step_kind", "procedure")
+        _pf67_patch010b3_set_if_present(step, columns, "procedure_template_id", procedure.id)
+        _pf67_patch010b3_set_if_present(step, columns, "procedure_snapshot_title", getattr(procedure, "name", "") or "Procedure")
+        _pf67_patch010b3_set_if_present(step, columns, "procedure_snapshot_description", description)
+        _pf67_patch010b3_set_if_present(step, columns, "procedure_snapshot_minutes", minutes)
+
+        db.session.add(step)
+        db.session.commit()
+
+        return redirect(url_for("views.template_detail", template_id=template.id))
+
+    procedures = [
+        candidate for candidate in ProtocolTemplate.query.order_by(ProtocolTemplate.name.asc()).all()
+        if _pf67_patch010b3_is_procedure(candidate) and candidate.id != template.id
+    ]
+
+    return render_template(
+        "insert_procedure_patch010b3.html",
+        template=template,
+        procedures=procedures,
+    )
+
+# === PF67 PATCH 010B7 PROCEDURE STEPS AS NORMAL STEPS ===
+import html as _pf67_010b7_html
+import re as _pf67_010b7_re
+from flask import request, redirect, url_for, render_template, jsonify
+from .models import db, ProtocolTemplate
+
+
+try:
+    _pf67_patch010b7_edit_required = edit_required
+except NameError:
+    def _pf67_patch010b7_edit_required(func):
+        return func
+
+
+def _pf67_patch010b7_is_procedure(template):
+    return (getattr(template, "protocol_role", None) or "protocol") == "procedure"
+
+
+def _pf67_patch010b7_step_model():
+    try:
+        return ProtocolTemplate.steps.property.mapper.class_
+    except Exception:
+        return None
+
+
+def _pf67_patch010b7_column_names(model):
+    try:
+        return set(model.__table__.columns.keys())
+    except Exception:
+        return set()
+
+
+def _pf67_patch010b7_plain_text(value):
+    html_value = _pf67_010b7_html.unescape(str(value or ""))
+    html_value = _pf67_010b7_re.sub(
+        r"<(script|style)\b.*?</\1>",
+        " ",
+        html_value,
+        flags=_pf67_010b7_re.IGNORECASE | _pf67_010b7_re.DOTALL,
+    )
+    html_value = _pf67_010b7_re.sub(r"<img\b[^>]*>", " ", html_value, flags=_pf67_010b7_re.IGNORECASE)
+    html_value = _pf67_010b7_re.sub(r"<[^>]+>", " ", html_value)
+    html_value = _pf67_010b7_html.unescape(html_value)
+    return _pf67_010b7_re.sub(r"\s+", " ", html_value).strip()
+
+
+def _pf67_patch010b7_first_img_src_raw(value):
+    html_value = value or ""
+
+    if not html_value:
+        return ""
+
+    candidates = [
+        str(html_value),
+        _pf67_010b7_html.unescape(str(html_value)),
+    ]
+
+    patterns = [
+        r"<img\b[^>]*\bsrc\s*=\s*\"([^\"]+)\"",
+        r"<img\b[^>]*\bsrc\s*=\s*'([^']+)'",
+        r"<img\b[^>]*\bsrc\s*=\s*([^>\s]+)",
+    ]
+
+    for candidate in candidates:
+        for pattern in patterns:
+            match = _pf67_010b7_re.search(pattern, candidate, flags=_pf67_010b7_re.IGNORECASE)
+
+            if match:
+                src = (match.group(1) or "").strip()
+                src = src.strip('"').strip("'")
+                return _pf67_010b7_html.unescape(src)
+
+    return ""
+
+
+@views_bp.app_template_filter("pf67_patch010b7_plain_summary")
+def pf67_patch010b7_plain_summary(value, max_length=220):
+    text_value = _pf67_patch010b7_plain_text(value)
+
+    try:
+        max_length = int(max_length)
+    except Exception:
+        max_length = 220
+
+    if max_length > 0 and len(text_value) > max_length:
+        text_value = text_value[: max_length - 1].rstrip() + "..."
+
+    return text_value
+
+
+@views_bp.app_template_filter("pf67_patch010b7_first_img_src")
+def pf67_patch010b7_first_img_src(value):
+    return _pf67_patch010b7_first_img_src_raw(value)
+
+
+def _pf67_patch010b7_duration_label(minutes):
+    try:
+        minutes = int(minutes or 0)
+    except Exception:
+        minutes = 0
+
+    if minutes <= 0:
+        return ""
+
+    days = minutes // 1440
+    rem = minutes % 1440
+    hours = rem // 60
+    mins = rem % 60
+    parts = []
+
+    if days:
+        parts.append(str(days) + " day" + ("" if days == 1 else "s"))
+
+    if hours:
+        parts.append(str(hours) + " hour" + ("" if hours == 1 else "s"))
+
+    if mins:
+        parts.append(str(mins) + " minute" + ("" if mins == 1 else "s"))
+
+    return " ".join(parts)
+
+
+@views_bp.app_template_global("pf67_patch010b7_duration_label")
+def pf67_patch010b7_duration_label(minutes):
+    return _pf67_patch010b7_duration_label(minutes)
+
+
+def _pf67_patch010b7_procedure_minutes(procedure):
+    steps = list(getattr(procedure, "steps", []) or [])
+    steps.sort(key=lambda step: (getattr(step, "sort_order", 0) or 0, getattr(step, "id", 0) or 0))
+    total = 0
+
+    for index, step in enumerate(steps):
+        if index == 0:
+            continue
+
+        try:
+            value = int(getattr(step, "ideal_minutes", 0) or 0)
+        except Exception:
+            value = 0
+
+        if value > 0:
+            total += value
+
+    return total
+
+
+@views_bp.app_template_global("pf67_patch010b7_procedure_minutes")
+def pf67_patch010b7_procedure_minutes(procedure):
+    return _pf67_patch010b7_procedure_minutes(procedure)
+
+
+def _pf67_patch010b7_step_wait_label(step, index):
+    if index == 0:
+        return ""
+
+    try:
+        ideal = int(getattr(step, "ideal_minutes", 0) or 0)
+    except Exception:
+        ideal = 0
+
+    if ideal > 0:
+        return "Wait " + _pf67_patch010b7_duration_label(ideal)
+
+    return ""
+
+
+def _pf67_patch010b7_step_title(step, index):
+    for name in ["name", "title"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return str(value)
+
+    return "Step " + str(index + 1)
+
+
+def _pf67_patch010b7_step_summary(step):
+    for name in ["instructions_html", "instructions", "description"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return _pf67_patch010b7_plain_text(value)
+
+    return ""
+
+
+def _pf67_patch010b7_set_if_present(obj, columns, name, value):
+    if name in columns and hasattr(obj, name):
+        setattr(obj, name, value)
+
+
+def _pf67_patch010b7_template_fk_column(columns):
+    if "template_id" in columns:
+        return "template_id"
+
+    if "protocol_template_id" in columns:
+        return "protocol_template_id"
+
+    return None
+
+
+def _pf67_patch010b7_next_sort_order(template):
+    steps = list(getattr(template, "steps", []) or [])
+    values = []
+
+    for step in steps:
+        try:
+            values.append(int(getattr(step, "sort_order", 0) or 0))
+        except Exception:
+            pass
+
+    if not values:
+        return 10
+
+    return max(values) + 10
+
+
+def _pf67_patch010b7_marker(procedure_id):
+    return '<div data-pf67-procedure-reference="true" data-procedure-id="' + str(procedure_id) + '"></div>'
+
+
+@views_bp.route("/templates/<int:template_id>/role-patch010b7.json")
+def pf67_patch010b7_template_role_json(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    return jsonify({
+        "id": template.id,
+        "role": "procedure" if _pf67_patch010b7_is_procedure(template) else "protocol",
+        "label": "Procedure" if _pf67_patch010b7_is_procedure(template) else "Protocol",
+    })
+
+
+@views_bp.route("/procedures/<int:procedure_id>/reference-patch010b7.json")
+def pf67_patch010b7_procedure_reference_json(procedure_id):
+    procedure = ProtocolTemplate.query.get_or_404(procedure_id)
+    minutes = _pf67_patch010b7_procedure_minutes(procedure)
+    description = getattr(procedure, "description", "") or ""
+    steps = list(getattr(procedure, "steps", []) or [])
+    steps.sort(key=lambda step: (getattr(step, "sort_order", 0) or 0, getattr(step, "id", 0) or 0))
+
+    step_payload = []
+
+    for index, step in enumerate(steps):
+        step_payload.append({
+            "id": getattr(step, "id", index + 1),
+            "index": index,
+            "title": _pf67_patch010b7_step_title(step, index),
+            "summary": _pf67_patch010b7_step_summary(step),
+            "wait_label": _pf67_patch010b7_step_wait_label(step, index),
+        })
+
+    return jsonify({
+        "id": procedure.id,
+        "title": getattr(procedure, "name", "") or "Procedure",
+        "description": _pf67_patch010b7_plain_text(description) or "",
+        "thumbnail": _pf67_patch010b7_first_img_src_raw(description),
+        "duration_minutes": minutes,
+        "duration_label": _pf67_patch010b7_duration_label(minutes),
+        "edit_url": url_for("views.template_detail", template_id=procedure.id),
+        "steps": step_payload,
+    })
+
+
+@views_bp.route("/protocols/<int:template_id>/insert-procedure-patch010b7", methods=["GET", "POST"])
+@_pf67_patch010b7_edit_required
+def pf67_patch010b7_insert_procedure(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    if request.method == "POST":
+        try:
+            procedure_id = int(request.form.get("procedure_id") or 0)
+        except Exception:
+            procedure_id = 0
+
+        procedure = ProtocolTemplate.query.get_or_404(procedure_id)
+
+        if not _pf67_patch010b7_is_procedure(procedure):
+            return redirect(url_for("views.template_detail", template_id=template.id))
+
+        StepModel = _pf67_patch010b7_step_model()
+
+        if StepModel is None:
+            return redirect(url_for("views.template_detail", template_id=template.id))
+
+        columns = _pf67_patch010b7_column_names(StepModel)
+        step = StepModel()
+        fk_column = _pf67_patch010b7_template_fk_column(columns)
+        minutes = _pf67_patch010b7_procedure_minutes(procedure)
+        description = _pf67_patch010b7_plain_text(getattr(procedure, "description", "") or "")
+
+        if fk_column:
+            setattr(step, fk_column, template.id)
+
+        _pf67_patch010b7_set_if_present(step, columns, "name", "Procedure: " + (getattr(procedure, "name", "") or "Procedure"))
+        _pf67_patch010b7_set_if_present(step, columns, "title", "Procedure: " + (getattr(procedure, "name", "") or "Procedure"))
+        _pf67_patch010b7_set_if_present(step, columns, "instructions_html", _pf67_patch010b7_marker(procedure.id))
+        _pf67_patch010b7_set_if_present(step, columns, "instructions", "")
+        _pf67_patch010b7_set_if_present(step, columns, "sort_order", _pf67_patch010b7_next_sort_order(template))
+        _pf67_patch010b7_set_if_present(step, columns, "step_kind", "procedure")
+        _pf67_patch010b7_set_if_present(step, columns, "procedure_template_id", procedure.id)
+        _pf67_patch010b7_set_if_present(step, columns, "procedure_snapshot_title", getattr(procedure, "name", "") or "Procedure")
+        _pf67_patch010b7_set_if_present(step, columns, "procedure_snapshot_description", description)
+        _pf67_patch010b7_set_if_present(step, columns, "procedure_snapshot_minutes", minutes)
+
+        db.session.add(step)
+        db.session.commit()
+
+        return redirect(url_for("views.template_detail", template_id=template.id))
+
+    procedures = [
+        candidate for candidate in ProtocolTemplate.query.order_by(ProtocolTemplate.name.asc()).all()
+        if _pf67_patch010b7_is_procedure(candidate) and candidate.id != template.id
+    ]
+
+    return render_template(
+        "insert_procedure_patch010b7.html",
+        template=template,
+        procedures=procedures,
+    )
+
+# === PF67 PATCH 010B9 SERVER RENDERED PROCEDURE STEP BUNDLE ===
+import html as _pf67_010b9_html
+import re as _pf67_010b9_re
+from flask import request, redirect, url_for, render_template
+from .models import db, ProtocolTemplate
+
+
+try:
+    _pf67_patch010b9_edit_required = edit_required
+except NameError:
+    def _pf67_patch010b9_edit_required(func):
+        return func
+
+
+class _PF67Patch010B9DisplayStep:
+    def __init__(self, source_step, overrides=None):
+        self._source_step = source_step
+        self._overrides = overrides or {}
+
+    def __getattr__(self, name):
+        if name in self._overrides:
+            return self._overrides[name]
+
+        return getattr(self._source_step, name)
+
+    def __getitem__(self, name):
+        return getattr(self, name)
+
+
+def _pf67_patch010b9_is_procedure(template):
+    return (getattr(template, "protocol_role", None) or "protocol") == "procedure"
+
+
+def _pf67_patch010b9_step_model():
+    try:
+        return ProtocolTemplate.steps.property.mapper.class_
+    except Exception:
+        return None
+
+
+def _pf67_patch010b9_column_names(model):
+    try:
+        return set(model.__table__.columns.keys())
+    except Exception:
+        return set()
+
+
+def _pf67_patch010b9_plain_text(value):
+    html_value = _pf67_010b9_html.unescape(str(value or ""))
+    html_value = _pf67_010b9_re.sub(
+        r"<(script|style)\b.*?</\1>",
+        " ",
+        html_value,
+        flags=_pf67_010b9_re.IGNORECASE | _pf67_010b9_re.DOTALL,
+    )
+    html_value = _pf67_010b9_re.sub(r"<img\b[^>]*>", " ", html_value, flags=_pf67_010b9_re.IGNORECASE)
+    html_value = _pf67_010b9_re.sub(r"<[^>]+>", " ", html_value)
+    html_value = _pf67_010b9_html.unescape(html_value)
+    return _pf67_010b9_re.sub(r"\s+", " ", html_value).strip()
+
+
+def _pf67_patch010b9_first_img_src_raw(value):
+    html_value = value or ""
+
+    if not html_value:
+        return ""
+
+    candidates = [
+        str(html_value),
+        _pf67_010b9_html.unescape(str(html_value)),
+    ]
+
+    patterns = [
+        r"<img\b[^>]*\bsrc\s*=\s*\"([^\"]+)\"",
+        r"<img\b[^>]*\bsrc\s*=\s*'([^']+)'",
+        r"<img\b[^>]*\bsrc\s*=\s*([^>\s]+)",
+    ]
+
+    for candidate in candidates:
+        for pattern in patterns:
+            match = _pf67_010b9_re.search(pattern, candidate, flags=_pf67_010b9_re.IGNORECASE)
+
+            if match:
+                src = (match.group(1) or "").strip()
+                src = src.strip('"').strip("'")
+                return _pf67_010b9_html.unescape(src)
+
+    return ""
+
+
+@views_bp.app_template_filter("pf67_patch010b9_plain_summary")
+def pf67_patch010b9_plain_summary(value, max_length=220):
+    text_value = _pf67_patch010b9_plain_text(value)
+
+    try:
+        max_length = int(max_length)
+    except Exception:
+        max_length = 220
+
+    if max_length > 0 and len(text_value) > max_length:
+        text_value = text_value[: max_length - 1].rstrip() + "..."
+
+    return text_value
+
+
+@views_bp.app_template_filter("pf67_patch010b9_first_img_src")
+def pf67_patch010b9_first_img_src(value):
+    return _pf67_patch010b9_first_img_src_raw(value)
+
+
+def _pf67_patch010b9_duration_label(minutes):
+    try:
+        minutes = int(minutes or 0)
+    except Exception:
+        minutes = 0
+
+    if minutes <= 0:
+        return ""
+
+    days = minutes // 1440
+    rem = minutes % 1440
+    hours = rem // 60
+    mins = rem % 60
+    parts = []
+
+    if days:
+        parts.append(str(days) + " day" + ("" if days == 1 else "s"))
+
+    if hours:
+        parts.append(str(hours) + " hour" + ("" if hours == 1 else "s"))
+
+    if mins:
+        parts.append(str(mins) + " minute" + ("" if mins == 1 else "s"))
+
+    return " ".join(parts)
+
+
+@views_bp.app_template_global("pf67_patch010b9_duration_label")
+def pf67_patch010b9_duration_label(minutes):
+    return _pf67_patch010b9_duration_label(minutes)
+
+
+def _pf67_patch010b9_procedure_minutes(procedure):
+    steps = list(getattr(procedure, "steps", []) or [])
+    steps.sort(key=lambda step: (getattr(step, "sort_order", 0) or 0, getattr(step, "id", 0) or 0))
+    total = 0
+
+    for index, step in enumerate(steps):
+        if index == 0:
+            continue
+
+        try:
+            value = int(getattr(step, "ideal_minutes", 0) or 0)
+        except Exception:
+            value = 0
+
+        if value > 0:
+            total += value
+
+    return total
+
+
+@views_bp.app_template_global("pf67_patch010b9_procedure_minutes")
+def pf67_patch010b9_procedure_minutes(procedure):
+    return _pf67_patch010b9_procedure_minutes(procedure)
+
+
+def _pf67_patch010b9_step_sort_value(step):
+    try:
+        return float(getattr(step, "sort_order", 0) or 0)
+    except Exception:
+        try:
+            return float(getattr(step, "position", 0) or 0)
+        except Exception:
+            return float(getattr(step, "id", 0) or 0)
+
+
+def _pf67_patch010b9_step_title(step, index):
+    for name in ["name", "title"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return str(value)
+
+    return "Step " + str(index + 1)
+
+
+def _pf67_patch010b9_step_instructions_html(step):
+    for name in ["instructions_html", "instructions", "description"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return value
+
+    return ""
+
+
+def _pf67_patch010b9_timing_overrides_from(step):
+    names = [
+        "check_minutes",
+        "ideal_minutes",
+        "limit_minutes",
+        "risk_minutes",
+        "failure_minutes",
+        "minimum_minutes",
+        "maximum_minutes",
+        "check_value",
+        "ideal_value",
+        "limit_value",
+        "risk_value",
+        "failure_value",
+        "check_unit",
+        "ideal_unit",
+        "limit_unit",
+        "risk_unit",
+        "failure_unit",
+    ]
+    values = {}
+
+    for name in names:
+        if hasattr(step, name):
+            try:
+                values[name] = getattr(step, name)
+            except Exception:
+                pass
+
+    return values
+
+
+@views_bp.app_template_global("pf67_patch010b9_display_steps")
+def pf67_patch010b9_display_steps(template):
+    source_steps = list(getattr(template, "steps", []) or [])
+    source_steps.sort(key=lambda step: (_pf67_patch010b9_step_sort_value(step), getattr(step, "id", 0) or 0))
+
+    result = []
+    procedure_instance_index = 0
+
+    for parent_index, step in enumerate(source_steps):
+        procedure_id = getattr(step, "procedure_template_id", None)
+        step_kind = getattr(step, "step_kind", "") or ""
+
+        if procedure_id or step_kind == "procedure":
+            try:
+                procedure_id_int = int(procedure_id or 0)
+            except Exception:
+                procedure_id_int = 0
+
+            procedure = ProtocolTemplate.query.get(procedure_id_int) if procedure_id_int else None
+
+            if not procedure:
+                # Keep the reference visible if the referenced Procedure cannot be found.
+                result.append(step)
+                continue
+
+            procedure_steps = list(getattr(procedure, "steps", []) or [])
+            procedure_steps.sort(key=lambda proc_step: (_pf67_patch010b9_step_sort_value(proc_step), getattr(proc_step, "id", 0) or 0))
+            parent_timing = _pf67_patch010b9_timing_overrides_from(step)
+
+            for proc_index, proc_step in enumerate(procedure_steps):
+                title = _pf67_patch010b9_step_title(proc_step, proc_index)
+                instructions_html = _pf67_patch010b9_step_instructions_html(proc_step)
+                wrapped_instructions = '<div class="pf67-procedure-derived-instructions">' + str(instructions_html or "") + '</div>'
+
+                overrides = {
+                    "id": getattr(step, "id", None),
+                    "name": title,
+                    "title": title,
+                    "instructions_html": wrapped_instructions,
+                    "is_procedure_derived": True,
+                    "is_procedure_reference": False,
+                    "procedure_template_id": procedure.id,
+                    "procedure_step_id": getattr(proc_step, "id", None),
+                    "procedure_reference_step_id": getattr(step, "id", None),
+                    "procedure_instance_index": procedure_instance_index,
+                    "sort_order": _pf67_patch010b9_step_sort_value(step) + ((proc_index + 1) / 1000.0),
+                    "pf67_source_step": proc_step,
+                    "pf67_parent_reference_step": step,
+                }
+
+                if proc_index == 0:
+                    # The parent Procedure-reference step's timing controls the wait before the Procedure begins.
+                    overrides.update(parent_timing)
+
+                result.append(_PF67Patch010B9DisplayStep(proc_step, overrides))
+
+            procedure_instance_index += 1
+        else:
+            if not hasattr(step, "is_procedure_derived"):
+                try:
+                    setattr(step, "is_procedure_derived", False)
+                except Exception:
+                    pass
+
+            result.append(step)
+
+    return result
+
+
+def _pf67_patch010b9_set_if_present(obj, columns, name, value):
+    if name in columns and hasattr(obj, name):
+        setattr(obj, name, value)
+
+
+def _pf67_patch010b9_template_fk_column(columns):
+    if "template_id" in columns:
+        return "template_id"
+
+    if "protocol_template_id" in columns:
+        return "protocol_template_id"
+
+    return None
+
+
+def _pf67_patch010b9_next_sort_order(template):
+    steps = list(getattr(template, "steps", []) or [])
+    values = []
+
+    for step in steps:
+        try:
+            values.append(int(getattr(step, "sort_order", 0) or 0))
+        except Exception:
+            pass
+
+    if not values:
+        return 10
+
+    return max(values) + 10
+
+
+def _pf67_patch010b9_marker(procedure_id):
+    return '<div data-pf67-procedure-reference="true" data-procedure-id="' + str(procedure_id) + '"></div>'
+
+
+@views_bp.before_app_request
+def pf67_patch010b9_redirect_procedure_reference_step_edits():
+    # If the existing editor routes attempt to edit the parent Procedure-reference step,
+    # redirect to the Procedure editor instead. This keeps derived Procedure steps read-only
+    # in the parent Protocol while preserving the current editor route structure.
+    path_value = request.path or ""
+    match = _pf67_010b9_re.search(r"/(?:templates|protocols)/(\d+).*?/(?:steps?|protocol_steps?|template_steps?)/(\d+)", path_value)
+
+    if not match:
+        return None
+
+    try:
+        parent_template_id = int(match.group(1))
+        step_id = int(match.group(2))
+    except Exception:
+        return None
+
+    StepModel = _pf67_patch010b9_step_model()
+
+    if StepModel is None:
+        return None
+
+    step = StepModel.query.get(step_id)
+
+    if not step:
+        return None
+
+    procedure_id = getattr(step, "procedure_template_id", None)
+
+    if not procedure_id:
+        return None
+
+    try:
+        procedure_id = int(procedure_id)
+    except Exception:
+        return None
+
+    return_to = request.referrer or url_for("views.template_detail", template_id=parent_template_id)
+
+    return redirect(url_for("views.template_detail", template_id=procedure_id, return_to=return_to))
+
+
+@views_bp.route("/protocols/<int:template_id>/insert-procedure-patch010b9", methods=["GET", "POST"])
+@_pf67_patch010b9_edit_required
+def pf67_patch010b9_insert_procedure(template_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+
+    if request.method == "POST":
+        try:
+            procedure_id = int(request.form.get("procedure_id") or 0)
+        except Exception:
+            procedure_id = 0
+
+        procedure = ProtocolTemplate.query.get_or_404(procedure_id)
+
+        if not _pf67_patch010b9_is_procedure(procedure):
+            return redirect(url_for("views.template_detail", template_id=template.id))
+
+        StepModel = _pf67_patch010b9_step_model()
+
+        if StepModel is None:
+            return redirect(url_for("views.template_detail", template_id=template.id))
+
+        columns = _pf67_patch010b9_column_names(StepModel)
+        step = StepModel()
+        fk_column = _pf67_patch010b9_template_fk_column(columns)
+        minutes = _pf67_patch010b9_procedure_minutes(procedure)
+        description = _pf67_patch010b9_plain_text(getattr(procedure, "description", "") or "")
+
+        if fk_column:
+            setattr(step, fk_column, template.id)
+
+        _pf67_patch010b9_set_if_present(step, columns, "name", "Procedure: " + (getattr(procedure, "name", "") or "Procedure"))
+        _pf67_patch010b9_set_if_present(step, columns, "title", "Procedure: " + (getattr(procedure, "name", "") or "Procedure"))
+        _pf67_patch010b9_set_if_present(step, columns, "instructions_html", _pf67_patch010b9_marker(procedure.id))
+        _pf67_patch010b9_set_if_present(step, columns, "instructions", "")
+        _pf67_patch010b9_set_if_present(step, columns, "sort_order", _pf67_patch010b9_next_sort_order(template))
+        _pf67_patch010b9_set_if_present(step, columns, "step_kind", "procedure")
+        _pf67_patch010b9_set_if_present(step, columns, "procedure_template_id", procedure.id)
+        _pf67_patch010b9_set_if_present(step, columns, "procedure_snapshot_title", getattr(procedure, "name", "") or "Procedure")
+        _pf67_patch010b9_set_if_present(step, columns, "procedure_snapshot_description", description)
+        _pf67_patch010b9_set_if_present(step, columns, "procedure_snapshot_minutes", minutes)
+
+        db.session.add(step)
+        db.session.commit()
+
+        return redirect(url_for("views.template_detail", template_id=template.id))
+
+    procedures = [
+        candidate for candidate in ProtocolTemplate.query.order_by(ProtocolTemplate.name.asc()).all()
+        if _pf67_patch010b9_is_procedure(candidate) and candidate.id != template.id
+    ]
+
+    return render_template(
+        "insert_procedure_patch010b9.html",
+        template=template,
+        procedures=procedures,
+    )
+
+# === PF67 PATCH 010B12 PROCEDURE BUNDLE BOUNDARIES ===
+from flask import request, redirect, url_for
+from .models import ProtocolTemplate
+
+
+class _PF67Patch010B12DisplayStep:
+    def __init__(self, source_step, overrides=None):
+        self._source_step = source_step
+        self._overrides = overrides or {}
+
+    def __getattr__(self, name):
+        if name in self._overrides:
+            return self._overrides[name]
+
+        return getattr(self._source_step, name)
+
+    def __getitem__(self, name):
+        return getattr(self, name)
+
+
+def _pf67_patch010b12_step_sort_value(step):
+    try:
+        return float(getattr(step, "sort_order", 0) or 0)
+    except Exception:
+        try:
+            return float(getattr(step, "position", 0) or 0)
+        except Exception:
+            return float(getattr(step, "id", 0) or 0)
+
+
+def _pf67_patch010b12_step_title(step, index):
+    for name in ["name", "title"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return str(value)
+
+    return "Step " + str(index + 1)
+
+
+def _pf67_patch010b12_step_instructions_html(step):
+    for name in ["instructions_html", "instructions", "description"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return value
+
+    return ""
+
+
+def _pf67_patch010b12_timing_overrides_from(step):
+    names = [
+        "check_minutes",
+        "ideal_minutes",
+        "limit_minutes",
+        "risk_minutes",
+        "failure_minutes",
+        "minimum_minutes",
+        "maximum_minutes",
+        "check_value",
+        "ideal_value",
+        "limit_value",
+        "risk_value",
+        "failure_value",
+        "check_unit",
+        "ideal_unit",
+        "limit_unit",
+        "risk_unit",
+        "failure_unit",
+    ]
+    values = {}
+
+    for name in names:
+        if hasattr(step, name):
+            try:
+                values[name] = getattr(step, name)
+            except Exception:
+                pass
+
+    return values
+
+
+@views_bp.app_template_global("pf67_patch010b9_display_steps")
+def pf67_patch010b12_display_steps(template):
+    source_steps = list(getattr(template, "steps", []) or [])
+    source_steps.sort(key=lambda step: (_pf67_patch010b12_step_sort_value(step), getattr(step, "id", 0) or 0))
+
+    result = []
+    procedure_instance_index = 0
+
+    for parent_index, step in enumerate(source_steps):
+        procedure_id = getattr(step, "procedure_template_id", None)
+        step_kind = getattr(step, "step_kind", "") or ""
+
+        if procedure_id or step_kind == "procedure":
+            try:
+                procedure_id_int = int(procedure_id or 0)
+            except Exception:
+                procedure_id_int = 0
+
+            procedure = ProtocolTemplate.query.get(procedure_id_int) if procedure_id_int else None
+
+            if not procedure:
+                result.append(step)
+                continue
+
+            procedure_steps = list(getattr(procedure, "steps", []) or [])
+            procedure_steps.sort(key=lambda proc_step: (_pf67_patch010b12_step_sort_value(proc_step), getattr(proc_step, "id", 0) or 0))
+            parent_timing = _pf67_patch010b12_timing_overrides_from(step)
+            total_proc_steps = len(procedure_steps)
+
+            for proc_index, proc_step in enumerate(procedure_steps):
+                title = _pf67_patch010b12_step_title(proc_step, proc_index)
+                instructions_html = _pf67_patch010b12_step_instructions_html(proc_step)
+                wrapped_instructions = '<div class="pf67-procedure-derived-instructions">' + str(instructions_html or "") + '</div>'
+                is_last = proc_index == (total_proc_steps - 1)
+
+                overrides = {
+                    "id": getattr(step, "id", None),
+                    "name": title,
+                    "title": title,
+                    "instructions_html": wrapped_instructions,
+                    "is_procedure_derived": True,
+                    "is_procedure_reference": False,
+                    "procedure_template_id": procedure.id,
+                    "procedure_step_id": getattr(proc_step, "id", None),
+                    "procedure_reference_step_id": getattr(step, "id", None),
+                    "procedure_instance_index": procedure_instance_index,
+                    "is_first_procedure_derived": proc_index == 0,
+                    "is_last_procedure_derived": is_last,
+                    "pf67_allow_parent_insert_after": is_last,
+                    "allow_insert_after": is_last,
+                    "sort_order": _pf67_patch010b12_step_sort_value(step) + ((proc_index + 1) / 1000.0),
+                    "pf67_source_step": proc_step,
+                    "pf67_parent_reference_step": step,
+                }
+
+                if proc_index == 0:
+                    overrides.update(parent_timing)
+
+                result.append(_PF67Patch010B12DisplayStep(proc_step, overrides))
+
+            procedure_instance_index += 1
+        else:
+            try:
+                setattr(step, "is_procedure_derived", False)
+                setattr(step, "pf67_allow_parent_insert_after", True)
+                setattr(step, "allow_insert_after", True)
+            except Exception:
+                pass
+
+            result.append(step)
+
+    return result
+
+# === PF67 PATCH 010C PROCEDURE FLOW SNAPSHOT EXPANSION ===
+from .models import ProtocolTemplate
+
+
+class _PF67Patch010CFlowStep:
+    def __init__(self, source_step, overrides=None):
+        self._source_step = source_step
+        self._overrides = overrides or {}
+
+    def __getattr__(self, name):
+        if name in self._overrides:
+            return self._overrides[name]
+
+        return getattr(self._source_step, name)
+
+    def __getitem__(self, name):
+        return getattr(self, name)
+
+
+def _pf67_patch010c_step_sort_value(step):
+    try:
+        return float(getattr(step, "sort_order", 0) or 0)
+    except Exception:
+        try:
+            return float(getattr(step, "position", 0) or 0)
+        except Exception:
+            return float(getattr(step, "id", 0) or 0)
+
+
+def _pf67_patch010c_step_title(step, index=0):
+    for name in ["name", "title"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return str(value)
+
+    return "Step " + str(index + 1)
+
+
+def _pf67_patch010c_step_instructions_html(step):
+    for name in ["instructions_html", "instructions", "description"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return value
+
+    return ""
+
+
+def _pf67_patch010c_timing_overrides_from(step):
+    names = [
+        "check_minutes",
+        "ideal_minutes",
+        "limit_minutes",
+        "risk_minutes",
+        "failure_minutes",
+        "minimum_minutes",
+        "maximum_minutes",
+        "check_value",
+        "ideal_value",
+        "limit_value",
+        "risk_value",
+        "failure_value",
+        "check_unit",
+        "ideal_unit",
+        "limit_unit",
+        "risk_unit",
+        "failure_unit",
+        "wait_minutes",
+        "duration_minutes",
+    ]
+
+    values = {}
+
+    for name in names:
+        if hasattr(step, name):
+            try:
+                values[name] = getattr(step, name)
+            except Exception:
+                pass
+
+    return values
+
+
+def _pf67_patch010c_apply_step_data(target_step, source_step):
+    # Copy common step data from an expanded source step to a new static Flow/Job step.
+    # Existing start-flow code may use direct assignments; this helper is available
+    # for a future direct route patch if needed.
+    title = _pf67_patch010c_step_title(source_step, 0)
+    instructions = _pf67_patch010c_step_instructions_html(source_step)
+
+    for name in ["name", "title"]:
+        if hasattr(target_step, name):
+            try:
+                setattr(target_step, name, title)
+            except Exception:
+                pass
+
+    for name in ["instructions_html", "instructions", "description"]:
+        if hasattr(target_step, name):
+            try:
+                setattr(target_step, name, instructions)
+            except Exception:
+                pass
+
+    for name, value in _pf67_patch010c_timing_overrides_from(source_step).items():
+        if hasattr(target_step, name):
+            try:
+                setattr(target_step, name, value)
+            except Exception:
+                pass
+
+    provenance = {
+        "source_protocol_step_id": getattr(source_step, "source_protocol_step_id", getattr(source_step, "id", None)),
+        "source_procedure_template_id": getattr(source_step, "source_procedure_template_id", None),
+        "source_procedure_step_id": getattr(source_step, "source_procedure_step_id", None),
+        "source_procedure_reference_step_id": getattr(source_step, "source_procedure_reference_step_id", None),
+        "is_procedure_derived": bool(getattr(source_step, "is_procedure_derived", False)),
+    }
+
+    for name, value in provenance.items():
+        if hasattr(target_step, name):
+            try:
+                setattr(target_step, name, value)
+            except Exception:
+                pass
+
+    return target_step
+
+
+def pf67_patch010c_flow_steps(template):
+    # Return static step source objects for Flow creation.
+    source_steps = list(getattr(template, "steps", []) or [])
+    source_steps.sort(key=lambda step: (_pf67_patch010c_step_sort_value(step), getattr(step, "id", 0) or 0))
+
+    result = []
+    procedure_instance_index = 0
+
+    for parent_index, step in enumerate(source_steps):
+        procedure_id = getattr(step, "procedure_template_id", None)
+        step_kind = getattr(step, "step_kind", "") or ""
+
+        if procedure_id or step_kind == "procedure":
+            try:
+                procedure_id_int = int(procedure_id or 0)
+            except Exception:
+                procedure_id_int = 0
+
+            procedure = ProtocolTemplate.query.get(procedure_id_int) if procedure_id_int else None
+
+            if not procedure:
+                result.append(step)
+                continue
+
+            procedure_steps = list(getattr(procedure, "steps", []) or [])
+            procedure_steps.sort(key=lambda proc_step: (_pf67_patch010c_step_sort_value(proc_step), getattr(proc_step, "id", 0) or 0))
+
+            parent_timing = _pf67_patch010c_timing_overrides_from(step)
+
+            for proc_index, proc_step in enumerate(procedure_steps):
+                title = _pf67_patch010c_step_title(proc_step, proc_index)
+                instructions_html = _pf67_patch010c_step_instructions_html(proc_step)
+                is_first = proc_index == 0
+                is_last = proc_index == (len(procedure_steps) - 1)
+
+                overrides = {
+                    "id": getattr(proc_step, "id", None),
+                    "name": title,
+                    "title": title,
+                    "instructions_html": instructions_html,
+                    "instructions": instructions_html,
+                    "is_procedure_derived": True,
+                    "source_protocol_step_id": getattr(step, "id", None),
+                    "source_procedure_template_id": procedure.id,
+                    "source_procedure_step_id": getattr(proc_step, "id", None),
+                    "source_procedure_reference_step_id": getattr(step, "id", None),
+                    "procedure_template_id": procedure.id,
+                    "procedure_step_id": getattr(proc_step, "id", None),
+                    "procedure_reference_step_id": getattr(step, "id", None),
+                    "procedure_instance_index": procedure_instance_index,
+                    "is_first_procedure_derived": is_first,
+                    "is_last_procedure_derived": is_last,
+                    "pf67_source_step": proc_step,
+                    "pf67_parent_reference_step": step,
+                }
+
+                if is_first:
+                    # Parent Protocol reference timing controls the wait before the Procedure begins.
+                    overrides.update(parent_timing)
+
+                result.append(_PF67Patch010CFlowStep(proc_step, overrides))
+
+            procedure_instance_index += 1
+        else:
+            try:
+                setattr(step, "is_procedure_derived", False)
+                setattr(step, "source_protocol_step_id", getattr(step, "id", None))
+            except Exception:
+                pass
+
+            result.append(step)
+
+    return result
+
+# === PF67 PATCH 010C2 PROCEDURE REFERENCE EDITOR AND CONTROLS ===
+from flask import request, redirect, url_for, render_template
+from .models import db, ProtocolTemplate
+
+
+try:
+    _pf67_patch010c2_edit_required = edit_required
+except NameError:
+    def _pf67_patch010c2_edit_required(func):
+        return func
+
+
+class _PF67Patch010C2DisplayStep:
+    def __init__(self, source_step, overrides=None):
+        self._source_step = source_step
+        self._overrides = overrides or {}
+
+    def __getattr__(self, name):
+        if name in self._overrides:
+            return self._overrides[name]
+
+        return getattr(self._source_step, name)
+
+    def __getitem__(self, name):
+        return getattr(self, name)
+
+
+def _pf67_patch010c2_step_model():
+    try:
+        return ProtocolTemplate.steps.property.mapper.class_
+    except Exception:
+        return None
+
+
+def _pf67_patch010c2_step_sort_value(step):
+    try:
+        return float(getattr(step, "sort_order", 0) or 0)
+    except Exception:
+        try:
+            return float(getattr(step, "position", 0) or 0)
+        except Exception:
+            return float(getattr(step, "id", 0) or 0)
+
+
+def _pf67_patch010c2_step_title(step, index=0):
+    for name in ["name", "title"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return str(value)
+
+    return "Step " + str(index + 1)
+
+
+def _pf67_patch010c2_step_instructions_html(step):
+    for name in ["instructions_html", "instructions", "description"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return value
+
+    return ""
+
+
+def _pf67_patch010c2_timing_overrides_from(step):
+    names = [
+        "check_minutes",
+        "ideal_minutes",
+        "limit_minutes",
+        "risk_minutes",
+        "failure_minutes",
+        "minimum_minutes",
+        "maximum_minutes",
+        "wait_minutes",
+        "duration_minutes",
+        "check_value",
+        "ideal_value",
+        "limit_value",
+        "risk_value",
+        "failure_value",
+        "check_unit",
+        "ideal_unit",
+        "limit_unit",
+        "risk_unit",
+        "failure_unit",
+    ]
+
+    values = {}
+
+    for name in names:
+        if hasattr(step, name):
+            try:
+                values[name] = getattr(step, name)
+            except Exception:
+                pass
+
+    return values
+
+
+@views_bp.app_template_global("pf67_patch010b9_display_steps")
+def pf67_patch010c2_display_steps(template):
+    source_steps = list(getattr(template, "steps", []) or [])
+    source_steps.sort(key=lambda step: (_pf67_patch010c2_step_sort_value(step), getattr(step, "id", 0) or 0))
+
+    result = []
+    procedure_instance_index = 0
+
+    for parent_index, step in enumerate(source_steps):
+        procedure_id = getattr(step, "procedure_template_id", None)
+        step_kind = getattr(step, "step_kind", "") or ""
+
+        if procedure_id or step_kind == "procedure":
+            try:
+                procedure_id_int = int(procedure_id or 0)
+            except Exception:
+                procedure_id_int = 0
+
+            procedure = ProtocolTemplate.query.get(procedure_id_int) if procedure_id_int else None
+
+            if not procedure:
+                result.append(step)
+                continue
+
+            procedure_steps = list(getattr(procedure, "steps", []) or [])
+            procedure_steps.sort(key=lambda proc_step: (_pf67_patch010c2_step_sort_value(proc_step), getattr(proc_step, "id", 0) or 0))
+            parent_timing = _pf67_patch010c2_timing_overrides_from(step)
+            total_proc_steps = len(procedure_steps)
+
+            for proc_index, proc_step in enumerate(procedure_steps):
+                title = _pf67_patch010c2_step_title(proc_step, proc_index)
+                instructions_html = _pf67_patch010c2_step_instructions_html(proc_step)
+                wrapped_instructions = '<div class="pf67-procedure-derived-instructions">' + str(instructions_html or "") + '</div>'
+                is_last = proc_index == (total_proc_steps - 1)
+
+                overrides = {
+                    "id": getattr(step, "id", None),
+                    "name": title,
+                    "title": title,
+                    "instructions_html": wrapped_instructions,
+                    "instructions": wrapped_instructions,
+                    "is_procedure_derived": True,
+                    "is_procedure_reference": False,
+                    "procedure_template_id": procedure.id,
+                    "procedure_step_id": getattr(proc_step, "id", None),
+                    "procedure_reference_step_id": getattr(step, "id", None),
+                    "procedure_instance_index": procedure_instance_index,
+                    "is_first_procedure_derived": proc_index == 0,
+                    "is_last_procedure_derived": is_last,
+                    "pf67_allow_parent_insert_after": is_last,
+                    "allow_insert_after": is_last,
+                    "pf67_show_reorder_controls": False,
+                    "allow_reorder": False,
+                    "can_reorder": False,
+                    "is_reorderable": False,
+                    "sort_order": _pf67_patch010c2_step_sort_value(step) + ((proc_index + 1) / 1000.0),
+                    "pf67_source_step": proc_step,
+                    "pf67_parent_reference_step": step,
+                }
+
+                if proc_index == 0:
+                    overrides.update(parent_timing)
+
+                result.append(_PF67Patch010C2DisplayStep(proc_step, overrides))
+
+            procedure_instance_index += 1
+        else:
+            try:
+                setattr(step, "is_procedure_derived", False)
+                setattr(step, "pf67_allow_parent_insert_after", True)
+                setattr(step, "allow_insert_after", True)
+                setattr(step, "pf67_show_reorder_controls", True)
+                setattr(step, "allow_reorder", True)
+                setattr(step, "can_reorder", True)
+                setattr(step, "is_reorderable", True)
+            except Exception:
+                pass
+
+            result.append(step)
+
+    return result
+
+
+def _pf67_patch010c2_timing_fields(step):
+    field_defs = [
+        ("check_minutes", "Check"),
+        ("ideal_minutes", "Ideal"),
+        ("limit_minutes", "Limit"),
+        ("risk_minutes", "Risk"),
+        ("failure_minutes", "Failure"),
+        ("minimum_minutes", "Minimum"),
+        ("maximum_minutes", "Maximum"),
+        ("wait_minutes", "Wait"),
+        ("duration_minutes", "Duration"),
+    ]
+
+    fields = []
+
+    for name, label in field_defs:
+        if hasattr(step, name):
+            try:
+                value = getattr(step, name)
+            except Exception:
+                value = ""
+
+            if value is None:
+                value = ""
+
+            fields.append({
+                "name": name,
+                "label": label + " minutes",
+                "value": value,
+            })
+
+    return fields
+
+
+@views_bp.route("/protocols/<int:template_id>/procedure-reference/<int:step_id>/timing", methods=["GET", "POST"])
+@_pf67_patch010c2_edit_required
+def pf67_patch010c2_procedure_reference_timing(template_id, step_id):
+    template = ProtocolTemplate.query.get_or_404(template_id)
+    StepModel = _pf67_patch010c2_step_model()
+
+    if StepModel is None:
+        return redirect(url_for("views.template_detail", template_id=template.id))
+
+    step = StepModel.query.get_or_404(step_id)
+    procedure_id = getattr(step, "procedure_template_id", None)
+
+    if not procedure_id:
+        return redirect(url_for("views.template_detail", template_id=template.id))
+
+    procedure = ProtocolTemplate.query.get(procedure_id)
+    return_to = request.args.get("return_to") or request.form.get("return_to") or request.referrer or url_for("views.template_detail", template_id=template.id)
+    timing_fields = _pf67_patch010c2_timing_fields(step)
+
+    if request.method == "POST":
+        for field in timing_fields:
+            raw_value = request.form.get(field["name"], "").strip()
+
+            if raw_value == "":
+                value = 0
+            else:
+                try:
+                    value = int(float(raw_value))
+                except Exception:
+                    value = 0
+
+            try:
+                setattr(step, field["name"], value)
+            except Exception:
+                pass
+
+        db.session.commit()
+        return redirect(return_to)
+
+    selected_step_title = request.args.get("step_title") or ""
+
+    return render_template(
+        "procedure_reference_timing_patch010c2.html",
+        template=template,
+        step=step,
+        procedure=procedure,
+        timing_fields=timing_fields,
+        selected_step_title=selected_step_title,
+        return_to=return_to,
+    )
+
+
+@views_bp.before_app_request
+def pf67_patch010c2_redirect_procedure_reference_step_edits():
+    path_value = request.path or ""
+    lower_path = path_value.lower()
+
+    if "procedure-reference" in lower_path:
+        return None
+
+    if "step" not in lower_path:
+        return None
+
+    if request.method not in ("GET", "POST"):
+        return None
+
+    StepModel = _pf67_patch010c2_step_model()
+
+    if StepModel is None:
+        return None
+
+    numbers = [int(value) for value in re.findall(r"\d+", path_value)]
+
+    if not numbers:
+        return None
+
+    # Last matching Procedure-reference step id wins.
+    for candidate_step_id in reversed(numbers):
+        try:
+            step = StepModel.query.get(candidate_step_id)
+        except Exception:
+            step = None
+
+        if not step:
+            continue
+
+        procedure_id = getattr(step, "procedure_template_id", None)
+
+        if not procedure_id:
+            continue
+
+        template_id = None
+
+        for attr in ["template_id", "protocol_template_id"]:
+            if hasattr(step, attr):
+                try:
+                    template_id = int(getattr(step, attr))
+                    break
+                except Exception:
+                    pass
+
+        if not template_id:
+            template_id = numbers[0]
+
+        return_to = request.referrer or url_for("views.template_detail", template_id=template_id)
+        step_title = request.args.get("step_title") or ""
+
+        return redirect(
+            url_for(
+                "views.pf67_patch010c2_procedure_reference_timing",
+                template_id=template_id,
+                step_id=candidate_step_id,
+                return_to=return_to,
+                step_title=step_title,
+            )
+        )
+
+    return None
+
+# === PF67 PATCH 010C3 PROCEDURE BUNDLE CONTROLS AND DELETE FIX ===
+import re as _pf67_010c3_re
+from flask import request, redirect, url_for
+from .models import db, ProtocolTemplate
+
+
+class _PF67Patch010C3DisplayStep:
+    def __init__(self, source_step, overrides=None):
+        self._source_step = source_step
+        self._overrides = overrides or {}
+
+    def __getattr__(self, name):
+        if name in self._overrides:
+            return self._overrides[name]
+
+        return getattr(self._source_step, name)
+
+    def __getitem__(self, name):
+        return getattr(self, name)
+
+
+def _pf67_patch010c3_step_model():
+    try:
+        return ProtocolTemplate.steps.property.mapper.class_
+    except Exception:
+        return None
+
+
+def _pf67_patch010c3_step_sort_value(step):
+    try:
+        return float(getattr(step, "sort_order", 0) or 0)
+    except Exception:
+        try:
+            return float(getattr(step, "position", 0) or 0)
+        except Exception:
+            return float(getattr(step, "id", 0) or 0)
+
+
+def _pf67_patch010c3_step_title(step, index=0):
+    for name in ["name", "title"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return str(value)
+
+    return "Step " + str(index + 1)
+
+
+def _pf67_patch010c3_step_instructions_html(step):
+    for name in ["instructions_html", "instructions", "description"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return value
+
+    return ""
+
+
+def _pf67_patch010c3_timing_overrides_from(step):
+    names = [
+        "check_minutes",
+        "ideal_minutes",
+        "limit_minutes",
+        "risk_minutes",
+        "failure_minutes",
+        "minimum_minutes",
+        "maximum_minutes",
+        "wait_minutes",
+        "duration_minutes",
+        "check_value",
+        "ideal_value",
+        "limit_value",
+        "risk_value",
+        "failure_value",
+        "check_unit",
+        "ideal_unit",
+        "limit_unit",
+        "risk_unit",
+        "failure_unit",
+    ]
+
+    values = {}
+
+    for name in names:
+        if hasattr(step, name):
+            try:
+                values[name] = getattr(step, name)
+            except Exception:
+                pass
+
+    return values
+
+
+@views_bp.app_template_global("pf67_patch010b9_display_steps")
+def pf67_patch010c3_display_steps(template):
+    source_steps = list(getattr(template, "steps", []) or [])
+    source_steps.sort(key=lambda step: (_pf67_patch010c3_step_sort_value(step), getattr(step, "id", 0) or 0))
+
+    result = []
+    procedure_instance_index = 0
+
+    for parent_index, step in enumerate(source_steps):
+        procedure_id = getattr(step, "procedure_template_id", None)
+        step_kind = getattr(step, "step_kind", "") or ""
+
+        if procedure_id or step_kind == "procedure":
+            try:
+                procedure_id_int = int(procedure_id or 0)
+            except Exception:
+                procedure_id_int = 0
+
+            procedure = ProtocolTemplate.query.get(procedure_id_int) if procedure_id_int else None
+
+            if not procedure:
+                result.append(step)
+                continue
+
+            procedure_steps = list(getattr(procedure, "steps", []) or [])
+            procedure_steps.sort(key=lambda proc_step: (_pf67_patch010c3_step_sort_value(proc_step), getattr(proc_step, "id", 0) or 0))
+
+            parent_timing = _pf67_patch010c3_timing_overrides_from(step)
+            total_proc_steps = len(procedure_steps)
+
+            for proc_index, proc_step in enumerate(procedure_steps):
+                title = _pf67_patch010c3_step_title(proc_step, proc_index)
+                instructions_html = _pf67_patch010c3_step_instructions_html(proc_step)
+                wrapped_instructions = '<div class="pf67-procedure-derived-instructions">' + str(instructions_html or "") + '</div>'
+                is_first = proc_index == 0
+                is_last = proc_index == (total_proc_steps - 1)
+
+                overrides = {
+                    "id": getattr(step, "id", None),
+                    "name": title,
+                    "title": title,
+                    "instructions_html": wrapped_instructions,
+                    "instructions": wrapped_instructions,
+                    "is_procedure_derived": True,
+                    "is_procedure_reference": False,
+                    "procedure_template_id": procedure.id,
+                    "procedure_step_id": getattr(proc_step, "id", None),
+                    "procedure_reference_step_id": getattr(step, "id", None),
+                    "procedure_instance_index": procedure_instance_index,
+                    "is_first_procedure_derived": is_first,
+                    "is_last_procedure_derived": is_last,
+                    "pf67_allow_parent_insert_after": is_last,
+                    "allow_insert_after": is_last,
+                    "pf67_show_reorder_controls": is_first,
+                    "allow_reorder": is_first,
+                    "can_reorder": is_first,
+                    "is_reorderable": is_first,
+                    "sort_order": _pf67_patch010c3_step_sort_value(step) + ((proc_index + 1) / 1000.0),
+                    "pf67_source_step": proc_step,
+                    "pf67_parent_reference_step": step,
+                }
+
+                if is_first:
+                    overrides.update(parent_timing)
+
+                result.append(_PF67Patch010C3DisplayStep(proc_step, overrides))
+
+            procedure_instance_index += 1
+        else:
+            try:
+                setattr(step, "is_procedure_derived", False)
+                setattr(step, "is_first_procedure_derived", False)
+                setattr(step, "is_last_procedure_derived", False)
+                setattr(step, "pf67_allow_parent_insert_after", True)
+                setattr(step, "allow_insert_after", True)
+                setattr(step, "pf67_show_reorder_controls", True)
+                setattr(step, "allow_reorder", True)
+                setattr(step, "can_reorder", True)
+                setattr(step, "is_reorderable", True)
+            except Exception:
+                pass
+
+            result.append(step)
+
+    return result
+
+
+def _pf67_patch010c3_template_redirect_url():
+    for endpoint in ["views.template_list", "views.templates", "views.protocols", "views.dashboard"]:
+        try:
+            return url_for(endpoint)
+        except Exception:
+            pass
+
+    return "/templates"
+
+
+@views_bp.before_app_request
+def pf67_patch010c3_delete_protocol_with_procedure_references():
+    # Target only full Protocol/Template delete POST routes, not step deletes.
+    if request.method != "POST":
+        return None
+
+    path_value = request.path or ""
+    lower_path = path_value.lower()
+
+    if "step" in lower_path:
+        return None
+
+    if "delete" not in lower_path and "remove" not in lower_path:
+        return None
+
+    match = _pf67_010c3_re.search(r"/(?:templates|protocols)/(\d+)/(?:delete|remove)", lower_path)
+
+    if not match:
+        match = _pf67_010c3_re.search(r"/(?:delete|remove)/(?:templates|protocols)/(\d+)", lower_path)
+
+    if not match:
+        return None
+
+    try:
+        template_id = int(match.group(1))
+    except Exception:
+        return None
+
+    template = ProtocolTemplate.query.get(template_id)
+
+    if not template:
+        return None
+
+    StepModel = _pf67_patch010c3_step_model()
+
+    if StepModel is not None:
+        for step in list(getattr(template, "steps", []) or []):
+            try:
+                db.session.delete(step)
+            except Exception:
+                pass
+
+    try:
+        db.session.delete(template)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return None
+
+    return redirect(_pf67_patch010c3_template_redirect_url())
+
+
+@views_bp.before_app_request
+def pf67_patch010c3_redirect_procedure_reference_step_edits():
+    # Robust redirect for full-editor links that point at the parent Procedure-reference step.
+    path_value = request.path or ""
+    lower_path = path_value.lower()
+
+    if "procedure-reference" in lower_path:
+        return None
+
+    if "step" not in lower_path:
+        return None
+
+    if request.method not in ("GET", "POST"):
+        return None
+
+    StepModel = _pf67_patch010c3_step_model()
+
+    if StepModel is None:
+        return None
+
+    candidate_numbers = [int(value) for value in _pf67_010c3_re.findall(r"\d+", path_value)]
+
+    for key, value in request.values.items():
+        try:
+            if str(value).isdigit():
+                candidate_numbers.append(int(value))
+        except Exception:
+            pass
+
+    seen = set()
+
+    for candidate_step_id in reversed(candidate_numbers):
+        if candidate_step_id in seen:
+            continue
+
+        seen.add(candidate_step_id)
+
+        try:
+            step = StepModel.query.get(candidate_step_id)
+        except Exception:
+            step = None
+
+        if not step:
+            continue
+
+        procedure_id = getattr(step, "procedure_template_id", None)
+
+        if not procedure_id:
+            continue
+
+        template_id = None
+
+        for attr in ["template_id", "protocol_template_id"]:
+            if hasattr(step, attr):
+                try:
+                    template_id = int(getattr(step, attr))
+                    break
+                except Exception:
+                    pass
+
+        if not template_id:
+            template_id = candidate_numbers[0] if candidate_numbers else 0
+
+        return_to = request.referrer or url_for("views.template_detail", template_id=template_id)
+        step_title = request.args.get("step_title") or ""
+
+        return redirect(
+            url_for(
+                "views.pf67_patch010c2_procedure_reference_timing",
+                template_id=template_id,
+                step_id=candidate_step_id,
+                return_to=return_to,
+                step_title=step_title,
+            )
+        )
+
+    return None
+
+# === PF67 PATCH 010C4 PROTOCOL EDITOR PROCEDURE CLEANUP ===
+import re as _pf67_010c4_re
+from flask import request, jsonify, redirect, url_for
+from .models import ProtocolTemplate
+
+
+class _PF67Patch010C4DisplayStep:
+    def __init__(self, source_step, overrides=None):
+        self._source_step = source_step
+        self._overrides = overrides or {}
+
+    def __getattr__(self, name):
+        if name in self._overrides:
+            return self._overrides[name]
+
+        return getattr(self._source_step, name)
+
+    def __getitem__(self, name):
+        return getattr(self, name)
+
+
+def _pf67_patch010c4_step_model():
+    try:
+        return ProtocolTemplate.steps.property.mapper.class_
+    except Exception:
+        return None
+
+
+def _pf67_patch010c4_step_sort_value(step):
+    try:
+        return float(getattr(step, "sort_order", 0) or 0)
+    except Exception:
+        try:
+            return float(getattr(step, "position", 0) or 0)
+        except Exception:
+            return float(getattr(step, "id", 0) or 0)
+
+
+def _pf67_patch010c4_step_title(step, index=0):
+    for name in ["name", "title"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return str(value)
+
+    return "Step " + str(index + 1)
+
+
+def _pf67_patch010c4_step_instructions_html(step):
+    for name in ["instructions_html", "instructions", "description"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return value
+
+    return ""
+
+
+def _pf67_patch010c4_timing_overrides_from(step):
+    names = [
+        "check_minutes",
+        "ideal_minutes",
+        "limit_minutes",
+        "risk_minutes",
+        "failure_minutes",
+        "minimum_minutes",
+        "maximum_minutes",
+        "wait_minutes",
+        "duration_minutes",
+        "check_value",
+        "ideal_value",
+        "limit_value",
+        "risk_value",
+        "failure_value",
+        "check_unit",
+        "ideal_unit",
+        "limit_unit",
+        "risk_unit",
+        "failure_unit",
+    ]
+
+    values = {}
+
+    for name in names:
+        if hasattr(step, name):
+            try:
+                values[name] = getattr(step, name)
+            except Exception:
+                pass
+
+    return values
+
+
+@views_bp.app_template_global("pf67_patch010b9_display_steps")
+def pf67_patch010c4_display_steps(template):
+    source_steps = list(getattr(template, "steps", []) or [])
+    source_steps.sort(key=lambda step: (_pf67_patch010c4_step_sort_value(step), getattr(step, "id", 0) or 0))
+
+    result = []
+    procedure_instance_index = 0
+
+    for parent_index, step in enumerate(source_steps):
+        procedure_id = getattr(step, "procedure_template_id", None)
+        step_kind = getattr(step, "step_kind", "") or ""
+
+        if procedure_id or step_kind == "procedure":
+            try:
+                procedure_id_int = int(procedure_id or 0)
+            except Exception:
+                procedure_id_int = 0
+
+            procedure = ProtocolTemplate.query.get(procedure_id_int) if procedure_id_int else None
+
+            if not procedure:
+                result.append(step)
+                continue
+
+            procedure_steps = list(getattr(procedure, "steps", []) or [])
+            procedure_steps.sort(key=lambda proc_step: (_pf67_patch010c4_step_sort_value(proc_step), getattr(proc_step, "id", 0) or 0))
+            parent_timing = _pf67_patch010c4_timing_overrides_from(step)
+            total_proc_steps = len(procedure_steps)
+
+            for proc_index, proc_step in enumerate(procedure_steps):
+                title = _pf67_patch010c4_step_title(proc_step, proc_index)
+                instructions_html = _pf67_patch010c4_step_instructions_html(proc_step)
+                wrapped_instructions = '<div class="pf67-procedure-derived-instructions">' + str(instructions_html or "") + '</div>'
+                is_first = proc_index == 0
+                is_last = proc_index == (total_proc_steps - 1)
+
+                overrides = {
+                    "id": getattr(step, "id", None),
+                    "name": title,
+                    "title": title,
+                    "instructions_html": wrapped_instructions,
+                    "instructions": wrapped_instructions,
+                    "is_procedure_derived": True,
+                    "is_procedure_reference": False,
+                    "procedure_template_id": procedure.id,
+                    "procedure_step_id": getattr(proc_step, "id", None),
+                    "procedure_reference_step_id": getattr(step, "id", None),
+                    "procedure_instance_index": procedure_instance_index,
+                    "is_first_procedure_derived": is_first,
+                    "is_last_procedure_derived": is_last,
+                    "pf67_allow_parent_insert_after": is_last,
+                    "allow_insert_after": is_last,
+                    "pf67_show_reorder_controls": True,
+                    "allow_reorder": True,
+                    "can_reorder": True,
+                    "is_reorderable": True,
+                    "pf67_bundle_move_up": is_first,
+                    "pf67_bundle_move_down": is_last,
+                    "sort_order": _pf67_patch010c4_step_sort_value(step) + ((proc_index + 1) / 1000.0),
+                    "pf67_source_step": proc_step,
+                    "pf67_parent_reference_step": step,
+                }
+
+                if is_first:
+                    overrides.update(parent_timing)
+
+                result.append(_PF67Patch010C4DisplayStep(proc_step, overrides))
+
+            procedure_instance_index += 1
+        else:
+            try:
+                setattr(step, "is_procedure_derived", False)
+                setattr(step, "is_first_procedure_derived", False)
+                setattr(step, "is_last_procedure_derived", False)
+                setattr(step, "pf67_allow_parent_insert_after", True)
+                setattr(step, "allow_insert_after", True)
+                setattr(step, "pf67_show_reorder_controls", True)
+                setattr(step, "allow_reorder", True)
+                setattr(step, "can_reorder", True)
+                setattr(step, "is_reorderable", True)
+                setattr(step, "pf67_bundle_move_up", False)
+                setattr(step, "pf67_bundle_move_down", False)
+            except Exception:
+                pass
+
+            result.append(step)
+
+    return result
+
+
+def _pf67_patch010c4_template_id_for_step(step):
+    for attr in ["template_id", "protocol_template_id"]:
+        if hasattr(step, attr):
+            try:
+                value = getattr(step, attr)
+                if value:
+                    return int(value)
+            except Exception:
+                pass
+
+    return None
+
+
+def _pf67_patch010c4_is_first_step(step):
+    template_id = _pf67_patch010c4_template_id_for_step(step)
+
+    if not template_id:
+        return False
+
+    StepModel = _pf67_patch010c4_step_model()
+
+    if StepModel is None:
+        return False
+
+    steps = []
+
+    try:
+        columns = StepModel.__table__.columns.keys()
+    except Exception:
+        columns = []
+
+    try:
+        if "template_id" in columns:
+            steps = StepModel.query.filter_by(template_id=template_id).all()
+        elif "protocol_template_id" in columns:
+            steps = StepModel.query.filter_by(protocol_template_id=template_id).all()
+    except Exception:
+        steps = []
+
+    if not steps:
+        return True
+
+    steps.sort(key=lambda item: (_pf67_patch010c4_step_sort_value(item), getattr(item, "id", 0) or 0))
+    return bool(steps and getattr(steps[0], "id", None) == getattr(step, "id", None))
+
+
+@views_bp.route("/pf67/patch010c4/step-context")
+def pf67_patch010c4_step_context():
+    StepModel = _pf67_patch010c4_step_model()
+    step_id = request.args.get("step_id", type=int)
+    template_id = request.args.get("template_id", type=int)
+
+    payload = {
+        "ok": True,
+        "is_first_step": False,
+        "hide_timing": False,
+        "is_procedure_reference": False,
+    }
+
+    if StepModel is not None and step_id:
+        step = StepModel.query.get(step_id)
+
+        if step:
+            is_first = _pf67_patch010c4_is_first_step(step)
+            payload["is_first_step"] = is_first
+            payload["hide_timing"] = is_first
+            payload["is_procedure_reference"] = bool(getattr(step, "procedure_template_id", None))
+            payload["procedure_template_id"] = getattr(step, "procedure_template_id", None)
+            return jsonify(payload)
+
+    if StepModel is not None and template_id:
+        steps = []
+
+        try:
+            columns = StepModel.__table__.columns.keys()
+        except Exception:
+            columns = []
+
+        try:
+            if "template_id" in columns:
+                steps = StepModel.query.filter_by(template_id=template_id).all()
+            elif "protocol_template_id" in columns:
+                steps = StepModel.query.filter_by(protocol_template_id=template_id).all()
+        except Exception:
+            steps = []
+
+        payload["is_first_step"] = len(steps) == 0
+        payload["hide_timing"] = len(steps) == 0
+
+    return jsonify(payload)
+
+
+@views_bp.before_app_request
+def pf67_patch010c4_redirect_procedure_reference_step_edits():
+    path_value = request.path or ""
+    lower_path = path_value.lower()
+
+    if "procedure-reference" in lower_path:
+        return None
+
+    if "step" not in lower_path:
+        return None
+
+    if request.method not in ("GET", "POST"):
+        return None
+
+    StepModel = _pf67_patch010c4_step_model()
+
+    if StepModel is None:
+        return None
+
+    candidate_numbers = [int(value) for value in _pf67_010c4_re.findall(r"\d+", path_value)]
+
+    for key, value in request.values.items():
+        try:
+            if str(value).isdigit():
+                candidate_numbers.append(int(value))
+        except Exception:
+            pass
+
+    seen = set()
+
+    for candidate_step_id in reversed(candidate_numbers):
+        if candidate_step_id in seen:
+            continue
+
+        seen.add(candidate_step_id)
+
+        try:
+            step = StepModel.query.get(candidate_step_id)
+        except Exception:
+            step = None
+
+        if not step:
+            continue
+
+        procedure_id = getattr(step, "procedure_template_id", None)
+
+        if not procedure_id:
+            continue
+
+        template_id = _pf67_patch010c4_template_id_for_step(step) or (candidate_numbers[0] if candidate_numbers else 0)
+        return_to = request.referrer or url_for("views.template_detail", template_id=template_id)
+        step_title = request.args.get("step_title") or ""
+
+        try:
+            return redirect(
+                url_for(
+                    "views.pf67_patch010c2_procedure_reference_timing",
+                    template_id=template_id,
+                    step_id=candidate_step_id,
+                    return_to=return_to,
+                    step_title=step_title,
+                )
+            )
+        except Exception:
+            return None
+
+    return None
+
+# === PF67 PATCH 010C5 PROCEDURE REFERENCE CONTROL ROW ===
+import re as _pf67_010c5_re
+from flask import request, jsonify, redirect, url_for
+from .models import ProtocolTemplate
+
+
+class _PF67Patch010C5DisplayStep:
+    def __init__(self, source_step, overrides=None):
+        self._source_step = source_step
+        self._overrides = overrides or {}
+
+    def __getattr__(self, name):
+        if name in self._overrides:
+            return self._overrides[name]
+
+        return getattr(self._source_step, name)
+
+    def __getitem__(self, name):
+        return getattr(self, name)
+
+
+def _pf67_patch010c5_step_model():
+    try:
+        return ProtocolTemplate.steps.property.mapper.class_
+    except Exception:
+        return None
+
+
+def _pf67_patch010c5_step_sort_value(step):
+    try:
+        return float(getattr(step, "sort_order", 0) or 0)
+    except Exception:
+        try:
+            return float(getattr(step, "position", 0) or 0)
+        except Exception:
+            return float(getattr(step, "id", 0) or 0)
+
+
+def _pf67_patch010c5_step_title(step, index=0):
+    for name in ["name", "title"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return str(value)
+
+    return "Step " + str(index + 1)
+
+
+def _pf67_patch010c5_step_instructions_html(step):
+    for name in ["instructions_html", "instructions", "description"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return value
+
+    return ""
+
+
+def _pf67_patch010c5_timing_overrides_from(step):
+    names = [
+        "check_minutes",
+        "ideal_minutes",
+        "limit_minutes",
+        "risk_minutes",
+        "failure_minutes",
+        "minimum_minutes",
+        "maximum_minutes",
+        "wait_minutes",
+        "duration_minutes",
+        "check_value",
+        "ideal_value",
+        "limit_value",
+        "risk_value",
+        "failure_value",
+        "check_unit",
+        "ideal_unit",
+        "limit_unit",
+        "risk_unit",
+        "failure_unit",
+    ]
+
+    values = {}
+
+    for name in names:
+        if hasattr(step, name):
+            try:
+                values[name] = getattr(step, name)
+            except Exception:
+                pass
+
+    return values
+
+
+@views_bp.app_template_global("pf67_patch010b9_display_steps")
+def pf67_patch010c5_display_steps(template):
+    source_steps = list(getattr(template, "steps", []) or [])
+    source_steps.sort(key=lambda step: (_pf67_patch010c5_step_sort_value(step), getattr(step, "id", 0) or 0))
+
+    result = []
+    procedure_instance_index = 0
+
+    for parent_index, step in enumerate(source_steps):
+        procedure_id = getattr(step, "procedure_template_id", None)
+        step_kind = getattr(step, "step_kind", "") or ""
+
+        if procedure_id or step_kind == "procedure":
+            try:
+                procedure_id_int = int(procedure_id or 0)
+            except Exception:
+                procedure_id_int = 0
+
+            procedure = ProtocolTemplate.query.get(procedure_id_int) if procedure_id_int else None
+
+            if not procedure:
+                result.append(step)
+                continue
+
+            procedure_steps = list(getattr(procedure, "steps", []) or [])
+            procedure_steps.sort(key=lambda proc_step: (_pf67_patch010c5_step_sort_value(proc_step), getattr(proc_step, "id", 0) or 0))
+            parent_timing = _pf67_patch010c5_timing_overrides_from(step)
+            total_proc_steps = len(procedure_steps)
+
+            for proc_index, proc_step in enumerate(procedure_steps):
+                title = _pf67_patch010c5_step_title(proc_step, proc_index)
+                instructions_html = _pf67_patch010c5_step_instructions_html(proc_step)
+                wrapped_instructions = '<div class="pf67-procedure-derived-instructions">' + str(instructions_html or "") + '</div>'
+                is_first = proc_index == 0
+                is_last = proc_index == (total_proc_steps - 1)
+
+                overrides = {
+                    "id": getattr(step, "id", None),
+                    "name": title,
+                    "title": title,
+                    "instructions_html": wrapped_instructions,
+                    "instructions": wrapped_instructions,
+                    "is_procedure_derived": True,
+                    "is_procedure_reference": False,
+                    "procedure_template_id": procedure.id,
+                    "procedure_step_id": getattr(proc_step, "id", None),
+                    "procedure_reference_step_id": getattr(step, "id", None),
+                    "procedure_instance_index": procedure_instance_index,
+                    "is_first_procedure_derived": is_first,
+                    "is_last_procedure_derived": is_last,
+                    "pf67_allow_parent_insert_after": is_last,
+                    "allow_insert_after": is_last,
+                    "pf67_show_reorder_controls": False,
+                    "allow_reorder": False,
+                    "can_reorder": False,
+                    "is_reorderable": False,
+                    "pf67_bundle_move_up": False,
+                    "pf67_bundle_move_down": False,
+                    "sort_order": _pf67_patch010c5_step_sort_value(step) + ((proc_index + 1) / 1000.0),
+                    "pf67_source_step": proc_step,
+                    "pf67_parent_reference_step": step,
+                }
+
+                if is_first:
+                    overrides.update(parent_timing)
+
+                result.append(_PF67Patch010C5DisplayStep(proc_step, overrides))
+
+            procedure_instance_index += 1
+        else:
+            try:
+                setattr(step, "is_procedure_derived", False)
+                setattr(step, "is_first_procedure_derived", False)
+                setattr(step, "is_last_procedure_derived", False)
+                setattr(step, "pf67_allow_parent_insert_after", True)
+                setattr(step, "allow_insert_after", True)
+                setattr(step, "pf67_show_reorder_controls", True)
+                setattr(step, "allow_reorder", True)
+                setattr(step, "can_reorder", True)
+                setattr(step, "is_reorderable", True)
+                setattr(step, "pf67_bundle_move_up", False)
+                setattr(step, "pf67_bundle_move_down", False)
+            except Exception:
+                pass
+
+            result.append(step)
+
+    return result
+
+
+def _pf67_patch010c5_template_id_for_step(step):
+    for attr in ["template_id", "protocol_template_id"]:
+        if hasattr(step, attr):
+            try:
+                value = getattr(step, attr)
+                if value:
+                    return int(value)
+            except Exception:
+                pass
+
+    return None
+
+
+def _pf67_patch010c5_is_first_step(step):
+    template_id = _pf67_patch010c5_template_id_for_step(step)
+
+    if not template_id:
+        return False
+
+    StepModel = _pf67_patch010c5_step_model()
+
+    if StepModel is None:
+        return False
+
+    steps = []
+
+    try:
+        columns = StepModel.__table__.columns.keys()
+    except Exception:
+        columns = []
+
+    try:
+        if "template_id" in columns:
+            steps = StepModel.query.filter_by(template_id=template_id).all()
+        elif "protocol_template_id" in columns:
+            steps = StepModel.query.filter_by(protocol_template_id=template_id).all()
+    except Exception:
+        steps = []
+
+    if not steps:
+        return True
+
+    steps.sort(key=lambda item: (_pf67_patch010c5_step_sort_value(item), getattr(item, "id", 0) or 0))
+    return bool(steps and getattr(steps[0], "id", None) == getattr(step, "id", None))
+
+
+@views_bp.route("/pf67/patch010c5/step-context")
+def pf67_patch010c5_step_context():
+    StepModel = _pf67_patch010c5_step_model()
+    step_id = request.args.get("step_id", type=int)
+    template_id = request.args.get("template_id", type=int)
+
+    payload = {
+        "ok": True,
+        "is_first_step": False,
+        "hide_timing": False,
+        "is_procedure_reference": False,
+    }
+
+    if StepModel is not None and step_id:
+        step = StepModel.query.get(step_id)
+
+        if step:
+            is_first = _pf67_patch010c5_is_first_step(step)
+            payload["is_first_step"] = is_first
+            payload["hide_timing"] = is_first
+            payload["is_procedure_reference"] = bool(getattr(step, "procedure_template_id", None))
+            payload["procedure_template_id"] = getattr(step, "procedure_template_id", None)
+            return jsonify(payload)
+
+    if StepModel is not None and template_id:
+        steps = []
+
+        try:
+            columns = StepModel.__table__.columns.keys()
+        except Exception:
+            columns = []
+
+        try:
+            if "template_id" in columns:
+                steps = StepModel.query.filter_by(template_id=template_id).all()
+            elif "protocol_template_id" in columns:
+                steps = StepModel.query.filter_by(protocol_template_id=template_id).all()
+        except Exception:
+            steps = []
+
+        payload["is_first_step"] = len(steps) == 0
+        payload["hide_timing"] = len(steps) == 0
+
+    return jsonify(payload)
+
+
+@views_bp.before_app_request
+def pf67_patch010c5_redirect_procedure_reference_step_edits():
+    path_value = request.path or ""
+    lower_path = path_value.lower()
+
+    if "procedure-reference" in lower_path:
+        return None
+
+    if "step" not in lower_path:
+        return None
+
+    if request.method not in ("GET", "POST"):
+        return None
+
+    StepModel = _pf67_patch010c5_step_model()
+
+    if StepModel is None:
+        return None
+
+    candidate_numbers = [int(value) for value in _pf67_010c5_re.findall(r"\d+", path_value)]
+
+    for key, value in request.values.items():
+        try:
+            if str(value).isdigit():
+                candidate_numbers.append(int(value))
+        except Exception:
+            pass
+
+    seen = set()
+
+    for candidate_step_id in reversed(candidate_numbers):
+        if candidate_step_id in seen:
+            continue
+
+        seen.add(candidate_step_id)
+
+        try:
+            step = StepModel.query.get(candidate_step_id)
+        except Exception:
+            step = None
+
+        if not step:
+            continue
+
+        procedure_id = getattr(step, "procedure_template_id", None)
+
+        if not procedure_id:
+            continue
+
+        template_id = _pf67_patch010c5_template_id_for_step(step) or (candidate_numbers[0] if candidate_numbers else 0)
+        return_to = request.referrer or url_for("views.template_detail", template_id=template_id)
+        step_title = request.args.get("step_title") or ""
+
+        try:
+            return redirect(
+                url_for(
+                    "views.pf67_patch010c2_procedure_reference_timing",
+                    template_id=template_id,
+                    step_id=candidate_step_id,
+                    return_to=return_to,
+                    step_title=step_title,
+                )
+            )
+        except Exception:
+            return None
+
+    return None
+
+# === PF67 PATCH 010C7 PROCEDURE CONTROL LINKS FIXED ===
+import re as _pf67_010c7_re
+from flask import request, jsonify, redirect, url_for, render_template
+from .models import db, ProtocolTemplate
+
+
+try:
+    _pf67_patch010c7_edit_required = edit_required
+except NameError:
+    def _pf67_patch010c7_edit_required(func):
+        return func
+
+
+class _PF67Patch010C7DisplayStep:
+    def __init__(self, source_step, overrides=None):
+        self._source_step = source_step
+        self._overrides = overrides or {}
+
+    def __getattr__(self, name):
+        if name in self._overrides:
+            return self._overrides[name]
+
+        return getattr(self._source_step, name)
+
+    def __getitem__(self, name):
+        return getattr(self, name)
+
+
+def _pf67_patch010c7_step_model():
+    try:
+        return ProtocolTemplate.steps.property.mapper.class_
+    except Exception:
+        return None
+
+
+def _pf67_patch010c7_step_sort_field(step):
+    if hasattr(step, "sort_order"):
+        return "sort_order"
+
+    if hasattr(step, "position"):
+        return "position"
+
+    return ""
+
+
+def _pf67_patch010c7_step_sort_value(step):
+    try:
+        return float(getattr(step, "sort_order", 0) or 0)
+    except Exception:
+        try:
+            return float(getattr(step, "position", 0) or 0)
+        except Exception:
+            return float(getattr(step, "id", 0) or 0)
+
+
+def _pf67_patch010c7_step_title(step, index=0):
+    for name in ["name", "title"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return str(value)
+
+    return "Step " + str(index + 1)
+
+
+def _pf67_patch010c7_step_instructions_html(step):
+    for name in ["instructions_html", "instructions", "description"]:
+        value = getattr(step, name, None)
+
+        if value:
+            return value
+
+    return ""
+
+
+def _pf67_patch010c7_timing_overrides_from(step):
+    names = [
+        "check_minutes",
+        "ideal_minutes",
+        "limit_minutes",
+        "risk_minutes",
+        "failure_minutes",
+        "minimum_minutes",
+        "maximum_minutes",
+        "wait_minutes",
+        "duration_minutes",
+        "check_value",
+        "ideal_value",
+        "limit_value",
+        "risk_value",
+        "failure_value",
+        "check_unit",
+        "ideal_unit",
+        "limit_unit",
+        "risk_unit",
+        "failure_unit",
+    ]
+
+    values = {}
+
+    for name in names:
+        if hasattr(step, name):
+            try:
+                values[name] = getattr(step, name)
+            except Exception:
+                pass
+
+    return values
+
+
+@views_bp.app_template_global("pf67_patch010b9_display_steps")
+def pf67_patch010c7_display_steps(template):
+    source_steps = list(getattr(template, "steps", []) or [])
+    source_steps.sort(key=lambda step: (_pf67_patch010c7_step_sort_value(step), getattr(step, "id", 0) or 0))
+
+    result = []
+    procedure_instance_index = 0
+
+    for parent_index, step in enumerate(source_steps):
+        procedure_id = getattr(step, "procedure_template_id", None)
+        step_kind = getattr(step, "step_kind", "") or ""
+
+        if procedure_id or step_kind == "procedure":
+            try:
+                procedure_id_int = int(procedure_id or 0)
+            except Exception:
+                procedure_id_int = 0
+
+            procedure = ProtocolTemplate.query.get(procedure_id_int) if procedure_id_int else None
+
+            if not procedure:
+                result.append(step)
+                continue
+
+            procedure_steps = list(getattr(procedure, "steps", []) or [])
+            procedure_steps.sort(key=lambda proc_step: (_pf67_patch010c7_step_sort_value(proc_step), getattr(proc_step, "id", 0) or 0))
+            parent_timing = _pf67_patch010c7_timing_overrides_from(step)
+            total_proc_steps = len(procedure_steps)
+
+            for proc_index, proc_step in enumerate(procedure_steps):
+                title = _pf67_patch010c7_step_title(proc_step, proc_index)
+                instructions_html = _pf67_patch010c7_step_instructions_html(proc_step)
+                marker = (
+                    '<span class="pf67-procedure-reference-marker" '
+                    'data-pf67-reference-step-id="' + str(getattr(step, "id", "")) + '" '
+                    'data-pf67-procedure-template-id="' + str(procedure.id) + '" '
+                    'data-pf67-procedure-step-id="' + str(getattr(proc_step, "id", "")) + '" '
+                    'hidden></span>'
+                )
+                wrapped_instructions = marker + '<div class="pf67-procedure-derived-instructions">' + str(instructions_html or "") + '</div>'
+                is_first = proc_index == 0
+                is_last = proc_index == (total_proc_steps - 1)
+
+                overrides = {
+                    "id": getattr(step, "id", None),
+                    "name": title,
+                    "title": title,
+                    "instructions_html": wrapped_instructions,
+                    "instructions": wrapped_instructions,
+                    "is_procedure_derived": True,
+                    "is_procedure_reference": False,
+                    "procedure_template_id": procedure.id,
+                    "procedure_step_id": getattr(proc_step, "id", None),
+                    "procedure_reference_step_id": getattr(step, "id", None),
+                    "procedure_instance_index": procedure_instance_index,
+                    "is_first_procedure_derived": is_first,
+                    "is_last_procedure_derived": is_last,
+                    "pf67_allow_parent_insert_after": is_last,
+                    "allow_insert_after": is_last,
+                    "pf67_show_reorder_controls": False,
+                    "allow_reorder": False,
+                    "can_reorder": False,
+                    "is_reorderable": False,
+                    "sort_order": _pf67_patch010c7_step_sort_value(step) + ((proc_index + 1) / 1000.0),
+                    "pf67_source_step": proc_step,
+                    "pf67_parent_reference_step": step,
+                }
+
+                if is_first:
+                    overrides.update(parent_timing)
+
+                result.append(_PF67Patch010C7DisplayStep(proc_step, overrides))
+
+            procedure_instance_index += 1
+        else:
+            try:
+                setattr(step, "is_procedure_derived", False)
+                setattr(step, "pf67_allow_parent_insert_after", True)
+                setattr(step, "allow_insert_after", True)
+                setattr(step, "pf67_show_reorder_controls", True)
+                setattr(step, "allow_reorder", True)
+                setattr(step, "can_reorder", True)
+                setattr(step, "is_reorderable", True)
+            except Exception:
+                pass
+
+            result.append(step)
+
+    return result
+
+
+def _pf67_patch010c7_template_id_for_step(step):
+    for attr in ["template_id", "protocol_template_id"]:
+        if hasattr(step, attr):
+            try:
+                value = getattr(step, attr)
+                if value:
+                    return int(value)
+            except Exception:
+                pass
+
+    return None
+
+
+def _pf67_patch010c7_steps_for_template(template_id):
+    StepModel = _pf67_patch010c7_step_model()
+
+    if StepModel is None:
+        return []
+
+    try:
+        columns = StepModel.__table__.columns.keys()
+    except Exception:
+        columns = []
+
+    try:
+        if "template_id" in columns:
+            steps = StepModel.query.filter_by(template_id=template_id).all()
+        elif "protocol_template_id" in columns:
+            steps = StepModel.query.filter_by(protocol_template_id=template_id).all()
+        else:
+            steps = []
+    except Exception:
+        steps = []
+
+    steps.sort(key=lambda item: (_pf67_patch010c7_step_sort_value(item), getattr(item, "id", 0) or 0))
+    return steps
+
+
+def _pf67_patch010c7_timing_fields(step):
+    field_defs = [
+        ("check_minutes", "Check minutes"),
+        ("ideal_minutes", "Ideal minutes"),
+        ("limit_minutes", "Limit minutes"),
+        ("risk_minutes", "Risk minutes"),
+        ("failure_minutes", "Failure minutes"),
+        ("minimum_minutes", "Minimum minutes"),
+        ("maximum_minutes", "Maximum minutes"),
+        ("wait_minutes", "Wait minutes"),
+        ("duration_minutes", "Duration minutes"),
+    ]
+
+    fields = []
+
+    for name, label in field_defs:
+        if hasattr(step, name):
+            try:
+                value = getattr(step, name)
+            except Exception:
+                value = ""
+
+            if value is None:
+                value = ""
+
+            fields.append({
+                "name": name,
+                "label": label,
+                "value": value,
+            })
+
+    return fields
+
+
+def _pf67_patch010c7_template_redirect_url(template_id):
+    try:
+        return url_for("views.template_detail", template_id=template_id)
+    except Exception:
+        return "/templates/" + str(template_id)
+
+
+@views_bp.route("/protocols/<int:template_id>/procedure-reference/<int:step_id>/timing-c7", methods=["GET", "POST"])
+@_pf67_patch010c7_edit_required
+def pf67_patch010c7_procedure_reference_timing(template_id, step_id):
+    StepModel = _pf67_patch010c7_step_model()
+
+    if StepModel is None:
+        return redirect(_pf67_patch010c7_template_redirect_url(template_id))
+
+    step = StepModel.query.get_or_404(step_id)
+    procedure_id = getattr(step, "procedure_template_id", None)
+
+    if not procedure_id:
+        return redirect(_pf67_patch010c7_template_redirect_url(template_id))
+
+    procedure = ProtocolTemplate.query.get(procedure_id)
+    return_to = request.args.get("return_to") or request.form.get("return_to") or request.referrer or _pf67_patch010c7_template_redirect_url(template_id)
+    timing_fields = _pf67_patch010c7_timing_fields(step)
+
+    if request.method == "POST":
+        for field in timing_fields:
+            raw_value = request.form.get(field["name"], "").strip()
+
+            if raw_value == "":
+                value = 0
+            else:
+                try:
+                    value = int(float(raw_value))
+                except Exception:
+                    value = 0
+
+            try:
+                setattr(step, field["name"], value)
+            except Exception:
+                pass
+
+        db.session.commit()
+        return redirect(return_to)
+
+    return render_template(
+        "procedure_reference_timing_patch010c7.html",
+        template=ProtocolTemplate.query.get(template_id),
+        step=step,
+        procedure=procedure,
+        timing_fields=timing_fields,
+        return_to=return_to,
+    )
+
+
+@views_bp.route("/protocols/<int:template_id>/procedure-reference/<int:step_id>/move-up-c7")
+@_pf67_patch010c7_edit_required
+def pf67_patch010c7_procedure_reference_move_up(template_id, step_id):
+    return _pf67_patch010c7_move_reference(template_id, step_id, -1)
+
+
+@views_bp.route("/protocols/<int:template_id>/procedure-reference/<int:step_id>/move-down-c7")
+@_pf67_patch010c7_edit_required
+def pf67_patch010c7_procedure_reference_move_down(template_id, step_id):
+    return _pf67_patch010c7_move_reference(template_id, step_id, 1)
+
+
+def _pf67_patch010c7_move_reference(template_id, step_id, direction):
+    StepModel = _pf67_patch010c7_step_model()
+
+    if StepModel is None:
+        return redirect(_pf67_patch010c7_template_redirect_url(template_id))
+
+    step = StepModel.query.get_or_404(step_id)
+    steps = _pf67_patch010c7_steps_for_template(template_id)
+    index = None
+
+    for idx, candidate in enumerate(steps):
+        if getattr(candidate, "id", None) == getattr(step, "id", None):
+            index = idx
+            break
+
+    if index is None:
+        return redirect(_pf67_patch010c7_template_redirect_url(template_id))
+
+    target_index = index + direction
+
+    if target_index < 0 or target_index >= len(steps):
+        return redirect(_pf67_patch010c7_template_redirect_url(template_id))
+
+    target = steps[target_index]
+    sort_field = _pf67_patch010c7_step_sort_field(step)
+
+    if not sort_field or not hasattr(target, sort_field):
+        return redirect(_pf67_patch010c7_template_redirect_url(template_id))
+
+    current_value = getattr(step, sort_field, None)
+    target_value = getattr(target, sort_field, None)
+
+    try:
+        setattr(step, sort_field, target_value)
+        setattr(target, sort_field, current_value)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    return redirect(request.referrer or _pf67_patch010c7_template_redirect_url(template_id))
+
+
+@views_bp.route("/pf67/patch010c7/step-context")
+def pf67_patch010c7_step_context():
+    StepModel = _pf67_patch010c7_step_model()
+    step_id = request.args.get("step_id", type=int)
+    template_id = request.args.get("template_id", type=int)
+
+    payload = {
+        "ok": True,
+        "is_first_step": False,
+        "hide_timing": False,
+        "is_procedure_reference": False,
+    }
+
+    if StepModel is not None and step_id:
+        step = StepModel.query.get(step_id)
+
+        if step:
+            template_id = _pf67_patch010c7_template_id_for_step(step) or template_id
+            steps = _pf67_patch010c7_steps_for_template(template_id) if template_id else []
+            is_first = bool(steps and getattr(steps[0], "id", None) == getattr(step, "id", None))
+            payload["is_first_step"] = is_first
+            payload["hide_timing"] = is_first
+            payload["is_procedure_reference"] = bool(getattr(step, "procedure_template_id", None))
+            payload["procedure_template_id"] = getattr(step, "procedure_template_id", None)
+            return jsonify(payload)
+
+    if StepModel is not None and template_id:
+        steps = _pf67_patch010c7_steps_for_template(template_id)
+        payload["is_first_step"] = len(steps) == 0
+        payload["hide_timing"] = len(steps) == 0
+
+    return jsonify(payload)
+
+
+@views_bp.before_app_request
+def pf67_patch010c7_redirect_procedure_reference_step_edits():
+    path_value = request.path or ""
+    lower_path = path_value.lower()
+
+    if "procedure-reference" in lower_path:
+        return None
+
+    if "step" not in lower_path:
+        return None
+
+    if request.method not in ("GET", "POST"):
+        return None
+
+    StepModel = _pf67_patch010c7_step_model()
+
+    if StepModel is None:
+        return None
+
+    candidate_numbers = [int(value) for value in _pf67_010c7_re.findall(r"\d+", path_value)]
+
+    for key, value in request.values.items():
+        try:
+            if str(value).isdigit():
+                candidate_numbers.append(int(value))
+        except Exception:
+            pass
+
+    seen = set()
+
+    for candidate_step_id in reversed(candidate_numbers):
+        if candidate_step_id in seen:
+            continue
+
+        seen.add(candidate_step_id)
+
+        try:
+            step = StepModel.query.get(candidate_step_id)
+        except Exception:
+            step = None
+
+        if not step:
+            continue
+
+        procedure_id = getattr(step, "procedure_template_id", None)
+
+        if not procedure_id:
+            continue
+
+        template_id = _pf67_patch010c7_template_id_for_step(step) or (candidate_numbers[0] if candidate_numbers else 0)
+        return_to = request.referrer or _pf67_patch010c7_template_redirect_url(template_id)
+
+        try:
+            return redirect(
+                url_for(
+                    "views.pf67_patch010c7_procedure_reference_timing",
+                    template_id=template_id,
+                    step_id=candidate_step_id,
+                    return_to=return_to,
+                )
+            )
+        except Exception:
+            return None
+
+    return None
+
+# === PF67 PATCH 010C8 INLINE PROCEDURE TIMING EDITOR ===
+from flask import request, jsonify
+from .models import db, ProtocolTemplate
+
+
+try:
+    _pf67_patch010c8_edit_required = edit_required
+except NameError:
+    def _pf67_patch010c8_edit_required(func):
+        return func
+
+
+def _pf67_patch010c8_step_model():
+    try:
+        return ProtocolTemplate.steps.property.mapper.class_
+    except Exception:
+        return None
+
+
+def _pf67_patch010c8_allowed_timing_columns(step):
+    # Normal PF67 timing-window labels. Storage columns may vary by revision.
+    candidates = [
+        {
+            "key": "check",
+            "label": "Check",
+            "columns": ["check_minutes", "minimum_minutes"],
+        },
+        {
+            "key": "ideal",
+            "label": "Ideal",
+            "columns": ["ideal_minutes", "wait_minutes", "duration_minutes"],
+        },
+        {
+            "key": "limit",
+            "label": "Limit",
+            "columns": ["limit_minutes", "maximum_minutes"],
+        },
+        {
+            "key": "risk",
+            "label": "Risk",
+            "columns": ["risk_minutes"],
+        },
+        {
+            "key": "failure",
+            "label": "Failure",
+            "columns": ["failure_minutes"],
+        },
+    ]
+
+    fields = []
+
+    for item in candidates:
+        selected_column = None
+
+        for column in item["columns"]:
+            if hasattr(step, column):
+                selected_column = column
+                break
+
+        if not selected_column:
+            continue
+
+        try:
+            minutes = int(getattr(step, selected_column) or 0)
+        except Exception:
+            minutes = 0
+
+        value, unit = _pf67_patch010c8_minutes_to_value_unit(minutes)
+
+        fields.append({
+            "key": item["key"],
+            "label": item["label"],
+            "column": selected_column,
+            "minutes": minutes,
+            "value": value,
+            "unit": unit,
+        })
+
+    return fields
+
+
+def _pf67_patch010c8_minutes_to_value_unit(minutes):
+    try:
+        minutes = int(minutes or 0)
+    except Exception:
+        minutes = 0
+
+    if minutes <= 0:
+        return "", "hours"
+
+    if minutes % 1440 == 0:
+        return minutes // 1440, "days"
+
+    if minutes % 60 == 0:
+        return minutes // 60, "hours"
+
+    return minutes, "minutes"
+
+
+def _pf67_patch010c8_value_unit_to_minutes(value, unit):
+    try:
+        numeric = float(value)
+    except Exception:
+        numeric = 0
+
+    if numeric < 0:
+        numeric = 0
+
+    unit = (unit or "minutes").lower().strip()
+
+    if unit == "days":
+        return int(round(numeric * 1440))
+
+    if unit == "hours":
+        return int(round(numeric * 60))
+
+    return int(round(numeric))
+
+
+@views_bp.route("/protocols/<int:template_id>/procedure-reference/<int:step_id>/timing-inline-c8", methods=["GET", "POST"])
+@_pf67_patch010c8_edit_required
+def pf67_patch010c8_procedure_reference_timing_inline(template_id, step_id):
+    StepModel = _pf67_patch010c8_step_model()
+
+    if StepModel is None:
+        return jsonify({"ok": False, "error": "Step model was not detected."}), 500
+
+    step = StepModel.query.get(step_id)
+
+    if not step:
+        return jsonify({"ok": False, "error": "Procedure reference step was not found."}), 404
+
+    procedure_id = getattr(step, "procedure_template_id", None)
+
+    if not procedure_id:
+        return jsonify({"ok": False, "error": "This step is not a Procedure reference."}), 400
+
+    procedure = ProtocolTemplate.query.get(procedure_id)
+    fields = _pf67_patch010c8_allowed_timing_columns(step)
+
+    allowed_columns = set([field["column"] for field in fields])
+
+    if request.method == "POST":
+        data = request.get_json(silent=True) or request.form.to_dict(flat=False)
+        incoming_fields = data.get("fields", [])
+
+        if isinstance(incoming_fields, dict):
+            incoming_fields = list(incoming_fields.values())
+
+        if not isinstance(incoming_fields, list):
+            incoming_fields = []
+
+        for item in incoming_fields:
+            if not isinstance(item, dict):
+                continue
+
+            column = item.get("column")
+            value = item.get("value", "")
+            unit = item.get("unit", "minutes")
+
+            if column not in allowed_columns:
+                continue
+
+            minutes = _pf67_patch010c8_value_unit_to_minutes(value, unit)
+
+            try:
+                setattr(step, column, minutes)
+            except Exception:
+                pass
+
+        db.session.commit()
+        fields = _pf67_patch010c8_allowed_timing_columns(step)
+
+    return jsonify({
+        "ok": True,
+        "procedure_id": procedure_id,
+        "procedure_name": getattr(procedure, "name", "Procedure") if procedure else "Procedure",
+        "fields": fields,
+    })
+
+# === PF67 PATCH 011A FLOW STEP SEQUENCE ORDERING ===
+def _pf67_patch011a_step_order_value(step):
+    # Explicit Flow sequence first. Due date/status/title are intentionally not first.
+    for name in ["sequence_order", "display_order", "step_sequence", "sort_order", "position"]:
+        if hasattr(step, name):
+            try:
+                value = getattr(step, name)
+
+                if value is not None:
+                    numeric = float(value)
+
+                    if numeric != 0:
+                        return numeric
+            except Exception:
+                pass
+
+    try:
+        return float(getattr(step, "id", 0) or 0)
+    except Exception:
+        return 0.0
+
+
+def pf67_patch011a_ordered_flow_steps(source):
+    # Accept either a Flow/Job object with .steps or a list/query of steps.
+    try:
+        if hasattr(source, "steps"):
+            steps = list(getattr(source, "steps") or [])
+        else:
+            steps = list(source or [])
+    except Exception:
+        steps = []
+
+    return sorted(steps, key=lambda step: (_pf67_patch011a_step_order_value(step), getattr(step, "id", 0) or 0))
+
+
+try:
+    views_bp.add_app_template_global(pf67_patch011a_ordered_flow_steps, "pf67_patch011a_ordered_flow_steps")
+except Exception:
+    try:
+        views_bp.app_template_global("pf67_patch011a_ordered_flow_steps")(pf67_patch011a_ordered_flow_steps)
+    except Exception:
+        pass
+
+# === PF67 PATCH 011A2 FLOW CREATION SEQUENCE FIX ===
+def pf67_patch011a2_sequence_flow_steps(template):
+    # Return the expanded Protocol/Procedure step list in natural sequence.
+    #
+    # Important:
+    # - Do NOT sort the expanded list by step.sort_order here.
+    # - Procedure-derived items can carry Procedure-internal sort_order values.
+    #   Sorting the flat expanded list by those values groups repeated Procedure
+    #   steps together and breaks the user's intended Protocol sequence.
+    # - Preserve the order produced by pf67_patch010c_flow_steps(template), then
+    #   attach transient ordering values that Flow creation snapshots into JobStep.
+    try:
+        expanded_steps = list(pf67_patch010c_flow_steps(template))
+    except Exception:
+        expanded_steps = list(getattr(template, "steps", []) or [])
+
+        try:
+            expanded_steps.sort(key=lambda step: (getattr(step, "sort_order", 0) or 0, getattr(step, "id", 0) or 0))
+        except Exception:
+            pass
+
+    for index, step in enumerate(expanded_steps):
+        try:
+            setattr(step, "_pf67_flow_sort_order", (index + 1) * 10)
+        except Exception:
+            pass
+
+        try:
+            setattr(step, "_pf67_flow_sequence_order", (index + 1) * 1000)
+        except Exception:
+            pass
+
+    return expanded_steps
+
+# === PF67 PATCH 011CD KEYWORD FILTERS AND DURATION PILLS ===
+from flask import jsonify as _pf67_patch011cd_jsonify
+
+
+def _pf67_patch011cd_minutes_from_value_unit(value, unit):
+    try:
+        numeric = float(value or 0)
+    except Exception:
+        numeric = 0
+
+    if numeric <= 0:
+        return 0
+
+    unit = str(unit or "minutes").strip().lower()
+
+    if unit.startswith("day"):
+        return int(round(numeric * 1440))
+
+    if unit.startswith("hour"):
+        return int(round(numeric * 60))
+
+    return int(round(numeric))
+
+
+def _pf67_patch011cd_minutes_for_step(step):
+    # Estimate anchor: Ideal first, then wait/duration fallback. Check/Limit/Risk/Failure
+    # are not estimate anchors.
+    for name in ["ideal_minutes", "wait_minutes", "duration_minutes"]:
+        if hasattr(step, name):
+            try:
+                value = int(getattr(step, name) or 0)
+            except Exception:
+                value = 0
+
+            if value > 0:
+                return value
+
+    # Some older UI variants store value + unit.
+    value_unit_pairs = [
+        ("ideal_value", "ideal_unit"),
+        ("wait_value", "wait_unit"),
+        ("duration_value", "duration_unit"),
+    ]
+
+    for value_name, unit_name in value_unit_pairs:
+        if hasattr(step, value_name):
+            try:
+                value = getattr(step, value_name)
+                unit = getattr(step, unit_name, "minutes") if hasattr(step, unit_name) else "minutes"
+            except Exception:
+                value = 0
+                unit = "minutes"
+
+            minutes = _pf67_patch011cd_minutes_from_value_unit(value, unit)
+
+            if minutes > 0:
+                return minutes
+
+    return 0
+
+
+def pf67_patch011cd_template_duration_minutes(template):
+    try:
+        steps = list(pf67_patch010b9_display_steps(template))
+    except Exception:
+        try:
+            steps = list(pf67_patch010c_flow_steps(template))
+        except Exception:
+            steps = list(getattr(template, "steps", []) or [])
+
+            try:
+                steps.sort(key=lambda step: (getattr(step, "sort_order", 0) or 0, getattr(step, "id", 0) or 0))
+            except Exception:
+                pass
+
+    total = 0
+
+    for index, step in enumerate(steps):
+        # PF67 model: first displayed step timing is irrelevant.
+        if index == 0:
+            continue
+
+        total += _pf67_patch011cd_minutes_for_step(step)
+
+    return int(total or 0)
+
+
+def pf67_patch011cd_duration_label(minutes):
+    try:
+        minutes = int(minutes or 0)
+    except Exception:
+        minutes = 0
+
+    if minutes <= 0:
+        return ""
+
+    if minutes < 60:
+        unit = "minute" if minutes == 1 else "minutes"
+        return str(minutes) + " " + unit
+
+    if minutes < 2880:
+        hours = minutes // 60
+        rem_minutes = minutes % 60
+
+        label = str(hours) + " " + ("hour" if hours == 1 else "hours")
+
+        if rem_minutes:
+            label += " " + str(rem_minutes) + " " + ("minute" if rem_minutes == 1 else "minutes")
+
+        return label
+
+    days = minutes // 1440
+    rem = minutes % 1440
+    hours = rem // 60
+    rem_minutes = rem % 60
+
+    label = str(days) + " " + ("day" if days == 1 else "days")
+
+    if hours:
+        label += " " + str(hours) + " " + ("hour" if hours == 1 else "hours")
+
+    if rem_minutes:
+        label += " " + str(rem_minutes) + " " + ("minute" if rem_minutes == 1 else "minutes")
+
+    return label
+
+
+def pf67_patch011cd_template_duration_label(template):
+    return pf67_patch011cd_duration_label(pf67_patch011cd_template_duration_minutes(template))
+
+
+try:
+    views_bp.add_app_template_global(pf67_patch011cd_template_duration_minutes, "pf67_patch011cd_template_duration_minutes")
+    views_bp.add_app_template_global(pf67_patch011cd_template_duration_label, "pf67_patch011cd_template_duration_label")
+except Exception:
+    try:
+        views_bp.app_template_global("pf67_patch011cd_template_duration_minutes")(pf67_patch011cd_template_duration_minutes)
+        views_bp.app_template_global("pf67_patch011cd_template_duration_label")(pf67_patch011cd_template_duration_label)
+    except Exception:
+        pass
+
+
+@views_bp.route("/pf67/patch011cd/template-durations")
+def pf67_patch011cd_template_durations():
+    payload = {}
+
+    try:
+        templates = ProtocolTemplate.query.all()
+    except Exception:
+        templates = []
+
+    for template in templates:
+        try:
+            minutes = pf67_patch011cd_template_duration_minutes(template)
+            label = pf67_patch011cd_duration_label(minutes)
+
+            payload[str(template.id)] = {
+                "minutes": minutes,
+                "label": label,
+            }
+        except Exception:
+            payload[str(getattr(template, "id", ""))] = {
+                "minutes": 0,
+                "label": "",
+            }
+
+    return _pf67_patch011cd_jsonify({
+        "ok": True,
+        "durations": payload,
+    })

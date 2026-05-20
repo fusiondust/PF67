@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 - New Protocol{% endblock %}
+
+{% block content %}
+
+<datalist id="pf67-protocol-category-options">
+    {% for category in pf67_patch006_protocol_categories() %}
+        <option value="{{ category }}"></option>
+    {% endfor %}
+</datalist>
+
+<div class="pf67-protocol-new-shell">
+    <h2>New Protocol</h2>
+    <p class="text-muted">Create a reusable process definition. You can start Flows from this Protocol after it is saved.</p>
+
+    <form method="post" action="{{ url_for('views.pf67_patch009_new_protocol') }}">
+        <div class="mb-3">
+            <label class="form-label">Protocol Title</label>
+            <input class="form-control" name="name" required autofocus>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Category</label>
+            <input class="form-control"
+                   list="pf67-protocol-category-options"
+                   name="category"
+                   placeholder="Type new category or select existing">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" name="description" rows="6"></textarea>
+            <div class="pf67-inline-help">Full image-capable editing is available after the Protocol is created.</div>
+        </div>
+
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="is_private" value="1" id="protocol-private">
+            <label class="form-check-label" for="protocol-private">Private Protocol</label>
+            <div class="pf67-privacy-note">Private Protocols are hidden from the public view and create private Flows by default.</div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit">Create Protocol</button>
+            <a class="btn btn-outline-secondary" href="{{ url_for('views.templates_page') }}">Cancel</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

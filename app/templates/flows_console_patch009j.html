@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Flows
+
+
+{% endblock %}
+
+{% block content %}
+
+<div class="pf67-flows-console-hero">
+    <div>
+        <div class="pf67-dashboard-kicker">ProtocolFlow67</div>
+        <h1>Flows</h1>
+        <p class="pf67-flows-console-description">
+            Track live and scheduled work created from Protocols. Counts give the quick pulse; refine the view when you need to focus on status, visibility, priority, or sequence.
+        </p>
+    </div>
+</div>
+
+<form class="pf67-flow-console-top-search"
+      method="get"
+      action="{{ url_for('views.pf67_patch009j_flows_console') }}">
+    <input class="form-control"
+           id="pf67-flow-q"
+           name="q"
+           type="search"
+           value="{{ filters.q if filters is defined and filters.q is defined else '' }}"
+           placeholder="Filter Flows..."
+           aria-label="Filter Flows">
+    <button class="btn btn-outline-secondary" type="submit">Filter</button>
+</form>
+
+<section class="pf67-flow-console-controls">
+    <div class="pf67-flow-console-summary">
+        <span class="pf67-flow-console-pill">
+            <span>{{ total_count }}</span>
+            <span>Flows</span>
+        </span>
+        <span class="pf67-flow-console-pill">
+            <span>Active</span>
+            <span>{{ counts.active }}</span>
+        </span>
+        <span class="pf67-flow-console-pill">
+            <span>Scheduled</span>
+            <span>{{ counts.scheduled }}</span>
+        </span>
+        <span class="pf67-flow-console-pill">
+            <span>Completed</span>
+            <span>{{ counts.completed }}</span>
+        </span>
+        <span class="pf67-flow-console-pill">
+            <span>Public</span>
+            <span>{{ counts.public }}</span>
+        </span>
+        <span class="pf67-flow-console-pill">
+            <span>Private</span>
+            <span>{{ counts.private }}</span>
+        </span>
+    </div>
+
+    <details class="pf67-flow-console-refine">
+        <summary>Refine view</summary>
+
+        <div class="pf67-flow-console-refine-inner">
+            <form method="get" action="{{ url_for('views.pf67_patch009j_flows_console') }}">
+                <div class="pf67-flow-console-control-grid">
+                    <div>
+                        <label class="form-label" for="pf67-flow-status">Status</label>
+                        <select class="form-select" id="pf67-flow-status" name="status">
+                            {% for value, label in status_options %}
+                                <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" for="pf67-flow-visibility">Visibility</label>
+                        <select class="form-select" id="pf67-flow-visibility" name="visibility">
+                            {% for value, label in visibility_options %}
+                                <option value="{{ value }}" {% if filters.visibility == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" for="pf67-flow-priority">Priority</label>
+                        <select class="form-select" id="pf67-flow-priority" name="priority">
+                            {% for value, label in priority_options %}
+                                <option value="{{ value }}" {% if filters.priority == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" for="pf67-flow-sort">Sort</label>
+                        <select class="form-select" id="pf67-flow-sort" name="sort">
+                            {% for value, label in sort_options %}
+                                <option value="{{ value }}" {% if filters.sort == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="pf67-flow-console-search">
+                        <label class="form-label" for="pf67-flow-q">Search</label>
+                        <input class="form-control"
+                               id="pf67-flow-q"
+                               name="q"
+                               value="{{ filters.q }}"
+                               placeholder="Flow or Protocol name">
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap mt-3">
+                    <button class="btn btn-primary" type="submit">Apply</button>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('views.pf67_patch009j_flows_console') }}">Reset</a>
+                </div>
+            </form>
+        </div>
+    </details>
+</section>
+
+{% if flows %}
+    <div class="pf67-flow-console-grid">
+        {% for item in flows %}
+            <article class="pf67-flow-console-card">
+                <div class="pf67-flow-console-card-title-row">
+                    <div>
+                        <a class="pf67-flow-console-card-title" href="{{ item.url }}">{{ item.job.name }}</a>
+                        <div class="pf67-flow-console-card-subtitle">
+                            Protocol:
+                            {% if item.template %}
+                                {{ item.template.name }}
+                            {% else %}
+                                No source Protocol
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <span class="pf67-flow-console-visibility">
+                        <span class="pf67-visibility-pill {% if item.is_private %}is-private{% else %}is-public{% endif %}"
+                              title="{% if item.is_private %}This Flow is private and hidden from the public interface. Open the Flow to change visibility.{% else %}This Flow is public and visible on the public interface. Open the Flow to change visibility.{% endif %}">
+                            {% if item.is_private %} Private {% else %} Public {% endif %}
+                        </span>
+                    </span>
+                </div>
+
+                <div class="pf67-flow-console-card-subtitle">
+                    {% if item.current_step %}
+                        Waiting on: {{ item.current_step.name }}
+                    {% elif item.group_label == "Completed" %}
+                        Completed
+                    {% else %}
+                        No open step.
+                    {% endif %}
+                </div>
+
+                <div class="pf67-progress-shell pf67-flow-console-progress">
+                    <div class="pf67-progress-track"
+                         role="progressbar"
+                         aria-valuenow="{{ item.progress_percent }}"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                        <div class="pf67-progress-fill" style="width: {{ item.progress_percent }}%;"></div>
+                    </div>
+                    <div class="pf67-progress-label">
+                        Roughly {{ item.progress_percent }}% complete{% if item.progress_basis %} · {{ item.progress_basis }}{% endif %}
+                    </div>
+                </div>
+
+                <div class="pf67-flow-console-meta">
+                    <span class="pf67-dashboard-pill">{{ item.group_label }}</span>
+                    <span class="pf67-dashboard-pill">Priority: {{ item.priority }}</span>
+                    {% if item.started_display %}
+                        <span class="pf67-dashboard-pill">Started {{ item.started_display }}</span>
+                    {% endif %}
+                    {% if item.estimated_completion %}
+                        <span class="pf67-dashboard-pill">Est. {{ item.estimated_completion }}</span>
+                    {% endif %}
+                    {% if item.time_label %}
+                        <span class="pf67-dashboard-pill">{{ item.time_label }}</span>
+                    {% endif %}
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="pf67-flow-console-empty">
+        No Flows match the current filters.
+    </div>
+{% endif %}
+
+
+
+
+{% endblock %}

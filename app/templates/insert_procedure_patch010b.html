@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Insert Procedure{% endblock %}
+
+{% block content %}
+
+<div class="pf67-dashboard-hero">
+    <div>
+        <div class="pf67-dashboard-kicker">ProtocolFlow67</div>
+        <h1>Insert Procedure</h1>
+        <p class="pf67-dashboard-description">
+            Choose a Procedure to insert into <span class="text-body">{{ template.name }}</span>. This adds a summarized Procedure block to the Protocol without showing the Procedure's individual steps inside the main Protocol.
+        </p>
+    </div>
+</div>
+
+<div class="pf67-insert-procedure-panel">
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('views.template_detail', template_id=template.id) }}">← Back to Protocol</a>
+</div>
+
+{% if procedures %}
+    <div class="pf67-procedure-choice-grid">
+        {% for procedure in procedures %}
+            <form class="pf67-procedure-choice-card"
+                  method="post"
+                  action="{{ url_for('views.pf67_patch010b_insert_procedure', template_id=template.id) }}">
+                <input type="hidden" name="procedure_id" value="{{ procedure.id }}">
+
+                <h3 class="h5 mb-2">{{ procedure.name }}</h3>
+
+                {% if procedure.category %}
+                    <div class="mb-2">
+                        <span class="pf67-dashboard-pill">{{ procedure.category }}</span>
+                    </div>
+                {% endif %}
+
+                <div class="text-muted mb-3">
+                    {% if procedure.description %}
+                        {{ procedure.description|pf67_patch010b_plain_summary(220) }}
+                    {% else %}
+                        No description.
+                    {% endif %}
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-primary btn-sm" type="submit">Insert Procedure</button>
+                    <a class="btn btn-outline-secondary btn-sm"
+                       href="{{ url_for('views.template_detail', template_id=procedure.id) }}">Open</a>
+                </div>
+            </form>
+        {% endfor %}
+    </div>
+{% else %}
+    <section class="pf67-dashboard-section">
+        <div class="text-muted">No Procedures are available yet. Create one from the Procedures view first.</div>
+    </section>
+{% endif %}
+
+{% endblock %}

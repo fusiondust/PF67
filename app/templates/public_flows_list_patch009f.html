@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Public Flows{% endblock %}
+
+{% block content %}
+
+<div class="pf67-dashboard-hero">
+    <div>
+        <div class="pf67-dashboard-kicker">ProtocolFlow67</div>
+        <h1>Public Flows</h1>
+        <p class="pf67-dashboard-description">
+            A compact public list of visible Flows, grouped by what is active, scheduled, and recently completed.
+        </p>
+    </div>
+</div>
+
+<section class="pf67-dashboard-section pf67-public-flow-group">
+    <div class="pf67-dashboard-section-header">
+        <h2 class="pf67-dashboard-section-title">Active</h2>
+    </div>
+    {% if active_flows %}
+        <div class="pf67-public-flow-grid">
+            {% for item in active_flows %}
+                {% if loop.index <= 16 %}
+                    {% include "public_flow_card_patch009f.html" %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-muted">No public Flows are active right now.</div>
+    {% endif %}
+</section>
+
+<section class="pf67-dashboard-section pf67-public-flow-group">
+    <div class="pf67-dashboard-section-header">
+        <h2 class="pf67-dashboard-section-title">Scheduled</h2>
+    </div>
+    {% if scheduled_flows %}
+        <div class="pf67-public-flow-grid">
+            {% for item in scheduled_flows %}
+                {% if loop.index <= 16 %}
+                    {% include "public_flow_card_patch009f.html" %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-muted">No public Flows are scheduled.</div>
+    {% endif %}
+</section>
+
+<section class="pf67-dashboard-section pf67-public-flow-group">
+    <div class="pf67-dashboard-section-header">
+        <h2 class="pf67-dashboard-section-title">Completed</h2>
+    </div>
+    {% if completed_flows %}
+        <div class="pf67-public-flow-grid">
+            {% for item in completed_flows %}
+                {% if loop.index <= 16 %}
+                    {% include "public_flow_card_patch009f.html" %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-muted">No public Flows have been completed recently.</div>
+    {% endif %}
+</section>
+
+{% endblock %}

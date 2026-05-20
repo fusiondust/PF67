@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Protocols{% endblock %}
+
+{% block content %}
+
+{% set public_protocols = pf67_patch009g_public_protocol_list() %}
+{% set ns = namespace(categories=[], has_uncategorized=false) %}
+
+{% for template in public_protocols %}
+    {% set category_value = template.category if template.category is defined and template.category else "" %}
+    {% if category_value %}
+        {% if category_value not in ns.categories %}
+            {% set ns.categories = ns.categories + [category_value] %}
+        {% endif %}
+    {% else %}
+        {% set ns.has_uncategorized = true %}
+    {% endif %}
+{% endfor %}
+
+<div class="pf67-dashboard-hero">
+    <div>
+        <div class="pf67-dashboard-kicker">ProtocolFlow67</div>
+        <h1>Protocols</h1>
+        <p class="pf67-dashboard-description">
+            Protocols are process guides. They outline the steps, timing, and instructions that help repeatable work move in the right order. Filter by category or sort the list to find the guide you want to read.
+        </p>
+    </div>
+</div>
+
+{% if public_protocols %}
+    <div class="pf67-public-protocol-controls" data-pf67-public-protocol-controls>
+        <div class="pf67-public-protocol-filter-pills">
+            <button class="pf67-public-protocol-filter-pill is-active"
+                    type="button"
+                    data-pf67-public-category="all">All Categories</button>
+
+            {% for category in ns.categories|sort %}
+                {% set category_key = category|lower|replace(" ", "-") %}
+                <button class="pf67-public-protocol-filter-pill"
+                        type="button"
+                        data-pf67-public-category="{{ category_key }}">{{ category }}</button>
+            {% endfor %}
+
+            {% if ns.has_uncategorized %}
+                <button class="pf67-public-protocol-filter-pill"
+                        type="button"
+                        data-pf67-public-category="no-category">No Category</button>
+            {% endif %}
+        </div>
+
+        <select class="form-select pf67-public-protocol-sort" data-pf67-public-protocol-sort>
+            <option value="newest" selected>Newest</option>
+            <option value="name_asc">Name A-Z</option>
+            <option value="name_desc">Name Z-A</option>
+        </select>
+    </div>
+
+    <div class="pf67-public-protocol-card-grid" data-pf67-public-protocol-grid>
+        {% for template in public_protocols %}
+            {% include "public_protocol_card_patch009k.html" %}
+        {% endfor %}
+    </div>
+
+    <section class="pf67-dashboard-section pf67-flow-console-hidden" data-pf67-public-protocol-empty>
+        <div class="text-muted">No Protocols match that category.</div>
+    </section>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function pf67Patch009RPublicProtocolControls() {
+        var grid = document.querySelector("[data-pf67-public-protocol-grid]");
+        var empty = document.querySelector("[data-pf67-public-protocol-empty]");
+        var cards = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-public-protocol-card]"));
+        var categoryButtons = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-public-category]"));
+        var sortSelect = document.querySelector("[data-pf67-public-protocol-sort]");
+        var activeCategory = "all";
+
+        if (!grid || !cards.length) {
+            return;
+        }
+
+        function sortCards() {
+            var sortValue = sortSelect ? sortSelect.value : "newest";
+
+            cards.sort(function(a, b) {
+                if (sortValue === "name_asc") {
+                    return (a.dataset.name || "").localeCompare(b.dataset.name || "");
+                }
+
+                if (sortValue === "name_desc") {
+                    return (b.dataset.name || "").localeCompare(a.dataset.name || "");
+                }
+
+                return Number(b.dataset.newest || 0) - Number(a.dataset.newest || 0);
+            });
+
+            cards.forEach(function(card) {
+                grid.appendChild(card);
+            });
+        }
+
+        function applyFilters() {
+            var visibleCount = 0;
+
+            cards.forEach(function(card) {
+                var visible = activeCategory === "all" || card.dataset.category === activeCategory;
+                card.classList.toggle("pf67-flow-console-hidden", !visible);
+
+                if (visible) {
+                    visibleCount += 1;
+                }
+            });
+
+            if (empty) {
+                empty.classList.toggle("pf67-flow-console-hidden", visibleCount > 0);
+            }
+        }
+
+        categoryButtons.forEach(function(button) {
+            button.addEventListener("click", function() {
+                activeCategory = button.getAttribute("data-pf67-public-category") || "all";
+
+                categoryButtons.forEach(function(otherButton) {
+                    otherButton.classList.toggle("is-active", otherButton === button);
+                });
+
+                applyFilters();
+            });
+        });
+
+        if (sortSelect) {
+            sortSelect.addEventListener("change", function() {
+                sortCards();
+                applyFilters();
+            });
+        }
+
+        sortCards();
+        applyFilters();
+    });
+    </script>
+{% else %}
+    <section class="pf67-dashboard-section">
+        <div class="text-muted">No Protocols are currently visible.</div>
+    </section>
+{% endif %}
+
+{% endblock %}

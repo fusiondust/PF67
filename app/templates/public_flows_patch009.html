@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Public {% endblock %}
+
+{% block content %}
+
+<div class="pf67-dashboard-hero">
+    <div>
+        <div class="pf67-dashboard-kicker">ProtocolFlow67</div>
+        <h1>Public Dashboard</h1>
+        <p class="pf67-dashboard-description">
+            Public Flows show what is currently in motion and the step each Flow is waiting on. Public Protocols explain the repeatable process behind the work.
+        </p>
+    </div>
+</div>
+
+<div class="pf67-public-board-grid">
+    <main>
+        <section class="pf67-dashboard-section">
+            <div class="pf67-dashboard-section-header">
+                <h2 class="pf67-dashboard-section-title">Public Flows</h2>
+                <a class="pf67-dashboard-sleek-link" href="{{ url_for('views.pf67_patch009e_public_flows') }}">View all →</a>
+            </div>
+
+            {% if public_flows %}
+                <div class="pf67-public-flow-grid">
+                    {% for item in public_flows %}
+                        {% if loop.index <= 8 %}
+                            <a class="pf67-public-flow-card" href="{{ item.url }}">
+                                <div class="pf67-dashboard-card-title">{{ item.job.name }}</div>
+                                <div class="pf67-dashboard-card-subtitle">
+                                    {% if item.step %}
+                                        Waiting on: {{ item.step.name }}
+                                    {% else %}
+                                        No open step.
+                                    {% endif %}
+                                </div>
+
+                                <div class="pf67-progress-shell">
+                                    <div class="pf67-progress-track"
+                                         role="progressbar"
+                                         aria-valuenow="{{ item.progress_percent }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                        <div class="pf67-progress-fill" style="width: {{ item.progress_percent }}%;"></div>
+                                    </div>
+                                    <div class="pf67-progress-label">
+                                        Roughly {{ item.progress_percent }}% complete{% if item.progress_basis %} · {{ item.progress_basis }}{% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="pf67-dashboard-meta">
+                                    <span class="pf67-dashboard-pill">{{ item.status_label }}</span>
+                                    {% if item.time_label %}
+                                        <span class="pf67-dashboard-pill">{{ item.time_label }}</span>
+                                    {% endif %}
+                                </div>
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-muted">No public Flows are currently visible.</div>
+            {% endif %}
+        </section>
+    </main>
+
+    <aside>
+        <section class="pf67-dashboard-section">
+            <div class="pf67-dashboard-section-header">
+                <h2 class="pf67-dashboard-section-title">Public Protocols</h2>
+                <a class="pf67-dashboard-sleek-link" href="{{ url_for('views.pf67_patch009c_public_protocols') }}">View all →</a>
+            </div>
+
+            {% if public_protocols %}
+                <div class="pf67-dashboard-card-list">
+                    {% for template in public_protocols %}
+                        {% if loop.index <= 8 %}
+                            <a class="pf67-dashboard-card" href="{{ url_for('views.pf67_patch009c_public_protocol_detail', template_id=template.id) }}">
+                                <div class="pf67-dashboard-card-title">{{ template.name }}</div>
+                                <div class="pf67-dashboard-card-subtitle">
+                                    {% if template.category is defined and template.category %}
+                                        {{ template.category }}
+                                    {% else %}
+                                        No Category
+                                    {% endif %}
+                                </div>
+                                <div class="pf67-dashboard-meta">
+                                    <span class="pf67-dashboard-pill">{{ template.steps|length }} step{% if template.steps|length != 1 %}s{% endif %}</span>
+                                </div>
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-muted">No public Protocols are currently visible.</div>
+            {% endif %}
+        </section>
+    </aside>
+</div>
+
+{% endblock %}

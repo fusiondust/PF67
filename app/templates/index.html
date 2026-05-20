@@ -1,229 +1,189 @@
 {% extends "base.html" %}
-{% block title %}PF67 · Dashboard
-<script>
-document.addEventListener("DOMContentLoaded", function pf67DashboardInfoModalPatch005B() {
-    var canEdit = {% if can_edit %}true{% else %}false{% endif %};
-    var modalBody = document.getElementById("pf67-dashboard-info-modal-body");
 
-    function normalizeText(value) {
-        return (value || "").replace(/\s+/g, " ").trim().toLowerCase();
-    }
+{% block title %}PF67 · Dashboard{% endblock %}
 
-    function findAboutSection() {
-        var headings = Array.prototype.slice.call(document.querySelectorAll("h1, h2, h3, h4, h5, h6"));
-
-        for (var i = 0; i < headings.length; i += 1) {
-            var heading = headings[i];
-            var text = normalizeText(heading.textContent);
-
-            if (text.indexOf("how this app") !== -1 || text.indexOf("meant to be used") !== -1) {
-                var section = heading.closest(".card, section, article, .pf67-work-section, .pf67-soft-panel");
-
-                if (section) {
-                    return section;
-                }
-
-                var parent = heading.parentElement;
-
-                while (parent && parent !== document.body) {
-                    if (parent.children.length <= 8) {
-                        return parent;
-                    }
-
-                    parent = parent.parentElement;
-                }
-
-                return heading;
-            }
-        }
-
-        return null;
-    }
-
-    var aboutSection = findAboutSection();
-
-    if (!aboutSection) {
-        return;
-    }
-
-    if (modalBody && canEdit) {
-        var clone = aboutSection.cloneNode(true);
-        modalBody.innerHTML = "";
-        modalBody.appendChild(clone);
-    }
-
-    aboutSection.classList.add("pf67-dashboard-about-hidden");
-});
-</script>
-
-
-{% endblock %}
 {% block content %}
 
 {% if can_edit %}
-<div class="pf67-dashboard-top-tools">
-    <button class="btn btn-outline-info pf67-dashboard-info-button"
-            type="button"
-            data-bs-toggle="modal"
-            data-bs-target="#pf67-dashboard-info-modal"
-            aria-label="How this app is meant to be used"
-            title="How this app is meant to be used">i</button>
+{% set lead_item = attention_tasks[0] if attention_tasks else none %}
+
+<div class="pf67-dashboard-topline">
+    <div class="pf67-dashboard-hero">
+        <div class="pf67-dashboard-hero-main">
+            <div class="pf67-dashboard-kicker">ProtocolFlow67</div>
+            <div class="pf67-dashboard-title-inline">
+            <h1>Dashboard</h1>
+            <button class="btn btn-outline-secondary pf67-dashboard-info-button"
+                type="button"
+                data-bs-toggle="modal"
+                data-bs-target="#pf67-dashboard-info-modal"
+                title="How this app is meant to be used">i</button>
+        </div>
+            <p class="pf67-dashboard-description">
+                ProtocolFlow67 turns reusable Protocols into live Flows so repeatable work can move in the right order, at the right time. This Dashboard is the front page for what needs attention now, what is coming next, and where protocol work is flowing as intended.
+            </p>
+        </div>
+    </div>
+
+    <div class="pf67-dashboard-hero-attention">
+        {% if lead_item %}
+            <a class="pf67-lead-story" href="{{ lead_item.url }}">
+                <div class="pf67-dashboard-kicker">Needs Attention</div>
+                <h3>{{ lead_item.step.name }}</h3>
+                <div class="pf67-dashboard-card-subtitle">{{ lead_item.job.name }}</div>
+                <div class="pf67-dashboard-meta">
+                    <span class="pf67-dashboard-pill">{{ lead_item.status_label }}</span>
+                    <span class="pf67-dashboard-pill">{{ lead_item.time_label }}</span>
+                    <span class="pf67-dashboard-pill pf67-dashboard-pill-{{ (lead_item.job.priority or 'Normal')|lower }}">
+                        Priority: {{ lead_item.job.priority or "Normal" }}
+                    </span>
+                </div>
+            </a>
+        {% else %}
+            <section class="pf67-lead-story">
+                <div class="pf67-dashboard-kicker">Needs Attention</div>
+                <h3>Nothing needs immediate attention.</h3>
+                <div class="pf67-dashboard-card-subtitle">Active and scheduled Flows will surface here when timing or priority says they need focus.</div>
+            </section>
+        {% endif %}
+    </div>
 </div>
 
-<div class="modal fade" id="pf67-dashboard-info-modal" tabindex="-1" aria-labelledby="pf67-dashboard-info-modal-title" aria-hidden="true">
+<div class="modal fade" id="pf67-dashboard-info-modal" tabindex="-1" aria-labelledby="pf67-dashboard-info-title" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="pf67-dashboard-info-modal-title">How this app is meant to be used</h5>
+                <h5 class="modal-title" id="pf67-dashboard-info-title">How this app is meant to be used</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-
-            <div class="modal-body pf67-dashboard-info-modal-body" id="pf67-dashboard-info-modal-body">
-                <p>
-                    PF67 organizes repeatable process knowledge into Protocols, then lets you start those Protocols as live Flows.
-                    The Dashboard is the attention surface: it should bring urgent, scheduled, active, and recently changed work into focus.
-                </p>
-
-                <p>
-                    Protocols are the reusable instructions. Flows are the live or scheduled executions of those instructions.
-                    History contains the Calendar and Activity Log.
-                </p>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <div class="modal-body">
+                <p>PF67 organizes repeatable process knowledge into Protocols, then lets you start those Protocols as live Flows.</p>
+                <p>The Dashboard works like a front page: late or risky work is pulled into focus, active Flows stay visible, and recent activity remains one click away.</p>
+                <p>Protocols are reusable instructions. Flows are live or scheduled executions of those instructions. Completed work belongs in the Archive as a chronological project story.</p>
             </div>
         </div>
     </div>
 </div>
-{% endif %}
 
-
-<div class="pf67-dashboard">
-  <div class="mb-4">
-    <div class="text-muted small">ProtocolFlow67</div>
-    <h1 class="mb-1">Dashboard</h1>
-    <p class="text-muted mb-0">A front-page view of protocol work that needs attention, active Flows, ready steps, and recent activity.</p>
-  </div>
-
-  <section class="mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h2 class="h4 mb-0">Needs Attention</h2>
-      <span class="badge text-bg-warning">Focus</span>
-    </div>
-
-    {% if attention_tasks %}
-      <div class="list-group">
-        {% for item in attention_tasks %}
-          <a class="list-group-item list-group-item-action" href="{{ item.url }}" title="{{ item.time_title }}">
-            <div class="d-flex justify-content-between gap-3">
-              <div>
-                <div class="fw-semibold">{{ item.step.name }}</div>
-                <div class="pf67-small text-muted">{{ item.job.name }}</div>
-              </div>
-              <div class="text-end pf67-small">
-                <div>{{ item.status_label }}</div>
-                <div class="text-muted">{{ item.time_label }}</div>
-                <div class="text-muted">Priority: {{ item.job.priority or "Normal" }}</div>
-              </div>
+<div class="pf67-dashboard-grid">
+    <main>
+        <section class="pf67-dashboard-section">
+            <div class="pf67-dashboard-section-header">
+                <h2 class="pf67-dashboard-section-title">Attention Queue</h2>
             </div>
-          </a>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p class="text-muted">Nothing needs immediate attention.</p>
-    {% endif %}
-  </section>
 
-  <section class="mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h2 class="h4 mb-0">Scheduled and Active Flows</h2>
-      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('views.jobs_page', view='active') }}">Open Flows</a>
-    </div>
+            {% if attention_tasks %}
+                <div class="pf67-dashboard-card-list">
+                    {% for item in attention_tasks %}
+                        {% if loop.index <= 6 %}
+                            <a class="pf67-dashboard-card" href="{{ item.url }}">
+                                <div class="pf67-dashboard-card-title">{{ item.step.name }}</div>
+                                <div class="pf67-dashboard-card-subtitle">{{ item.job.name }}</div>
+                                <div class="pf67-dashboard-meta">
+                                    <span class="pf67-dashboard-pill">{{ item.status_label }}</span>
+                                    <span class="pf67-dashboard-pill">{{ item.time_label }}</span>
+                                    <span class="pf67-dashboard-pill pf67-dashboard-pill-{{ (item.job.priority or 'Normal')|lower }}">
+                                        Priority: {{ item.job.priority or "Normal" }}
+                                    </span>
+                                </div>
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-muted">No active work queue items.</div>
+            {% endif %}
+        </section>
 
-    {% if landing_jobs %}
-      <div class="list-group">
-        {% for item in landing_jobs %}
-          <a class="list-group-item list-group-item-action" href="{{ item.url }}">
-            <div class="d-flex justify-content-between gap-3">
-              <div>
-                <div class="fw-semibold">{{ item.job.name }}</div>
-                <div class="pf67-small text-muted">Started {{ item.started_display }}</div>
-              </div>
-              <div class="text-end pf67-small">
-                <div>{{ item.status_label }}</div>
-                <div class="text-muted">Priority: {{ item.job.priority or "Normal" }}</div>
-              </div>
+        <section class="pf67-dashboard-section">
+            <div class="pf67-dashboard-section-header">
+                <h2 class="pf67-dashboard-section-title">Active Flows</h2>
+                <a class="pf67-dashboard-sleek-link" href="{{ url_for('views.jobs_page', view='active') }}">View all Flows →</a>
             </div>
-          </a>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p class="text-muted">No active or pending Flows.</p>
-    {% endif %}
-  </section>
 
-  <section class="mb-4">
-    <h2 class="h4">Ready Tasks</h2>
-    {% if ready_tasks %}
-      <div class="list-group">
-        {% for item in ready_tasks %}
-          <a class="list-group-item list-group-item-action" href="{{ item.url }}" title="{{ item.time_title }}">
-            <div class="d-flex justify-content-between gap-3">
-              <div>
-                <div class="fw-semibold">{{ item.step.name }}</div>
-                <div class="pf67-small text-muted">{{ item.job.name }}</div>
-              </div>
-              <div class="text-end pf67-small">
-                <div>{{ item.status_label }}</div>
-                <div class="text-muted">{{ item.time_label }}</div>
-              </div>
+            {% if landing_jobs %}
+                <div class="pf67-dashboard-card-list">
+                    {% for item in landing_jobs %}
+                        <a class="pf67-dashboard-card pf67-active-flow-card" href="{{ url_for('views.job_detail', job_id=item.job.id) }}">
+                            <div class="pf67-dashboard-card-title">{{ item.job.name }}</div>
+                            <div class="pf67-dashboard-card-subtitle">
+                                Started {{ item.started_display }}
+                            </div>
+                            <div class="pf67-dashboard-meta">
+                                <span class="pf67-dashboard-pill">{{ item.status_label }}</span>
+                                <span class="pf67-dashboard-pill pf67-dashboard-pill-{{ (item.job.priority or 'Normal')|lower }}">
+                                    Priority: {{ item.job.priority or "Normal" }}
+                                </span>
+                                {% if item.job.is_private is defined and item.job.is_private %}
+                                    <span class="pf67-dashboard-pill">Private</span>
+                                {% endif %}
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-muted">No active or pending Flows.</div>
+            {% endif %}
+        </section>
+    </main>
+
+    <aside>
+        <section class="pf67-dashboard-section">
+            <div class="pf67-dashboard-section-header">
+                <h2 class="pf67-dashboard-section-title">Upcoming</h2>
             </div>
-          </a>
-        {% endfor %}
-      </div>
-      {% if ready_more_count > 0 %}
-        <p class="pf67-small text-muted mt-2">{{ ready_more_count }} more ready task(s)</p>
-      {% endif %}
-    {% else %}
-      <p class="text-muted">No active work queue items.</p>
-    {% endif %}
-  </section>
 
-  <section class="mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h2 class="h4 mb-0">Recent Activity</h2>
-      <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('views.movements') }}">Open Activity Log</a>
-    </div>
+            {% if ready_tasks %}
+                <div class="pf67-dashboard-card-list">
+                    {% for item in ready_tasks %}
+                        {% if loop.index <= 6 %}
+                            <a class="pf67-dashboard-card" href="{{ item.url }}">
+                                <div class="pf67-dashboard-card-title">{{ item.step.name }}</div>
+                                <div class="pf67-dashboard-card-subtitle">{{ item.job.name }}</div>
+                                <div class="pf67-dashboard-meta">
+                                    <span class="pf67-dashboard-pill">{{ item.status_label }}</span>
+                                    <span class="pf67-dashboard-pill">{{ item.time_label }}</span>
+                                </div>
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
 
-    {% if recent_movements %}
-      <div class="list-group">
-        {% for item in recent_movements %}
-          <a class="list-group-item list-group-item-action" href="{{ item.url }}">
-            <div class="d-flex justify-content-between gap-3">
-              <div>
-                <div class="fw-semibold">{{ item.title }}</div>
-                <div class="pf67-small text-muted">{{ item.type }} · {{ item.subtitle }}</div>
-              </div>
-              <div class="pf67-small text-muted text-end">{{ item.time }}</div>
+                {% if ready_more_count > 0 %}
+                    <div class="text-muted mt-2">{{ ready_more_count }} more ready task(s)</div>
+                {% endif %}
+            {% else %}
+                <div class="text-muted">No upcoming work is ready right now.</div>
+            {% endif %}
+        </section>
+
+        <section class="pf67-dashboard-section">
+            <div class="pf67-dashboard-section-header">
+                <h2 class="pf67-dashboard-section-title">Recent Activity</h2>
             </div>
-          </a>
-        {% endfor %}
-      </div>
-      {% if recent_more_count > 0 %}
-        <p class="pf67-small text-muted mt-2">{{ recent_more_count }} more recent activity item(s)</p>
-      {% endif %}
-    {% else %}
-      <p class="text-muted">No activity yet.</p>
-    {% endif %}
-  </section>
 
-  <section class="mt-5 pt-4 border-top">
-    <h2 class="h4">How this app is meant to be used</h2>
-    <p>Build reusable <strong>Protocols</strong> for repeatable timed processes, then start or schedule real <strong>Flows</strong> from those protocols.</p>
-    <p>The Dashboard works like a front page: late or risky work is pulled into focus, active Flows stay visible, and recent activity remains one click away.</p>
-    <p>Completed work belongs in the Archive as a chronological project story with notes, step completions, and supporting media.</p>
-  </section>
+            {% if recent_movements %}
+                <div class="pf67-dashboard-card-list">
+                    {% for item in recent_movements %}
+                        {% if loop.index <= 5 %}
+                            <div class="pf67-dashboard-card">
+                                <div class="pf67-dashboard-card-title">{{ item.title }}</div>
+                                <div class="pf67-dashboard-card-subtitle">{{ item.type }} · {{ item.subtitle }}</div>
+                                <div class="pf67-dashboard-meta">
+                                    <span class="pf67-dashboard-pill">{{ item.time }}</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-muted">No activity yet.</div>
+            {% endif %}
+        </section>
+    </aside>
 </div>
+{% else %}
+{% include "public_dashboard_content_patch009g.html" %}
+{% endif %}
 
 {% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Public Flows{% endblock %}
+
+{% block content %}
+
+<div class="pf67-dashboard-hero">
+    <div>
+        <div class="pf67-dashboard-kicker">ProtocolFlow67</div>
+        <h1>Public Flows</h1>
+        <p class="pf67-dashboard-description">
+            These public Flows show what is currently in motion, the step being waited on, and a rough progress estimate.
+        </p>
+    </div>
+</div>
+
+{% if public_flows %}
+    <div class="pf67-public-flow-grid">
+        {% for item in public_flows %}
+            <a class="pf67-public-flow-card" href="{{ item.url }}">
+                <div class="pf67-dashboard-card-title">{{ item.job.name }}</div>
+                <div class="pf67-dashboard-card-subtitle">
+                    {% if item.step %}
+                        Waiting on: {{ item.step.name }}
+                    {% else %}
+                        No open step.
+                    {% endif %}
+                </div>
+
+                <div class="pf67-progress-shell">
+                    <div class="pf67-progress-track"
+                         role="progressbar"
+                         aria-valuenow="{{ item.progress_percent }}"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                        <div class="pf67-progress-fill" style="width: {{ item.progress_percent }}%;"></div>
+                    </div>
+                    <div class="pf67-progress-label">
+                        Roughly {{ item.progress_percent }}% complete{% if item.progress_basis %} · {{ item.progress_basis }}{% endif %}
+                    </div>
+                </div>
+
+                <div class="pf67-dashboard-meta">
+                    <span class="pf67-dashboard-pill">{{ item.status_label }}</span>
+                    {% if item.time_label %}
+                        <span class="pf67-dashboard-pill">{{ item.time_label }}</span>
+                    {% endif %}
+                    {% if item.estimated_completion %}
+                        <span class="pf67-dashboard-pill">Est. {{ item.estimated_completion }}</span>
+                    {% endif %}
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <section class="pf67-dashboard-section">
+        <div class="text-muted">No public Flows are currently visible.</div>
+    </section>
+{% endif %}
+
+{% endblock %}

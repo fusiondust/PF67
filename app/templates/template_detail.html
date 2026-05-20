@@ -35,6 +35,8 @@
 {% block title %}PF67 - Protocol - {{ template.name }}{% endblock %}
 
 {% block content %}
+{% set pf67_patch010b9_display_steps_loaded = pf67_patch010b9_display_steps(template) %}
+<div class="pf67-protocol-detail-page">
 
 <datalist id="pf67-protocol-category-options">
     {% for category in pf67_patch006_protocol_categories() %}
@@ -109,13 +111,50 @@
             {% if can_edit %}
                 <div class="pf67-protocol-actions">
                     <button class="btn btn-outline-success btn-sm" type="button" data-pf67-panel-open="start-flow-panel">Start Flow</button>
+                    {% if can_edit and (step is not defined or step.pf67_allow_parent_insert_after|default(true)) %}
                     <button class="btn btn-outline-primary btn-sm" type="button" data-pf67-panel-open="add-step-panel-bottom">Add Step</button>
+                    <a class="btn btn-outline-primary btn-sm pf67-template-insert-procedure-peer" href="{{ url_for('views.pf67_patch010b9_insert_procedure', template_id=template.id) }}">Insert Procedure</a>
+                    {% endif %} {# pf67_patch010b12_add_insert_controls #}
+                    
+{% if can_edit %}
+<div class="pf67-editor-delete-close-row"> {# pf67_patch010c15_delete_close_row #}
+<form class="pf67-visibility-pill-form"
+      method="post"
+      action="{{ url_for('views.pf67_patch009d_toggle_protocol_visibility', template_id=template.id) }}">
+    {% if template.is_private is defined and template.is_private %}
+        <input type="hidden" name="is_private" value="0">
+        <button class="pf67-visibility-pill is-private"
+                type="submit"
+                title="This Protocol is currently private and hidden from the public interface. Click to make it public.">Private</button>
+    {% else %}
+        <input type="hidden" name="is_private" value="1">
+        <button class="pf67-visibility-pill is-public"
+                type="submit"
+                title="This Protocol is currently public and visible on the public interface. Click to make it private.">Public</button>
+    {% endif %}
+</form>
+
+</div>
+
+{% endif %}
+
                     <form class="pf67-protocol-delete-form"
-                          method="post"
+method="post"
                           action="{{ url_for('views.pf67_patch008_delete_protocol', template_id=template.id) }}"
                           onsubmit="return confirm('Delete this Protocol? This cannot be undone. Protocols with existing Flows are protected.');">
                         <button class="btn btn-outline-danger btn-sm" type="submit">Delete Protocol</button>
                     </form>
+                    {% set pf67_close_target = request.args.get('return_to') %}
+                    {% if not pf67_close_target %}
+                        {% if template.protocol_role|default('protocol') == 'procedure' %}
+                            {% set pf67_close_target = '/templates?role=procedure' %}
+                        {% else %}
+                            {% set pf67_close_target = '/templates?role=protocol' %}
+                        {% endif %}
+                    {% endif %}
+                    <a class="btn btn-outline-secondary btn-sm pf67-editor-close-beside-delete" href="{{ pf67_close_target }}">Close</a>
+                    {# pf67_patch010c17_close_after_delete #}
+
                 </div>
             {% endif %}
         </div>
@@ -136,7 +175,7 @@
                   action="{{ url_for('views.pf67_patch006b_update_protocol_description', template_id=template.id) }}"
                   class="pf67-protocol-description-editor pf67-protocol-edit-box"
                   id="pf67-protocol-description-editor">
-                <h4>Edit Protocol Description</h4>
+                <h4>{% if template.protocol_role|default('protocol') == 'procedure' %}Edit Procedure Description{% else %}Edit Protocol Description{% endif %}</h4>
                 {{ pf67_lite_editor(
                     "description",
                     template.description or "",
@@ -156,7 +195,7 @@
             <div class="pf67-protocol-flow-panel pf67-protocol-edit-box" id="start-flow-panel">
                 <h4>Start Flow</h4>
 
-                <form method="post" action="{{ url_for('views.pf67_patch008_start_flow', template_id=template.id) }}">
+                <form method="post" action="{{ url_for('views.pf67_patch009_start_flow', template_id=template.id) }}">
                     <div class="pf67-flow-start-grid">
                         <div>
                             <div class="mb-3">
@@ -213,6 +252,19 @@
                         </div>
                     </div>
 
+                    <div class="form-check mb-3">
+                        {% if template.is_private is defined and template.is_private %}
+                            <input type="hidden" name="is_private" value="1">
+                            <input class="form-check-input" type="checkbox" checked disabled id="flow-private">
+                            <label class="form-check-label" for="flow-private">Private Flow</label>
+                            <div class="pf67-privacy-note">Forced private because this Protocol is private.</div>
+                        {% else %}
+                            <input class="form-check-input" type="checkbox" name="is_private" value="1" id="flow-private">
+                            <label class="form-check-label" for="flow-private">Private Flow</label>
+                            <div class="pf67-privacy-note">Hide this Flow from the public Flow board.</div>
+                        {% endif %}
+                    </div>
+
                     <div class="d-flex gap-2 mt-3">
                         <button class="btn btn-success" type="submit">Start Flow</button>
                         <button class="btn btn-outline-secondary" type="button" data-pf67-panel-close="start-flow-panel">Cancel</button>
@@ -227,7 +279,7 @@
             <div class="pf67-protocol-toc-title">Steps</div>
 
             {% if template.steps %}
-                {% for step in template.steps|sort(attribute="sort_order") %}
+                {% for step in pf67_patch010b9_display_steps(template)|sort(attribute="sort_order") %}
                     <a class="pf67-protocol-toc-link" href="#template-step-{{ step.id }}">
                         {% if step.name %}
                             {{ step.name }}
@@ -244,21 +296,25 @@
         <main class="pf67-protocol-main">
             <div class="pf67-protocol-doc">
                 {% if template.steps %}
-                    {% for step in template.steps|sort(attribute="sort_order") %}
-                        <div class="pf67-protocol-step-row" id="template-step-{{ step.id }}">
+                    {% for step in pf67_patch010b9_display_steps(template)|sort(attribute="sort_order") %}
+                        <div class="{% if step.is_procedure_derived %}pf67-procedure-derived-step-surface {% if step.is_first_procedure_derived|default(false) %}pf67-procedure-bundle-reorder-handle {% endif %}{% endif %}pf67-protocol-step-row" id="template-step-{{ step.id }}">
                             {% if can_edit %}
                                 {% if not loop.first %}
-                                    <div class="pf67-protocol-step-move pf67-protocol-step-move-up">
+                                    <div class="{% if step.is_procedure_derived %}pf67-procedure-derived-step-surface {% if step.is_first_procedure_derived|default(false) %}pf67-procedure-bundle-reorder-handle {% endif %}{% endif %}pf67-protocol-step-move pf67-protocol-step-move-up">
                                         <form method="post" action="{{ url_for('views.move_template_step', template_id=template.id, step_id=step.id, direction='up') }}">
+                                            {% if (not step.is_procedure_derived|default(false)) or step.is_first_procedure_derived|default(false) %} {# pf67_patch010c3_bundle_reorder_only #}
                                             <button class="btn btn-outline-secondary btn-sm" type="submit" title="Move up">&uarr;</button>
+                                            {% endif %}
                                         </form>
                                     </div>
                                 {% endif %}
 
                                 {% if not loop.last %}
-                                    <div class="pf67-protocol-step-move pf67-protocol-step-move-down">
+                                    <div class="{% if step.is_procedure_derived %}pf67-procedure-derived-step-surface {% if step.is_first_procedure_derived|default(false) %}pf67-procedure-bundle-reorder-handle {% endif %}{% endif %}pf67-protocol-step-move pf67-protocol-step-move-down">
                                         <form method="post" action="{{ url_for('views.move_template_step', template_id=template.id, step_id=step.id, direction='down') }}">
+                                            {% if (not step.is_procedure_derived|default(false)) or step.is_first_procedure_derived|default(false) %} {# pf67_patch010c3_bundle_reorder_only #}
                                             <button class="btn btn-outline-secondary btn-sm" type="submit" title="Move down">&darr;</button>
+                                            {% endif %}
                                         </form>
                                     </div>
                                 {% endif %}
@@ -280,12 +336,12 @@
                                 </div>
                             {% endif %}
 
-                            <article class="pf67-protocol-step-display"
+                            <article class="{% if step.is_procedure_derived %}pf67-procedure-derived-step-surface {% if step.is_first_procedure_derived|default(false) %}pf67-procedure-bundle-reorder-handle {% endif %}{% endif %}pf67-protocol-step-display"
                                      tabindex="0"
                                      {% if can_edit %}data-pf67-inline-open="pf67-step-editor-{{ step.id }}" data-pf67-inline-hide-self="true"{% endif %}
                                      title="{% if can_edit %}Click to edit this step{% endif %}">
-                                <div class="pf67-protocol-step-heading">
-                                    <span class="pf67-protocol-step-title">
+                                <div class="{% if step.is_procedure_derived %}pf67-procedure-derived-step-surface {% if step.is_first_procedure_derived|default(false) %}pf67-procedure-bundle-reorder-handle {% endif %}{% endif %}pf67-protocol-step-heading">
+                                    <span class="{% if step.is_procedure_derived %}pf67-procedure-derived-step-surface {% if step.is_first_procedure_derived|default(false) %}pf67-procedure-bundle-reorder-handle {% endif %}{% endif %}pf67-protocol-step-title">
                                         {% if step.name %}
                                             {{ step.name }}
                                         {% else %}
@@ -294,7 +350,7 @@
                                     </span>
                                 </div>
 
-                                <div class="pf67-protocol-step-body">
+                                <div class="{% if step.is_procedure_derived %}pf67-procedure-derived-step-surface {% if step.is_first_procedure_derived|default(false) %}pf67-procedure-bundle-reorder-handle {% endif %}{% endif %}pf67-protocol-step-body">
                                     {% if step.instructions_html %}
                                         {{ step.instructions_html | safe }}
                                     {% else %}
@@ -307,7 +363,7 @@
                             {% if can_edit %}
                                 <form method="post"
                                       action="{{ url_for('views.pf67_patch006b_update_protocol_step', template_id=template.id, step_id=step.id) }}"
-                                      class="pf67-protocol-step-editor pf67-protocol-edit-box"
+                                      class="{% if step.is_procedure_derived %}pf67-procedure-derived-step-surface {% if step.is_first_procedure_derived|default(false) %}pf67-procedure-bundle-reorder-handle {% endif %}{% endif %}pf67-protocol-step-editor pf67-protocol-edit-box"
                                       id="pf67-step-editor-{{ step.id }}">
                                     <h4>Edit Step</h4>
 
@@ -440,14 +496,21 @@
 
                                 <div class="pf67-protocol-insert-zone">
                                     <button class="btn btn-outline-primary btn-sm" type="button" data-pf67-panel-open="add-step-panel-after-{{ step.id }}">
-                                        Add Step Here
+                                        {% if can_edit and (step is not defined or step.pf67_allow_parent_insert_after|default(true)) %}
+                                        Add Step
+                                        
+                                        {% endif %} {# pf67_patch010b12_add_insert_controls #}
                                     </button>
                                 </div>
 
                                 <div class="pf67-protocol-add-panel pf67-protocol-edit-box" id="add-step-panel-after-{{ step.id }}">
                                     <form method="post" action="{{ url_for('views.pf67_patch006b_add_protocol_step', template_id=template.id) }}">
                                         <input type="hidden" name="after_step_id" value="{{ step.id }}">
-                                        <h4>Add Step Here</h4>
+                                        {% if can_edit and (step is not defined or step.pf67_allow_parent_insert_after|default(true)) %}
+                                        <h4>Add Step</h4>
+                                        <a class="btn btn-outline-primary btn-sm pf67-template-insert-procedure-peer" href="{{ url_for('views.pf67_patch010b9_insert_procedure', template_id=template.id) }}">Insert Procedure</a>
+                            <a class="btn btn-outline-primary btn-sm pf67-template-insert-procedure-peer" href="{{ url_for('views.pf67_patch010b9_insert_procedure', template_id=template.id) }}">Insert Procedure</a>
+                                        {% endif %} {# pf67_patch010b12_add_insert_controls #}
                                         {% include "protocol_step_form_patch006d.html" %}
                                     </form>
                                 </div>
@@ -866,5 +929,7 @@ document.addEventListener("DOMContentLoaded", function pf67Patch006DProtocolEdit
     });
 });
 </script>
+
+</div>
 
 {% endblock %}

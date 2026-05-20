@@ -4,97 +4,242 @@
 
 {% block content %}
 
-<div class="pf67-page-shell">
-    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-        <div>
-            <h2>Protocols</h2>
-            <p class="text-muted mb-0">Reusable process definitions used to start scheduled or live Jobs.</p>
+{% set requested_role = request.args.get("role", "protocol") %}
+{% if requested_role not in ["protocol", "procedure"] %}
+    {% set requested_role = "protocol" %}
+{% endif %}
+
+{% set ns_list = namespace(visible=[]) %}
+
+{% for template in templates %}
+    {% set role = template.protocol_role if template.protocol_role is defined and template.protocol_role else "protocol" %}
+    {% if role == requested_role %}
+        {% set ns_list.visible = ns_list.visible + [template] %}
+    {% endif %}
+{% endfor %}
+
+<div class="pf67-protocol-list-header">
+    <div>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <h2 class="mb-0">{% if requested_role == "procedure" %}Procedures{% else %}Protocols{% endif %}</h2>
+            <nav class="pf67-role-switch" aria-label="Protocol and Procedure view switch">
+                <a href="{{ url_for('views.templates_page', role='protocol') }}"
+                   class="{% if requested_role == 'protocol' %}is-active{% endif %}">Protocols</a>
+                <a href="{{ url_for('views.templates_page', role='procedure') }}"
+                   class="{% if requested_role == 'procedure' %}is-active{% endif %}">Procedures</a>
+            </nav>
         </div>
 
-        {% if can_edit %}
-            <a class="btn btn-primary" href="{{ url_for('views.new_protocol_patch003') }}">New Protocol</a>
+        {% if requested_role == "procedure" %}
+            <p class="text-muted mb-0 mt-2">
+                Procedures are reusable building-block process definitions. They stay out of the normal Protocol list, can be used later inside Protocols, and can still start their own standalone Flows.
+            </p>
+        {% else %}
+            <p class="text-muted mb-0 mt-2">
+                Build and maintain the main process guides that become live Flows when real work begins.
+            </p>
         {% endif %}
     </div>
 
-    {% if templates %}
-        {% set ns = namespace(categories=[]) %}
-        {% for template in templates %}
-            {% set cat = template.category if template.category is defined and template.category else "Uncategorized" %}
-            {% if cat not in ns.categories %}
-                {% set ns.categories = ns.categories + [cat] %}
-            {% endif %}
-        {% endfor %}
-
-        <div class="pf67-protocol-list-toolbar">
-            <div>
-                <label class="form-label mb-1">Filter by Category</label>
-                <select class="form-select form-select-sm" id="pf67-protocol-category-filter">
-                    <option value="">All Categories</option>
-                    {% for category in ns.categories|sort %}
-                        <option value="{{ category }}">{{ category }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-
-        <div class="row g-3" id="pf67-protocol-list">
-            {% for template in templates %}
-                {% set cat = template.category if template.category is defined and template.category else "Uncategorized" %}
-                {% set cover = pf67_protocol_cover_image(template.id) %}
-
-                <div class="col-12 col-md-6 col-xl-4 pf67-protocol-list-item" data-category="{{ cat }}">
-                    <a class="card pf67-card pf67-protocol-card h-100 text-decoration-none text-body"
-                       href="{{ url_for('views.template_detail', template_id=template.id) }}">
-                        {% if cover %}
-                            <img class="pf67-protocol-card-cover" src="{{ cover }}" alt="">
-                        {% endif %}
-
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between gap-2 align-items-start">
-                                <h5 class="card-title mb-1">{{ template.name }}</h5>
-                                <span class="pf67-category-badge">{{ cat }}</span>
-                            </div>
-
-                            {% if template.description %}
-                                <p class="card-text text-muted mt-2 mb-0">{{ template.description }}</p>
-                            {% else %}
-                                <p class="card-text text-muted mt-2 mb-0">No description.</p>
-                            {% endif %}
-
-                            <div class="text-muted pf67-small mt-2">
-                                {{ template.steps|length }} step{% if template.steps|length != 1 %}s{% endif %}
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="card pf67-card">
-            <div class="card-body">
-                No protocols yet.
-            </div>
-        </div>
+    {% if can_edit %}
+        {% if requested_role == "procedure" %}
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('views.pf67_patch010a_new_procedure') }}">New Procedure</a>
+        {% else %}
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('views.pf67_patch009_new_protocol') }}">New Protocol</a>
+        {% endif %}
     {% endif %}
 </div>
 
-<script>
-document.addEventListener("DOMContentLoaded", function pf67ProtocolFilterPatch003() {
-    var select = document.getElementById("pf67-protocol-category-filter");
+{% if ns_list.visible %}
+    {% set ns = namespace(categories=[], has_uncategorized=false) %}
 
-    if (!select) {
-        return;
-    }
+    {% for template in ns_list.visible %}
+        {% set raw_cat = template.category if template.category is defined and template.category else "" %}
+        {% if raw_cat %}
+            {% if raw_cat not in ns.categories %}
+                {% set ns.categories = ns.categories + [raw_cat] %}
+            {% endif %}
+        {% else %}
+            {% set ns.has_uncategorized = true %}
+        {% endif %}
+    {% endfor %}
 
-    select.addEventListener("change", function() {
-        var selected = select.value;
+    <div class="pf67-protocol-filter-pills" aria-label="Protocol category filters">
+        <span class="pf67-protocol-filter-label">Categories:</span>
 
-        document.querySelectorAll(".pf67-protocol-list-item").forEach(function(item) {
-            var category = item.getAttribute("data-category") || "";
-            item.style.display = (!selected || category === selected) ? "" : "none";
+        <button class="pf67-protocol-filter-pill pf67-protocol-category-pill is-all is-active"
+                type="button"
+                data-pf67-category-all="true">
+            All Categories
+        </button>
+
+        {% for category in ns.categories|sort %}
+            <button class="pf67-protocol-filter-pill pf67-protocol-category-pill"
+                    type="button"
+                    data-pf67-category-pill
+                    data-category="{{ category }}">
+                <span class="pf67-protocol-filter-symbol">+</span>
+                <span>{{ category }}</span>
+            </button>
+        {% endfor %}
+
+        {% if ns.has_uncategorized %}
+            <button class="pf67-protocol-filter-pill pf67-protocol-category-pill"
+                    type="button"
+                    data-pf67-category-pill
+                    data-category="__uncategorized__">
+                <span class="pf67-protocol-filter-symbol">+</span>
+                <span>No Category</span>
+            </button>
+        {% endif %}
+    </div>
+
+    <div class="pf67-protocol-card-grid" id="pf67-protocol-card-grid">
+        {% for template in ns_list.visible %}
+            {% set raw_cat = template.category if template.category is defined and template.category else "" %}
+            {% set display_cat = raw_cat if raw_cat else "No Category" %}
+            {% set filter_cat = raw_cat if raw_cat else "__uncategorized__" %}
+            {% set cover = template.description|pf67_patch009i_first_img_src if template.description is defined else "" %}
+            {% set summary = template.description|pf67_patch009i_plain_summary(240) if template.description is defined else "" %}
+            {% set is_private = template.is_private is defined and template.is_private %}
+
+            <div class="pf67-protocol-card"
+                 data-pf67-protocol-card
+                 data-category="{{ filter_cat }}">
+                <div class="pf67-protocol-card-inner">
+                    <div class="pf67-protocol-card-top {% if not cover %}pf67-protocol-card-no-thumb{% endif %}">
+                        {% if cover %}
+                            <a class="pf67-protocol-card-thumb" href="{{ url_for('views.template_detail', template_id=template.id) }}">
+                                <img src="{{ cover }}" alt="">
+                            </a>
+                        {% endif %}
+
+                        <div>
+                            <h3 class="pf67-protocol-card-title">
+                                <a href="{{ url_for('views.template_detail', template_id=template.id) }}">{{ template.name }}</a>
+                            </h3>
+
+                            <div class="pf67-protocol-card-meta">
+                                <span class="pf67-protocol-card-pill">{{ display_cat }}</span>
+                                <span class="pf67-protocol-card-pill">
+                                    {{ template.steps|length }} step{% if template.steps|length != 1 %}s{% endif %}
+                                </span>
+                                <span class="pf67-protocol-card-pill">
+                                    {% if requested_role == "procedure" %}Procedure{% else %}Protocol{% endif %}
+                                </span>
+                                <span class="pf67-visibility-pill {% if is_private %}is-private{% else %}is-public{% endif %}"
+                                      title="{% if is_private %}This {% if requested_role == 'procedure' %}Procedure{% else %}Protocol{% endif %} is private.{% else %}This {% if requested_role == 'procedure' %}Procedure{% else %}Protocol{% endif %} is public.{% endif %}">
+                                    {% if is_private %}Private{% else %}Public{% endif %}
+                                </span>
+
+                                {% if can_edit %}
+                                    <form class="pf67-role-action-form"
+                                          method="post"
+                                          action="{{ url_for('views.pf67_patch010a_set_protocol_role', template_id=template.id) }}">
+                                        {% if requested_role == "procedure" %}
+                                            <input type="hidden" name="protocol_role" value="protocol">
+                                            <button class="pf67-role-action-button" type="submit" title="Move this Procedure into the main Protocols view.">Make Protocol</button>
+                                        {% else %}
+                                            <input type="hidden" name="protocol_role" value="procedure">
+                                            <button class="pf67-role-action-button" type="submit" title="Move this Protocol into the Procedures view.">Make Procedure</button>
+                                        {% endif %}
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pf67-protocol-card-description">
+                        {% if summary %}
+                            {{ summary }}
+                        {% else %}
+                            No description.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function pf67Patch010AProtocolCategoryPills() {
+        var allButton = document.querySelector("[data-pf67-category-all]");
+        var categoryButtons = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-category-pill]"));
+        var cards = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-protocol-card]"));
+
+        function setButtonState(button, isActive) {
+            var symbol = button.querySelector(".pf67-protocol-filter-symbol");
+
+            button.classList.toggle("is-active", isActive);
+            button.setAttribute("aria-pressed", isActive ? "true" : "false");
+
+            if (symbol) {
+                symbol.textContent = isActive ? "-" : "+";
+            }
+        }
+
+        function selectedCategories() {
+            return categoryButtons
+                .filter(function(button) {
+                    return button.classList.contains("is-active");
+                })
+                .map(function(button) {
+                    return button.getAttribute("data-category") || "";
+                })
+                .filter(Boolean);
+        }
+
+        function applyFilters() {
+            var selected = selectedCategories();
+            var showAll = selected.length === 0;
+
+            if (allButton) {
+                allButton.classList.toggle("is-active", showAll);
+                allButton.setAttribute("aria-pressed", showAll ? "true" : "false");
+            }
+
+            cards.forEach(function(card) {
+                var category = card.getAttribute("data-category") || "";
+
+                if (showAll || selected.indexOf(category) !== -1) {
+                    card.style.display = "";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
+
+        if (allButton) {
+            allButton.addEventListener("click", function() {
+                categoryButtons.forEach(function(button) {
+                    setButtonState(button, false);
+                });
+                applyFilters();
+            });
+        }
+
+        categoryButtons.forEach(function(button) {
+            setButtonState(button, false);
+
+            button.addEventListener("click", function() {
+                setButtonState(button, !button.classList.contains("is-active"));
+                applyFilters();
+            });
         });
+
+        applyFilters();
     });
-});
-</script>
+    </script>
+{% else %}
+    <div class="pf67-protocol-empty-demo">
+        {% if requested_role == "procedure" %}
+            <strong>No Procedures yet.</strong>
+            <div class="pf67-small mt-1">Create a Procedure for reusable internal work such as cleaning equipment, preparing tools, or other building-block tasks.</div>
+        {% else %}
+            <strong>No Protocols yet.</strong>
+            <div class="pf67-small mt-1">Create your first Protocol to start building reusable process documentation.</div>
+        {% endif %}
+    </div>
+{% endif %}
 
 {% endblock %}

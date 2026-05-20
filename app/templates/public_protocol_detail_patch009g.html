@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · {{ template.name }}{% endblock %}
+
+{% block content %}
+{% set pf67_patch010b9_display_steps_loaded = pf67_patch010b9_display_steps(template) %}
+
+<div class="pf67-public-protocol-detail">
+    <div class="pf67-public-back-row">
+        <a class="pf67-public-back-button"
+           data-pf67-public-back
+           href="{{ url_for('views.index') }}">← Back to list</a>
+    </div>
+    <div class="pf67-dashboard-hero">
+        <div>
+            <div class="pf67-dashboard-kicker">Protocol</div>
+            <h1>{{ template.name }}</h1>
+            <p class="text-muted mb-0">
+                {% if template.category is defined and template.category %}
+                    {{ template.category }}
+                {% else %}
+                    No Category
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="pf67-public-protocol-description">
+        {% if template.description %}
+            {{ template.description | safe }}
+        {% else %}
+            <span class="text-muted">No description has been added yet.</span>
+        {% endif %}
+    </div>
+
+    {% if template.steps %}
+        {% for step in pf67_patch010b9_display_steps(template)|sort(attribute="sort_order") %}
+            <section class="pf67-public-step">
+                {% if not loop.first and step.ideal_minutes %}
+                    <div class="pf67-protocol-wait-before">
+                        <div class="pf67-protocol-wait-primary">
+                            {{ step.ideal_minutes|pf67_patch007c_wait_label }}{% if step.minimum_minutes %}<span class="pf67-protocol-wait-inline-tip">Check after {{ step.minimum_minutes|pf67_patch007c_duration_label }}</span>{% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="pf67-public-step-title">
+                    {% if step.name %}
+                        {{ step.name }}
+                    {% else %}
+                        Step {{ loop.index }}
+                    {% endif %}
+                </div>
+
+                <div class="pf67-public-step-body">
+                    {% if step.instructions_html %}
+                        {{ step.instructions_html | safe }}
+                    {% else %}
+                        <span class="text-muted">No instructions entered.</span>
+                    {% endif %}
+                </div>
+            </section>
+        {% endfor %}
+    {% else %}
+        <section class="pf67-dashboard-section">
+            <div class="text-muted">This Protocol does not have public steps yet.</div>
+        </section>
+    {% endif %}
+</div>
+
+{% endblock %}

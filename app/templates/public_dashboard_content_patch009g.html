@@ -1,0 +1,106 @@
+{% set pf67_public = pf67_patch009g_public_dashboard_data() %}
+{% set active_flows = pf67_public.active_flows %}
+{% set scheduled_flows = pf67_public.scheduled_flows %}
+{% set completed_flows = pf67_public.completed_flows %}
+{% set public_protocols = pf67_public.public_protocols %}
+
+<div class="pf67-dashboard-hero">
+    <div>
+        <div class="pf67-dashboard-kicker">ProtocolFlow67</div>
+        <h1>Dashboard</h1>
+        <p class="pf67-dashboard-description">
+            Protocols are the process guides. Flows are those Protocols in motion and are shown here as status snapshots, not detail pages. Open a Protocol to read the guide behind the work; use the Flow cards to see what is happening, what is scheduled, and what recently finished.
+        </p>
+    </div>
+</div>
+
+<div class="pf67-public-board-grid">
+    <div class="pf67-public-board-column">
+        <section class="pf67-dashboard-section">
+            <div class="pf67-dashboard-section-header">
+                <div>
+                    <h2 class="pf67-dashboard-section-title">Protocols</h2>
+                    <div class="pf67-public-landing-note">Process guides that show how the work is intended to flow.</div>
+                </div>
+                <a class="pf67-dashboard-sleek-link"
+                   data-pf67-public-return-source
+                   href="{{ url_for('views.pf67_patch009g_public_protocols') }}">View all →</a>
+            </div>
+
+            {% if public_protocols %}
+                <div class="pf67-public-protocol-card-grid">
+                    {% for template in public_protocols %}
+                        {% if loop.index <= 5 %}
+                            {% include "public_protocol_card_patch009k.html" %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-muted">No Protocols are currently visible.</div>
+            {% endif %}
+        </section>
+    </div>
+
+    <div class="pf67-public-board-column">
+        <section class="pf67-dashboard-section">
+            <div class="pf67-dashboard-section-header">
+                <div>
+                    <h2 class="pf67-dashboard-section-title">Happening Now</h2>
+                    <div class="pf67-public-landing-note">Flows currently moving through a Protocol or waiting for the next step.</div>
+                </div>
+                <a class="pf67-dashboard-sleek-link"
+                   href="{{ url_for('views.pf67_patch009g_public_flows') }}">View all Flows →</a>
+            </div>
+
+            {% if active_flows %}
+                <div class="pf67-public-flow-mini-list">
+                    {% for item in active_flows %}
+                        {% if loop.index <= 8 %}
+                            {% include "public_flow_card_patch009g.html" %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-muted">No Flows are active right now.</div>
+            {% endif %}
+        </section>
+    </div>
+
+    <div class="pf67-public-board-column">
+        <section class="pf67-dashboard-section">
+            <div class="pf67-dashboard-section-header">
+                <h2 class="pf67-dashboard-section-title">Scheduled</h2>
+            </div>
+
+            {% if scheduled_flows %}
+                <div class="pf67-public-flow-mini-list">
+                    {% for item in scheduled_flows %}
+                        {% if loop.index <= 5 %}
+                            {% include "public_flow_card_patch009g.html" %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-muted">No Flows are scheduled.</div>
+            {% endif %}
+        </section>
+
+        <section class="pf67-dashboard-section">
+            <div class="pf67-dashboard-section-header">
+                <h2 class="pf67-dashboard-section-title">Recently Completed</h2>
+            </div>
+
+            {% if completed_flows %}
+                <div class="pf67-dashboard-card-list">
+                    {% for item in completed_flows %}
+                        {% if loop.index <= 5 %}
+                            {% include "public_flow_card_patch009g.html" %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-muted">No Flows have been completed recently.</div>
+            {% endif %}
+        </section>
+    </div>
+</div>

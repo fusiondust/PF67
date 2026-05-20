@@ -10,7 +10,8 @@
             <div>
                 <h2 class="mb-1">{{ job.name }}</h2>
 
-                <div class="pf67-small text-muted">
+
+<div class="pf67-small text-muted">
                     Protocol v{{ job.template_version }}
                     ·
                     Status:
@@ -28,17 +29,33 @@
                         </form>
                     {% else %}
                         {{ job.status|title }}
-                    {% endif %}
-                    ·
-                    <a href="{{ url_for('api.job_notes', job_id=job.id) }}" class="pf67-muted-link">API</a>
-                    ·
-                    <a href="{{ url_for('views.job_report_pdf', job_id=job.id) }}" class="pf67-muted-link">PDF</a>
+                    {% endif %} · <a href="{{ url_for('views.job_report_pdf', job_id=job.id) }}" class="pf67-muted-link">PDF</a>
                     {% if can_edit %}
                         ·
                         <a data-bs-toggle="collapse" href="#general-note-panel" class="pf67-muted-link">
                             General Note
-                        </a>
-                    {% endif %}
+                        </a> 
+{% if can_edit %}
+<span class="pf67-flow-action-visibility">
+    <form class="pf67-visibility-pill-form"
+          method="post"
+          action="{{ url_for('views.pf67_patch009d_toggle_flow_visibility', job_id=job.id) }}">
+        {% if job.is_private is defined and job.is_private %}
+            <input type="hidden" name="is_private" value="0">
+            <button class="pf67-visibility-pill is-private"
+                    type="submit"
+                    title="This Flow is currently private and hidden from the public interface. Click to make it public.">Private</button>
+        {% else %}
+            <input type="hidden" name="is_private" value="1">
+            <button class="pf67-visibility-pill is-public"
+                    type="submit"
+                    title="This Flow is currently public and visible on the public interface. Click to make it private.">Public</button>
+        {% endif %}
+    </form>
+</span>
+{% endif %}
+ 
+{% endif %}
                 </div>
             </div>
 
@@ -110,7 +127,7 @@
         <div class="row">
             <div class="col-md-4">
                 <div class="nav flex-column nav-pills pf67-step-list" id="step-tabs" role="tablist">
-                    {% for step in job.steps %}
+                    {% for step in pf67_patch011a_ordered_flow_steps(job.steps) %}
                         {% set timing = step_timing.get(step.id) %}
                         {% set is_active = step.id == selected_step_id %}
 
@@ -139,7 +156,7 @@
 
             <div class="col-md-8">
                 <div class="tab-content">
-                    {% for step in job.steps %}
+                    {% for step in pf67_patch011a_ordered_flow_steps(job.steps) %}
                         {% set timing = step_timing.get(step.id) %}
                         {% set is_active = step.id == selected_step_id %}
                         {% set notes_for_step = step_notes.get(step.id, []) %}
@@ -274,7 +291,10 @@
                                                     Complete Step
                                                 </button>
                                             {% else %}
-                                                <form method="post" action="{{ url_for('views.uncomplete_step', step_id=step.id) }}" class="d-inline">
+                                                <form method="post"
+                                                      action="{{ url_for('views.uncomplete_step', step_id=step.id) }}"
+                                                      class="d-inline pf67-uncomplete-step-form"
+                                                      data-pf67-uncomplete-step-id="{{ step.id }}">
                                                     <button class="btn btn-outline-warning btn-sm" type="submit">
                                                         Uncomplete Step
                                                     </button>
@@ -477,8 +497,8 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
 
-        activeStepId = button.getAttribute("data-pf67-step-id") || "";
-        activeStepCompleted = button.getAttribute("data-pf67-step-completed") || "0";
+        activeStepId = button.getAttribute("data-pf67-step-id") · "";
+        activeStepCompleted = button.getAttribute("data-pf67-step-completed") · "0";
         updateHeaderStepActions();
     }
 
@@ -498,11 +518,18 @@ document.addEventListener("DOMContentLoaded", function() {
 
         if (completeButton) {
             completeButton.setAttribute("data-pf67-step-id", activeStepId);
+            completeButton.classList.remove("d-none");
 
             if (activeStepCompleted === "1") {
-                completeButton.classList.add("d-none");
+                completeButton.textContent = "Uncomplete Step";
+                completeButton.classList.remove("btn-outline-success");
+                completeButton.classList.add("btn-outline-warning");
+                completeButton.setAttribute("data-pf67-header-step-action", "uncomplete");
             } else {
-                completeButton.classList.remove("d-none");
+                completeButton.textContent = "Complete Step";
+                completeButton.classList.remove("btn-outline-warning");
+                completeButton.classList.add("btn-outline-success");
+                completeButton.setAttribute("data-pf67-header-step-action", "complete");
             }
         }
     }
@@ -675,7 +702,7 @@ document.addEventListener("DOMContentLoaded", function() {
         var originalDisplay = control.getAttribute("data-pf67-original-display");
         var originalValue = control.getAttribute("data-pf67-original-value");
 
-        if (!display || !editor || !input || !saveButton || !cancelButton || !noteId) {
+        if (!display · !editor · !input · !saveButton · !cancelButton · !noteId) {
             return;
         }
 
@@ -736,7 +763,7 @@ document.addEventListener("DOMContentLoaded", function() {
         var originalDisplay = control.getAttribute("data-pf67-original-display");
         var originalValue = control.getAttribute("data-pf67-original-value");
 
-        if (!display || !editor || !input || !saveButton || !cancelButton || !noteId) {
+        if (!display · !editor · !input · !saveButton · !cancelButton · !noteId) {
             return;
         }
 
@@ -795,7 +822,7 @@ document.addEventListener("DOMContentLoaded", function() {
         var originalValue = input ? input.value : "";
         var originalDisplay = display ? display.textContent.trim() : "";
 
-        if (!display || !editor || !input || !saveButton || !cancelButton) {
+        if (!display · !editor · !input · !saveButton · !cancelButton) {
             return;
         }
 
@@ -930,7 +957,7 @@ document.addEventListener("DOMContentLoaded", function() {
         link.addEventListener("click", function(event) {
             var href = link.getAttribute("href");
 
-            if (!href || href.indexOf("#step-") === -1) {
+            if (!href · href.indexOf("#step-") === -1) {
                 return;
             }
 
@@ -977,6 +1004,24 @@ document.addEventListener("DOMContentLoaded", function() {
         headerCompleteStep.addEventListener("click", function() {
             if (!activeStepId) {
                 setActiveStepFromButton(getActiveStepButton());
+            }
+
+            if (activeStepCompleted === "1" || headerCompleteStep.getAttribute("data-pf67-header-step-action") === "uncomplete") {
+                var uncompleteForm = document.querySelector("[data-pf67-uncomplete-step-id='" + activeStepId + "']");
+
+                if (!uncompleteForm) {
+                    var activePanel = document.getElementById("step-panel-" + activeStepId);
+
+                    if (activePanel) {
+                        uncompleteForm = activePanel.querySelector("form[action*='uncomplete']");
+                    }
+                }
+
+                if (uncompleteForm) {
+                    uncompleteForm.submit();
+                }
+
+                return;
             }
 
             showStepPanel(activeStepId, "complete-step-panel-");
@@ -1092,6 +1137,320 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch011B5FlowHeaderAndNoteRepair() {
+    var richTextCounter = 0;
+
+    function currentActiveStepButton() {
+        return document.querySelector(".pf67-step-button[data-pf67-step-id].active") ||
+               document.querySelector("[data-pf67-step-id].active");
+    }
+
+    function selectedStepId() {
+        var button = currentActiveStepButton();
+
+        if (!button) {
+            return "";
+        }
+
+        return button.getAttribute("data-pf67-step-id") || "";
+    }
+
+    function selectedStepCompleted() {
+        var button = currentActiveStepButton();
+
+        if (!button) {
+            return false;
+        }
+
+        return button.getAttribute("data-pf67-step-completed") === "1";
+    }
+
+    function setHeaderButtonState() {
+        var stepId = selectedStepId();
+        var completeButton = document.getElementById("pf67-header-complete-step");
+        var addButton = document.getElementById("pf67-header-add-note");
+        var isCompleted = selectedStepCompleted();
+
+        if (addButton && stepId) {
+            addButton.setAttribute("data-pf67-step-id", stepId);
+        }
+
+        if (!completeButton || !stepId) {
+            return;
+        }
+
+        completeButton.setAttribute("data-pf67-step-id", stepId);
+        completeButton.classList.remove("d-none");
+
+        if (isCompleted) {
+            completeButton.textContent = "Uncomplete Step";
+            completeButton.classList.remove("btn-outline-success");
+            completeButton.classList.add("btn-outline-warning");
+            completeButton.setAttribute("data-pf67-header-step-action", "uncomplete");
+        } else {
+            completeButton.textContent = "Complete Step";
+            completeButton.classList.remove("btn-outline-warning");
+            completeButton.classList.add("btn-outline-success");
+            completeButton.setAttribute("data-pf67-header-step-action", "complete");
+        }
+    }
+
+    function ensureTextareaId(textarea) {
+        if (!textarea) {
+            return "";
+        }
+
+        if (!textarea.id) {
+            richTextCounter += 1;
+            textarea.id = "pf67-rich-text-011b5-" + richTextCounter;
+        }
+
+        return textarea.id;
+    }
+
+    function ensureRichEditorForTextarea(textarea) {
+        if (!textarea || !window.tinymce) {
+            return null;
+        }
+
+        var id = ensureTextareaId(textarea);
+        var existing = tinymce.get(id);
+
+        if (existing) {
+            try {
+                existing.focus();
+            } catch (err) {}
+
+            return existing;
+        }
+
+        var options = {
+            target: textarea,
+            plugins: "code link lists image",
+            toolbar: "undo redo | bold italic | bullist numlist | link image | code",
+            menubar: false,
+            branding: false,
+            height: 220,
+            automatic_uploads: true,
+            images_upload_url: "{{ url_for('views.upload_job_image', job_id=job.id) }}",
+            images_file_types: "jpg,jpeg,png,gif,webp",
+            setup: function(editor) {
+                editor.on("focus", function() {
+                    window.pf67Patch011B5ActiveEditorId = editor.id;
+                });
+            }
+        };
+
+        if (typeof pf67TinyOptions === "function") {
+            options = pf67TinyOptions(options);
+        }
+
+        try {
+            tinymce.init(options);
+        } catch (err) {}
+
+        return tinymce.get(id) || null;
+    }
+
+    function ensureRichEditorsIn(scope) {
+        if (!scope) {
+            return;
+        }
+
+        var textareas = scope.querySelectorAll("textarea.pf67-rich-text");
+
+        textareas.forEach(function(textarea) {
+            ensureRichEditorForTextarea(textarea);
+        });
+    }
+
+    function panelFor(prefix, stepId) {
+        if (!stepId) {
+            return null;
+        }
+
+        return document.getElementById(prefix + stepId);
+    }
+
+    function findUncompleteForm(stepId) {
+        var panel = document.getElementById("step-panel-" + stepId);
+        var form = null;
+
+        if (panel) {
+            form = panel.querySelector("form[action*='uncomplete']");
+        }
+
+        if (!form) {
+            form = document.querySelector("form[action*='uncomplete'][action$='/" + stepId + "']");
+        }
+
+        return form;
+    }
+
+    function submitUncompleteForSelectedStep() {
+        var stepId = selectedStepId();
+
+        if (!stepId) {
+            return false;
+        }
+
+        var form = findUncompleteForm(stepId);
+
+        if (!form) {
+            return false;
+        }
+
+        form.submit();
+        return true;
+    }
+
+    function openAndPreparePanel(prefix, stepId) {
+        var panel = panelFor(prefix, stepId);
+
+        if (!panel) {
+            return;
+        }
+
+        window.setTimeout(function() {
+            ensureRichEditorsIn(panel);
+        }, 80);
+
+        window.setTimeout(function() {
+            ensureRichEditorsIn(panel);
+        }, 260);
+    }
+
+    function clearAndHidePanel(panel) {
+        if (!panel) {
+            return;
+        }
+
+        var form = panel.querySelector("form");
+
+        if (form) {
+            var titleInput = form.querySelector("input[name='title']");
+            var textareas = form.querySelectorAll("textarea.pf67-rich-text");
+
+            if (titleInput) {
+                titleInput.value = "";
+            }
+
+            textareas.forEach(function(textarea) {
+                var id = ensureTextareaId(textarea);
+                var editor = window.tinymce ? tinymce.get(id) : null;
+
+                if (editor) {
+                    editor.setContent("");
+                }
+
+                textarea.value = "";
+            });
+        }
+
+        if (window.bootstrap) {
+            bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false }).hide();
+        } else {
+            panel.classList.remove("show");
+        }
+    }
+
+    function prepareEditorForMediaButton(button) {
+        var form = button.closest("form");
+
+        if (!form) {
+            return;
+        }
+
+        var textarea = form.querySelector("textarea.pf67-rich-text");
+        var editor = ensureRichEditorForTextarea(textarea);
+
+        if (editor) {
+            window.pf67Patch011B5ActiveEditorId = editor.id;
+
+            try {
+                editor.focus();
+            } catch (err) {}
+        }
+    }
+
+    document.querySelectorAll(".pf67-step-button[data-pf67-step-id]").forEach(function(button) {
+        button.addEventListener("shown.bs.tab", function() {
+            setHeaderButtonState();
+        });
+
+        button.addEventListener("click", function() {
+            window.setTimeout(setHeaderButtonState, 40);
+        });
+    });
+
+    var headerCompleteStep = document.getElementById("pf67-header-complete-step");
+
+    if (headerCompleteStep) {
+        headerCompleteStep.addEventListener("click", function(event) {
+            setHeaderButtonState();
+
+            if (selectedStepCompleted()) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                submitUncompleteForSelectedStep();
+                return;
+            }
+
+            window.setTimeout(function() {
+                openAndPreparePanel("complete-step-panel-", selectedStepId());
+            }, 80);
+        }, true);
+    }
+
+    var headerAddNote = document.getElementById("pf67-header-add-note");
+
+    if (headerAddNote) {
+        headerAddNote.addEventListener("click", function() {
+            window.setTimeout(function() {
+                openAndPreparePanel("add-step-note-panel-", selectedStepId());
+            }, 80);
+        }, true);
+    }
+
+    document.addEventListener("shown.bs.collapse", function(event) {
+        var panel = event.target;
+
+        if (panel && panel.id && (panel.id.indexOf("add-step-note-panel-") === 0 || panel.id.indexOf("complete-step-panel-") === 0)) {
+            ensureRichEditorsIn(panel);
+        }
+    });
+
+    document.addEventListener("click", function(event) {
+        var cancelStepNote = event.target.closest(".pf67-cancel-step-note");
+        var cancelCompletion = event.target.closest(".pf67-cancel-completion-note");
+
+        if (cancelStepNote || cancelCompletion) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            clearAndHidePanel(event.target.closest(".collapse"));
+            return;
+        }
+
+        var mediaButton = event.target.closest(".pf67-media-button");
+
+        if (mediaButton) {
+            prepareEditorForMediaButton(mediaButton);
+        }
+    }, true);
+
+    if (window.tinymce) {
+        window.setTimeout(function() {
+            ensureRichEditorsIn(document);
+        }, 300);
+    }
+
+    setHeaderButtonState();
+    window.setTimeout(setHeaderButtonState, 250);
+});
+</script>
+
 {% endif %}
 
 {% endblock %}

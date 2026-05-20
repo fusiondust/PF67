@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Insert Procedure{% endblock %}
+
+{% block content %}
+
+<div class="pf67-dashboard-hero">
+    <div>
+        <div class="pf67-dashboard-kicker">ProtocolFlow67</div>
+        <h1>Insert Procedure</h1>
+        <p class="pf67-dashboard-description">
+            Choose a Procedure to add its prescribed steps into <span class="text-body">{{ template.name }}</span>. The steps will read like normal Protocol steps; in the backend, clicking one opens the Procedure for editing.
+        </p>
+    </div>
+</div>
+
+<div class="pf67-insert-procedure-panel">
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('views.template_detail', template_id=template.id) }}">Back to Protocol</a>
+</div>
+
+{% if procedures %}
+    {% set ns = namespace(categories=[], has_uncategorized=false) %}
+    {% for procedure in procedures %}
+        {% set category_value = procedure.category if procedure.category else "" %}
+        {% if category_value %}
+            {% if category_value not in ns.categories %}
+                {% set ns.categories = ns.categories + [category_value] %}
+            {% endif %}
+        {% else %}
+            {% set ns.has_uncategorized = true %}
+        {% endif %}
+    {% endfor %}
+
+    <div class="pf67-procedure-selector-tools">
+        <input class="form-control pf67-procedure-selector-search"
+               data-pf67-procedure-search
+               placeholder="Filter Procedures by name, category, or description">
+
+        <div class="pf67-public-protocol-filter-pills">
+            <button class="pf67-public-protocol-filter-pill is-active"
+                    type="button"
+                    data-pf67-procedure-category="all">All Categories</button>
+
+            {% for category in ns.categories|sort %}
+                {% set category_key = category|lower|replace(" ", "-") %}
+                <button class="pf67-public-protocol-filter-pill"
+                        type="button"
+                        data-pf67-procedure-category="{{ category_key }}">{{ category }}</button>
+            {% endfor %}
+
+            {% if ns.has_uncategorized %}
+                <button class="pf67-public-protocol-filter-pill"
+                        type="button"
+                        data-pf67-procedure-category="no-category">No Category</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="pf67-procedure-choice-grid" data-pf67-procedure-choice-grid>
+        {% for procedure in procedures %}
+            {% set summary = procedure.description|pf67_patch010b7_plain_summary(260) %}
+            {% set thumb = procedure.description|pf67_patch010b7_first_img_src %}
+            {% set category_value = procedure.category if procedure.category else "No Category" %}
+            {% set category_key = category_value|lower|replace(" ", "-") %}
+            <form class="pf67-procedure-choice-card"
+                  method="post"
+                  data-pf67-procedure-choice-card
+                  data-category="{{ category_key }}"
+                  data-search="{{ (procedure.name ~ ' ' ~ category_value ~ ' ' ~ summary)|lower }}"
+                  action="{{ url_for('views.pf67_patch010b7_insert_procedure', template_id=template.id) }}">
+                <input type="hidden" name="procedure_id" value="{{ procedure.id }}">
+
+                {% if thumb %}
+                    <span class="pf67-procedure-choice-thumb">
+                        <img src="{{ thumb }}" alt="">
+                    </span>
+                {% endif %}
+
+                <h3 class="h5 mb-2">{{ procedure.name }}</h3>
+
+                <div class="mb-2">
+                    <span class="pf67-dashboard-pill">{{ category_value }}</span>
+                    {% set minutes = pf67_patch010b7_procedure_minutes(procedure) %}
+                    {% if minutes %}
+                        <span class="pf67-dashboard-pill">{{ pf67_patch010b7_duration_label(minutes) }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="text-muted mb-3">
+                    {% if summary %}
+                        {{ summary }}
+                    {% else %}
+                        No description.
+                    {% endif %}
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-primary btn-sm" type="submit">Insert Procedure</button>
+                    <a class="btn btn-outline-secondary btn-sm"
+                       target="_blank"
+                       rel="noopener"
+                       href="{{ url_for('views.template_detail', template_id=procedure.id) }}">Open</a>
+                </div>
+            </form>
+        {% endfor %}
+    </div>
+
+    <section class="pf67-dashboard-section pf67-flow-console-hidden" data-pf67-procedure-empty>
+        <div class="text-muted">No Procedures match those filters.</div>
+    </section>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function pf67Patch010B7ProcedureSelector() {
+        var search = document.querySelector("[data-pf67-procedure-search]");
+        var cards = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-procedure-choice-card]"));
+        var categoryButtons = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-procedure-category]"));
+        var empty = document.querySelector("[data-pf67-procedure-empty]");
+        var activeCategory = "all";
+
+        function applyFilters() {
+            var query = search ? (search.value || "").trim().toLowerCase() : "";
+            var visibleCount = 0;
+
+            cards.forEach(function(card) {
+                var categoryMatch = activeCategory === "all" || card.dataset.category === activeCategory;
+                var searchMatch = !query || (card.dataset.search || "").indexOf(query) !== -1;
+                var visible = categoryMatch && searchMatch;
+
+                card.classList.toggle("pf67-flow-console-hidden", !visible);
+
+                if (visible) {
+                    visibleCount += 1;
+                }
+            });
+
+            if (empty) {
+                empty.classList.toggle("pf67-flow-console-hidden", visibleCount > 0);
+            }
+        }
+
+        categoryButtons.forEach(function(button) {
+            button.addEventListener("click", function() {
+                activeCategory = button.getAttribute("data-pf67-procedure-category") || "all";
+
+                categoryButtons.forEach(function(otherButton) {
+                    otherButton.classList.toggle("is-active", otherButton === button);
+                });
+
+                applyFilters();
+            });
+        });
+
+        if (search) {
+            search.addEventListener("input", applyFilters);
+        }
+
+        applyFilters();
+    });
+    </script>
+{% else %}
+    <section class="pf67-dashboard-section">
+        <div class="text-muted">No Procedures are available yet. Create one from the Procedures view first.</div>
+    </section>
+{% endif %}
+
+{% endblock %}

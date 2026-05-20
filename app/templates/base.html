@@ -3577,6 +3577,2642 @@
             }
         }
 
+    
+        /* PF67 Patch 008B Protocol List Cover Cards */
+        .pf67-protocol-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .pf67-protocol-list-toolbar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .pf67-protocol-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .pf67-protocol-card {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(108, 117, 125, 0.06);
+            transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+            min-height: 100%;
+        }
+
+        .pf67-protocol-card:hover,
+        .pf67-protocol-card:focus {
+            color: inherit;
+            text-decoration: none;
+            border-color: rgba(13, 110, 253, 0.45);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+        }
+
+        .pf67-protocol-card-inner {
+            padding: 14px;
+        }
+
+        .pf67-protocol-card-top {
+            display: grid;
+            grid-template-columns: 118px minmax(0, 1fr);
+            gap: 14px;
+            align-items: start;
+        }
+
+        .pf67-protocol-card-thumb {
+            width: 118px;
+            aspect-ratio: 3 / 4;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--bs-border-color);
+            background: rgba(108, 117, 125, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bs-secondary-color);
+            font-size: 0.82rem;
+            text-align: center;
+        }
+
+        .pf67-protocol-card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .pf67-protocol-card-title {
+            font-size: 1.15rem;
+            line-height: 1.25;
+            font-weight: 800;
+            margin: 0 0 8px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .pf67-protocol-card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .pf67-protocol-card-pill {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            max-width: 100%;
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-size: 0.78rem;
+            font-weight: 750;
+            background: rgba(108, 117, 125, 0.12);
+            border: 1px solid rgba(108, 117, 125, 0.18);
+            color: var(--bs-secondary-color);
+        }
+
+        .pf67-protocol-card-description {
+            margin-top: 12px;
+            color: var(--bs-secondary-color);
+            line-height: 1.45;
+        }
+
+        .pf67-protocol-card-description:empty {
+            display: none;
+        }
+
+        @media (max-width: 520px) {
+            .pf67-protocol-card-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pf67-protocol-card-top {
+                grid-template-columns: 92px minmax(0, 1fr);
+            }
+
+            .pf67-protocol-card-thumb {
+                width: 92px;
+            }
+        }
+
+    
+        /* PF67 Patch 008C Protocol Category Pills */
+        .pf67-protocol-filter-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .pf67-protocol-filter-label {
+            font-size: 0.88rem;
+            color: var(--bs-secondary-color);
+            font-weight: 650;
+            margin-right: 2px;
+        }
+
+        .pf67-protocol-filter-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border-radius: 999px;
+            border: 1px solid var(--bs-border-color);
+            background: rgba(108, 117, 125, 0.08);
+            color: var(--bs-body-color);
+            padding: 5px 10px;
+            font-size: 0.86rem;
+            font-weight: 700;
+            line-height: 1.2;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+        }
+
+        .pf67-protocol-filter-pill:hover,
+        .pf67-protocol-filter-pill:focus {
+            border-color: rgba(13, 110, 253, 0.45);
+            background: rgba(13, 110, 253, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .pf67-protocol-filter-pill.is-active {
+            border-color: rgba(13, 110, 253, 0.65);
+            background: rgba(13, 110, 253, 0.18);
+            color: var(--bs-body-color);
+        }
+
+        .pf67-protocol-filter-pill.is-all {
+            font-weight: 800;
+        }
+
+        .pf67-protocol-filter-symbol {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.1rem;
+            height: 1.1rem;
+            border-radius: 999px;
+            background: rgba(108, 117, 125, 0.14);
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .pf67-protocol-filter-pill.is-active .pf67-protocol-filter-symbol {
+            background: rgba(13, 110, 253, 0.22);
+        }
+
+        .pf67-protocol-card-top.pf67-protocol-card-no-thumb {
+            display: block;
+        }
+
+        .pf67-protocol-card-top.pf67-protocol-card-no-thumb .pf67-protocol-card-title {
+            margin-top: 0;
+        }
+
+    
+        /* PF67 Patch 009A Dashboard Newspaper Layout */
+        .pf67-dashboard-hero {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .pf67-dashboard-kicker {
+            font-size: 0.82rem;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--bs-secondary-color);
+            margin-bottom: 4px;
+        }
+
+        .pf67-dashboard-description {
+            max-width: 860px;
+            color: var(--bs-secondary-color);
+            line-height: 1.45;
+        }
+
+        .pf67-dashboard-info-button {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            font-weight: 900;
+            font-style: italic;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .pf67-dashboard-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.85fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        .pf67-dashboard-section {
+            border: 1px solid var(--bs-border-color);
+            border-radius: 18px;
+            background: rgba(108, 117, 125, 0.06);
+            padding: 14px;
+            min-width: 0;
+        }
+
+        .pf67-dashboard-section + .pf67-dashboard-section {
+            margin-top: 18px;
+        }
+
+        .pf67-dashboard-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .pf67-dashboard-section-title {
+            margin: 0;
+            font-size: 1.08rem;
+            font-weight: 850;
+            line-height: 1.25;
+        }
+
+        .pf67-dashboard-sleek-link {
+            font-size: 0.86rem;
+            text-decoration: none;
+            white-space: nowrap;
+            color: var(--bs-link-color);
+        }
+
+        .pf67-dashboard-sleek-link:hover,
+        .pf67-dashboard-sleek-link:focus {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .pf67-lead-story {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+            border-radius: 18px;
+            border: 1px solid rgba(13, 110, 253, 0.32);
+            background: rgba(13, 110, 253, 0.10);
+            padding: 18px;
+            margin-bottom: 18px;
+        }
+
+        .pf67-lead-story:hover,
+        .pf67-lead-story:focus {
+            color: inherit;
+            text-decoration: none;
+            border-color: rgba(13, 110, 253, 0.55);
+        }
+
+        .pf67-lead-story h3 {
+            margin: 0 0 6px 0;
+            font-size: clamp(1.35rem, 2vw, 2rem);
+            line-height: 1.15;
+        }
+
+        .pf67-dashboard-card-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .pf67-dashboard-card {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+            border: 1px solid rgba(108, 117, 125, 0.20);
+            border-radius: 14px;
+            padding: 11px 12px;
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .pf67-dashboard-card:hover,
+        .pf67-dashboard-card:focus {
+            color: inherit;
+            text-decoration: none;
+            border-color: rgba(13, 110, 253, 0.48);
+            background: rgba(13, 110, 253, 0.08);
+        }
+
+        .pf67-dashboard-card-title {
+            font-weight: 850;
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+        }
+
+        .pf67-dashboard-card-subtitle {
+            color: var(--bs-secondary-color);
+            font-size: 0.9rem;
+            margin-top: 2px;
+        }
+
+        .pf67-dashboard-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .pf67-dashboard-pill {
+            display: inline-flex;
+            width: fit-content;
+            border: 1px solid rgba(108, 117, 125, 0.20);
+            background: rgba(108, 117, 125, 0.10);
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--bs-secondary-color);
+        }
+
+        .pf67-dashboard-pill-critical,
+        .pf67-dashboard-pill-high {
+            border-color: rgba(220, 53, 69, 0.40);
+            background: rgba(220, 53, 69, 0.12);
+            color: var(--bs-body-color);
+        }
+
+        .pf67-active-flow-card:nth-of-type(n+11) {
+            display: none;
+        }
+
+        .pf67-public-flow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 14px;
+        }
+
+        .pf67-public-flow-card {
+            display: block;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 16px;
+            padding: 14px;
+            background: rgba(108, 117, 125, 0.06);
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .pf67-public-flow-card:hover,
+        .pf67-public-flow-card:focus {
+            color: inherit;
+            text-decoration: none;
+            border-color: rgba(13, 110, 253, 0.45);
+        }
+
+        .pf67-privacy-inline-form {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 0;
+        }
+
+        .pf67-privacy-note {
+            font-size: 0.84rem;
+            color: var(--bs-secondary-color);
+        }
+
+        @media (max-width: 900px) {
+            .pf67-dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pf67-active-flow-card:nth-of-type(n+6) {
+                display: none;
+            }
+        }
+
+    
+        /* PF67 Patch 009B Dashboard Header and Flow Privacy */
+        .pf67-dashboard-topline {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.95fr);
+            gap: 18px;
+            align-items: stretch;
+            margin-bottom: 18px;
+        }
+
+        .pf67-dashboard-topline .pf67-dashboard-hero {
+            margin-bottom: 0;
+            height: 100%;
+        }
+
+        .pf67-dashboard-hero-main {
+            min-width: 0;
+        }
+
+        .pf67-dashboard-hero-attention {
+            min-width: 0;
+        }
+
+        .pf67-dashboard-hero-attention .pf67-lead-story {
+            height: 100%;
+            margin-bottom: 0;
+        }
+
+        .pf67-dashboard-section-title {
+            font-size: clamp(1.28rem, 1.35vw, 1.62rem) !important;
+            font-weight: 900 !important;
+            letter-spacing: -0.01em;
+        }
+
+        .pf67-dashboard-card-title {
+            font-size: 1rem;
+        }
+
+        .pf67-flow-privacy-panel {
+            border: 1px solid var(--bs-border-color);
+            border-radius: 14px;
+            background: rgba(108, 117, 125, 0.06);
+            padding: 10px 12px;
+            margin: 10px 0 16px 0;
+        }
+
+        .pf67-flow-privacy-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 0;
+        }
+
+        .pf67-flow-privacy-form .form-check {
+            margin-bottom: 0;
+        }
+
+        .pf67-flow-privacy-note {
+            color: var(--bs-secondary-color);
+            font-size: 0.84rem;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 980px) {
+            .pf67-dashboard-topline {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    
+        /* PF67 Patch 009C Public Protocol Visibility */
+        .pf67-public-board-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        .pf67-public-protocol-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 14px;
+        }
+
+        .pf67-public-protocol-card {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 16px;
+            background: rgba(108, 117, 125, 0.06);
+            padding: 14px;
+        }
+
+        .pf67-public-protocol-card:hover,
+        .pf67-public-protocol-card:focus {
+            color: inherit;
+            text-decoration: none;
+            border-color: rgba(13, 110, 253, 0.45);
+        }
+
+        .pf67-public-protocol-detail {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        .pf67-public-protocol-description {
+            border: 1px solid var(--bs-border-color);
+            border-radius: 16px;
+            background: rgba(108, 117, 125, 0.06);
+            padding: 16px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        .pf67-public-protocol-description img,
+        .pf67-public-step-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            border: 1px solid var(--bs-border-color);
+            margin: 8px 0;
+        }
+
+        .pf67-public-step {
+            border-top: 1px solid rgba(108, 117, 125, 0.22);
+            padding: 18px 0;
+        }
+
+        .pf67-public-step:first-of-type {
+            border-top: 0;
+        }
+
+        .pf67-public-step-title {
+            font-size: 1.15rem;
+            font-weight: 850;
+            margin-bottom: 8px;
+        }
+
+        .pf67-flow-visibility-toggle {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(108, 117, 125, 0.08);
+            margin: 8px 0 14px 0;
+        }
+
+        .pf67-flow-visibility-toggle form {
+            margin: 0;
+        }
+
+        .pf67-flow-visibility-toggle button {
+            border: 0;
+            border-radius: 0;
+            padding: 5px 12px;
+            font-size: 0.84rem;
+            font-weight: 750;
+            color: var(--bs-secondary-color);
+            background: transparent;
+        }
+
+        .pf67-flow-visibility-toggle button.is-active {
+            color: var(--bs-body-color);
+            background: rgba(13, 110, 253, 0.18);
+        }
+
+        .pf67-flow-visibility-toggle button:not(.is-active):hover,
+        .pf67-flow-visibility-toggle button:not(.is-active):focus {
+            color: var(--bs-link-color);
+            background: rgba(13, 110, 253, 0.08);
+        }
+
+        @media (max-width: 900px) {
+            .pf67-public-board-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    
+        /* PF67 Patch 009D Visibility Pills */
+        .pf67-visibility-pill-form {
+            display: inline-flex;
+            margin: 0;
+            padding: 0;
+            vertical-align: baseline;
+        }
+
+        .pf67-visibility-pill {
+            border: 1px solid rgba(108, 117, 125, 0.26);
+            border-radius: 999px;
+            background: rgba(108, 117, 125, 0.10);
+            color: var(--bs-secondary-color);
+            padding: 3px 9px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            line-height: 1.2;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+        }
+
+        .pf67-visibility-pill.is-public {
+            border-color: rgba(25, 135, 84, 0.38);
+            background: rgba(25, 135, 84, 0.12);
+            color: var(--bs-body-color);
+        }
+
+        .pf67-visibility-pill.is-private {
+            border-color: rgba(220, 53, 69, 0.38);
+            background: rgba(220, 53, 69, 0.12);
+            color: var(--bs-body-color);
+        }
+
+        .pf67-visibility-pill:hover,
+        .pf67-visibility-pill:focus {
+            border-color: rgba(13, 110, 253, 0.55);
+            background: rgba(13, 110, 253, 0.12);
+            color: var(--bs-body-color);
+            text-decoration: none;
+        }
+
+        .pf67-visibility-card-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            margin: 6px 0 8px 0;
+        }
+
+        .pf67-flow-action-visibility {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 0.35rem;
+            margin-right: 0.35rem;
+        }
+
+        .pf67-flow-action-visibility .pf67-visibility-pill {
+            border: 0;
+            background: transparent;
+            color: var(--bs-link-color);
+            padding: 0;
+            font-size: inherit;
+            font-weight: inherit;
+            border-radius: 0;
+            text-decoration: none;
+        }
+
+        .pf67-flow-action-visibility .pf67-visibility-pill:hover,
+        .pf67-flow-action-visibility .pf67-visibility-pill:focus {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            background: transparent;
+        }
+
+        .pf67-public-board-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .pf67-public-board-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    
+        /* PF67 Patch 009E Public Dashboard and Progress */
+        .pf67-progress-shell {
+            margin-top: 10px;
+        }
+
+        .pf67-progress-track {
+            position: relative;
+            height: 9px;
+            border-radius: 999px;
+            background: rgba(108, 117, 125, 0.20);
+            overflow: hidden;
+            border: 1px solid rgba(108, 117, 125, 0.18);
+        }
+
+        .pf67-progress-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: rgba(13, 110, 253, 0.55);
+            min-width: 2px;
+        }
+
+        .pf67-progress-label {
+            margin-top: 5px;
+            color: var(--bs-secondary-color);
+            font-size: 0.82rem;
+            line-height: 1.25;
+        }
+
+        .pf67-public-board-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.22fr) minmax(300px, 0.78fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        .pf67-public-section-actions {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .pf67-visibility-card-row {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            margin: 0;
+        }
+
+        .pf67-protocol-card-meta .pf67-visibility-pill {
+            cursor: default;
+        }
+
+        .pf67-protocol-card-meta .pf67-visibility-pill:hover,
+        .pf67-protocol-card-meta .pf67-visibility-pill:focus {
+            border-color: rgba(108, 117, 125, 0.26);
+            background: rgba(108, 117, 125, 0.10);
+            text-decoration: none;
+        }
+
+        .pf67-protocol-card-meta .pf67-visibility-pill.is-public:hover,
+        .pf67-protocol-card-meta .pf67-visibility-pill.is-public:focus {
+            border-color: rgba(25, 135, 84, 0.38);
+            background: rgba(25, 135, 84, 0.12);
+        }
+
+        .pf67-protocol-card-meta .pf67-visibility-pill.is-private:hover,
+        .pf67-protocol-card-meta .pf67-visibility-pill.is-private:focus {
+            border-color: rgba(220, 53, 69, 0.38);
+            background: rgba(220, 53, 69, 0.12);
+        }
+
+        .pf67-visibility-pill-form {
+            display: inline-flex;
+            margin: 0;
+            padding: 0;
+            vertical-align: baseline;
+        }
+
+        .pf67-visibility-pill {
+            border: 1px solid rgba(108, 117, 125, 0.26);
+            border-radius: 999px;
+            background: rgba(108, 117, 125, 0.10);
+            color: var(--bs-secondary-color);
+            padding: 3px 9px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            line-height: 1.2;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+        }
+
+        .pf67-visibility-pill.is-public {
+            border-color: rgba(25, 135, 84, 0.38);
+            background: rgba(25, 135, 84, 0.12);
+            color: var(--bs-body-color);
+        }
+
+        .pf67-visibility-pill.is-private {
+            border-color: rgba(220, 53, 69, 0.38);
+            background: rgba(220, 53, 69, 0.12);
+            color: var(--bs-body-color);
+        }
+
+        .pf67-visibility-pill:hover,
+        .pf67-visibility-pill:focus {
+            border-color: rgba(13, 110, 253, 0.55);
+            background: rgba(13, 110, 253, 0.12);
+            color: var(--bs-body-color);
+            text-decoration: none;
+        }
+
+        .pf67-flow-action-visibility {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 0.35rem;
+            margin-right: 0.35rem;
+        }
+
+        .pf67-flow-action-visibility .pf67-visibility-pill {
+            border: 0;
+            background: transparent;
+            color: var(--bs-link-color);
+            padding: 0;
+            font-size: inherit;
+            font-weight: inherit;
+            border-radius: 0;
+            text-decoration: none;
+        }
+
+        .pf67-flow-action-visibility .pf67-visibility-pill:hover,
+        .pf67-flow-action-visibility .pf67-visibility-pill:focus {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            background: transparent;
+        }
+
+        @media (max-width: 900px) {
+            .pf67-public-board-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    
+        /* PF67 Patch 009F Public Landing Route Fix */
+        .pf67-public-board-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        .pf67-public-flow-group + .pf67-public-flow-group {
+            margin-top: 18px;
+        }
+
+        .pf67-public-flow-mini-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .pf67-progress-shell {
+            margin-top: 10px;
+        }
+
+        .pf67-progress-track {
+            position: relative;
+            height: 9px;
+            border-radius: 999px;
+            background: rgba(108, 117, 125, 0.20);
+            overflow: hidden;
+            border: 1px solid rgba(108, 117, 125, 0.18);
+        }
+
+        .pf67-progress-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: rgba(13, 110, 253, 0.55);
+            min-width: 2px;
+        }
+
+        .pf67-progress-label {
+            margin-top: 5px;
+            color: var(--bs-secondary-color);
+            font-size: 0.82rem;
+            line-height: 1.25;
+        }
+
+        .pf67-public-landing-note {
+            color: var(--bs-secondary-color);
+            font-size: 0.92rem;
+            line-height: 1.45;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 900px) {
+            .pf67-public-board-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    
+        /* PF67 Patch 009G Public Root Landing Repair */
+        .pf67-public-board-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        .pf67-public-flow-group + .pf67-public-flow-group {
+            margin-top: 18px;
+        }
+
+        .pf67-public-flow-mini-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .pf67-progress-shell {
+            margin-top: 10px;
+        }
+
+        .pf67-progress-track {
+            position: relative;
+            height: 9px;
+            border-radius: 999px;
+            background: rgba(108, 117, 125, 0.20);
+            overflow: hidden;
+            border: 1px solid rgba(108, 117, 125, 0.18);
+        }
+
+        .pf67-progress-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: rgba(13, 110, 253, 0.55);
+            min-width: 2px;
+        }
+
+        .pf67-progress-label {
+            margin-top: 5px;
+            color: var(--bs-secondary-color);
+            font-size: 0.82rem;
+            line-height: 1.25;
+        }
+
+        .pf67-public-landing-note {
+            color: var(--bs-secondary-color);
+            font-size: 0.92rem;
+            line-height: 1.45;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 900px) {
+            .pf67-public-board-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    
+        /* PF67 Patch 009H Public Header Polish */
+        .pf67-dashboard-title-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pf67-dashboard-title-inline h1 {
+            margin-bottom: 0;
+        }
+
+        .pf67-dashboard-title-inline .pf67-dashboard-info-button {
+            position: static;
+            flex: 0 0 auto;
+        }
+
+        .pf67-dashboard-hero-main .pf67-dashboard-title-inline + .pf67-dashboard-description {
+            margin-top: 8px;
+        }
+
+        .pf67-public-nav-clean .navbar-nav,
+        .pf67-public-nav-clean nav ul {
+            align-items: center;
+        }
+
+        .pf67-public-nav-clean .navbar-nav .nav-item {
+            margin-left: 0;
+        }
+
+        .pf67-header-mode-label,
+        .pf67-readonly-label,
+        .pf67-edit-mode-label {
+            display: none !important;
+        }
+
+    
+        /* PF67 Patch 009I Nav and Thumbnail Repair */
+        .pf67-protocol-card-thumb {
+            display: block;
+            width: 118px;
+            aspect-ratio: 3 / 4;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--bs-border-color);
+            background: rgba(108, 117, 125, 0.12);
+            color: inherit;
+            text-decoration: none;
+            flex: 0 0 auto;
+        }
+
+        .pf67-protocol-card-thumb:hover,
+        .pf67-protocol-card-thumb:focus {
+            border-color: rgba(13, 110, 253, 0.45);
+            text-decoration: none;
+        }
+
+        .pf67-protocol-card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        @media (max-width: 520px) {
+            .pf67-protocol-card-thumb {
+                width: 92px;
+            }
+        }
+
+    
+        /* PF67 Patch 009J Backend Flows Console */
+        .pf67-flows-console-hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .pf67-flows-console-hero h1 {
+            margin-bottom: 4px;
+        }
+
+        .pf67-flows-console-description {
+            color: var(--bs-secondary-color);
+            max-width: 820px;
+            line-height: 1.45;
+        }
+
+        .pf67-flow-console-controls {
+            border: 1px solid var(--bs-border-color);
+            border-radius: 18px;
+            background: rgba(108, 117, 125, 0.06);
+            padding: 14px;
+            margin-bottom: 18px;
+        }
+
+        .pf67-flow-console-control-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(140px, 1fr));
+            gap: 10px;
+            align-items: end;
+        }
+
+        .pf67-flow-console-control-grid .pf67-flow-console-search {
+            grid-column: span 2;
+        }
+
+        .pf67-flow-console-summary {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .pf67-flow-console-pill {
+            display: inline-flex;
+            border: 1px solid rgba(108, 117, 125, 0.24);
+            background: rgba(108, 117, 125, 0.10);
+            border-radius: 999px;
+            padding: 3px 9px;
+            color: var(--bs-secondary-color);
+            font-size: 0.8rem;
+            font-weight: 750;
+        }
+
+        .pf67-flow-console-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+            gap: 14px;
+        }
+
+        .pf67-flow-console-card {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 18px;
+            background: rgba(108, 117, 125, 0.06);
+            padding: 14px;
+            min-width: 0;
+        }
+
+        .pf67-flow-console-card:hover,
+        .pf67-flow-console-card:focus {
+            color: inherit;
+            text-decoration: none;
+            border-color: rgba(13, 110, 253, 0.45);
+            background: rgba(13, 110, 253, 0.07);
+        }
+
+        .pf67-flow-console-card-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .pf67-flow-console-card-title {
+            font-size: 1.08rem;
+            font-weight: 900;
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+        }
+
+        .pf67-flow-console-card-subtitle {
+            color: var(--bs-secondary-color);
+            font-size: 0.9rem;
+            line-height: 1.35;
+        }
+
+        .pf67-flow-console-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .pf67-flow-console-meta .pf67-dashboard-pill,
+        .pf67-flow-console-meta .pf67-flow-console-pill {
+            margin: 0;
+        }
+
+        .pf67-flow-console-visibility {
+            display: inline-flex;
+            flex: 0 0 auto;
+            margin-top: 1px;
+        }
+
+        .pf67-flow-console-visibility form {
+            margin: 0;
+        }
+
+        .pf67-flow-console-visibility .pf67-visibility-pill {
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .pf67-flow-console-empty {
+            border: 1px dashed var(--bs-border-color);
+            border-radius: 18px;
+            padding: 20px;
+            color: var(--bs-secondary-color);
+            background: rgba(108, 117, 125, 0.04);
+        }
+
+        .pf67-flow-console-progress {
+            margin-top: 12px;
+        }
+
+        @media (max-width: 980px) {
+            .pf67-flow-console-control-grid {
+                grid-template-columns: repeat(2, minmax(140px, 1fr));
+            }
+
+            .pf67-flow-console-control-grid .pf67-flow-console-search {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .pf67-flow-console-control-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pf67-flow-console-control-grid .pf67-flow-console-search {
+                grid-column: span 1;
+            }
+
+            .pf67-flow-console-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    
+        /* PF67 Patch 009K Flow Console Polish */
+        .pf67-flow-console-controls {
+            padding: 12px 14px;
+        }
+
+        .pf67-flow-console-summary {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .pf67-flow-console-refine {
+            border-top: 1px solid rgba(108, 117, 125, 0.16);
+            padding-top: 8px;
+        }
+
+        .pf67-flow-console-refine summary {
+            cursor: pointer;
+            color: var(--bs-link-color);
+            font-size: 0.92rem;
+            font-weight: 750;
+            list-style: none;
+            width: fit-content;
+        }
+
+        .pf67-flow-console-refine summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .pf67-flow-console-refine summary::before {
+            content: "▸";
+            display: inline-block;
+            margin-right: 6px;
+            transition: transform 0.15s ease;
+        }
+
+        .pf67-flow-console-refine[open] summary::before {
+            transform: rotate(90deg);
+        }
+
+        .pf67-flow-console-refine-inner {
+            margin-top: 12px;
+        }
+
+        .pf67-flow-console-visibility .pf67-visibility-pill {
+            cursor: default;
+        }
+
+        .pf67-flow-console-visibility .pf67-visibility-pill:hover,
+        .pf67-flow-console-visibility .pf67-visibility-pill:focus {
+            text-decoration: none;
+            border-color: rgba(108, 117, 125, 0.26);
+            background: rgba(108, 117, 125, 0.10);
+        }
+
+        .pf67-flow-console-visibility .pf67-visibility-pill.is-public:hover,
+        .pf67-flow-console-visibility .pf67-visibility-pill.is-public:focus {
+            border-color: rgba(25, 135, 84, 0.38);
+            background: rgba(25, 135, 84, 0.12);
+        }
+
+        .pf67-flow-console-visibility .pf67-visibility-pill.is-private:hover,
+        .pf67-flow-console-visibility .pf67-visibility-pill.is-private:focus {
+            border-color: rgba(220, 53, 69, 0.38);
+            background: rgba(220, 53, 69, 0.12);
+        }
+
+        .pf67-public-protocol-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .pf67-public-protocol-card-grid .pf67-protocol-card {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .pf67-public-protocol-card-grid .pf67-protocol-card-title a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .pf67-public-protocol-card-grid .pf67-protocol-card-title a:hover,
+        .pf67-public-protocol-card-grid .pf67-protocol-card-title a:focus {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        @media (max-width: 520px) {
+            .pf67-public-protocol-card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    
+        /* PF67 Patch 009L Backend Flow Filter Polish */
+        .pf67-flow-console-refine-inner-009l {
+            display: grid;
+            gap: 14px;
+        }
+
+        .pf67-flow-console-lead-search {
+            max-width: 760px;
+        }
+
+        .pf67-flow-filter-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .pf67-flow-filter-cluster {
+            display: inline-flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 0;
+        }
+
+        .pf67-flow-filter-label {
+            color: var(--bs-secondary-color);
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        .pf67-flow-filter-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .pf67-flow-filter-menu summary {
+            list-style: none;
+            cursor: pointer;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 999px;
+            background: rgba(108, 117, 125, 0.08);
+            padding: 7px 12px;
+            font-size: 0.92rem;
+            font-weight: 750;
+            min-width: 150px;
+            color: var(--bs-body-color);
+        }
+
+        .pf67-flow-filter-menu summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .pf67-flow-filter-menu summary::after {
+            content: "▾";
+            display: inline-block;
+            margin-left: 8px;
+            color: var(--bs-secondary-color);
+        }
+
+        .pf67-flow-filter-menu[open] summary {
+            border-color: rgba(13, 110, 253, 0.45);
+            background: rgba(13, 110, 253, 0.10);
+        }
+
+        .pf67-flow-filter-menu-body {
+            position: absolute;
+            z-index: 20;
+            margin-top: 6px;
+            min-width: 190px;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 14px;
+            background: var(--bs-body-bg);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+            padding: 8px;
+        }
+
+        .pf67-flow-filter-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 7px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 0.92rem;
+            color: var(--bs-body-color);
+            white-space: nowrap;
+        }
+
+        .pf67-flow-filter-check:hover,
+        .pf67-flow-filter-check:focus-within {
+            background: rgba(13, 110, 253, 0.10);
+        }
+
+        .pf67-flow-filter-check input {
+            margin: 0;
+        }
+
+        .pf67-visibility-segment {
+            display: inline-flex;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(108, 117, 125, 0.08);
+            width: fit-content;
+        }
+
+        .pf67-visibility-segment input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .pf67-visibility-segment label {
+            margin: 0;
+            padding: 7px 12px;
+            font-size: 0.9rem;
+            font-weight: 750;
+            cursor: pointer;
+            color: var(--bs-secondary-color);
+            border-left: 1px solid rgba(108, 117, 125, 0.16);
+        }
+
+        .pf67-visibility-segment label:first-of-type {
+            border-left: 0;
+        }
+
+        .pf67-visibility-segment input:checked + label {
+            background: rgba(13, 110, 253, 0.18);
+            color: var(--bs-body-color);
+        }
+
+        .pf67-flow-sort-zone {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: end;
+            padding-top: 12px;
+            border-top: 1px solid rgba(108, 117, 125, 0.16);
+        }
+
+        .pf67-flow-sort-zone select {
+            min-width: 240px;
+        }
+
+        .pf67-flow-console-actions-009l {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        @media (max-width: 680px) {
+            .pf67-flow-filter-strip,
+            .pf67-flow-sort-zone {
+                display: grid;
+                grid-template-columns: 1fr;
+            }
+
+            .pf67-flow-filter-menu summary,
+            .pf67-flow-sort-zone select,
+            .pf67-flow-console-actions-009l .btn {
+                width: 100%;
+            }
+
+            .pf67-flow-filter-menu-body {
+                position: static;
+                box-shadow: none;
+            }
+
+            .pf67-visibility-segment {
+                width: 100%;
+            }
+
+            .pf67-visibility-segment label {
+                flex: 1;
+                text-align: center;
+            }
+        }
+
+    
+        /* PF67 Patch 009M Instant Flow Filters */
+        .pf67-flow-console-refine-inner-009m {
+            display: grid;
+            gap: 14px;
+        }
+
+        .pf67-flow-search-line {
+            display: grid;
+            grid-template-columns: minmax(240px, 1fr) auto auto;
+            gap: 8px;
+            align-items: center;
+            max-width: 860px;
+        }
+
+        .pf67-flow-filter-strip-009m {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .pf67-flow-filter-menu-009m {
+            position: relative;
+            display: inline-block;
+        }
+
+        .pf67-flow-filter-menu-009m summary {
+            list-style: none;
+            cursor: pointer;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 999px;
+            background: rgba(108, 117, 125, 0.08);
+            padding: 7px 14px;
+            font-size: 0.92rem;
+            font-weight: 800;
+            min-width: 150px;
+            color: var(--bs-body-color);
+            text-align: center;
+            line-height: 1.25;
+        }
+
+        .pf67-flow-filter-menu-009m summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .pf67-flow-filter-menu-009m summary::before,
+        .pf67-flow-filter-menu-009m summary::after {
+            content: none !important;
+            display: none !important;
+        }
+
+        .pf67-flow-filter-menu-009m[open] summary {
+            border-color: rgba(13, 110, 253, 0.45);
+            background: rgba(13, 110, 253, 0.10);
+        }
+
+        .pf67-flow-filter-menu-body-009m {
+            position: absolute;
+            z-index: 20;
+            margin-top: 6px;
+            min-width: 190px;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 14px;
+            background: var(--bs-body-bg);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+            padding: 8px;
+        }
+
+        .pf67-flow-filter-check-009m {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 7px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 0.92rem;
+            color: var(--bs-body-color);
+            white-space: nowrap;
+        }
+
+        .pf67-flow-filter-check-009m:hover,
+        .pf67-flow-filter-check-009m:focus-within {
+            background: rgba(13, 110, 253, 0.10);
+        }
+
+        .pf67-flow-filter-check-009m input {
+            margin: 0;
+        }
+
+        .pf67-visibility-segment-009m {
+            display: inline-flex;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(108, 117, 125, 0.08);
+            width: fit-content;
+        }
+
+        .pf67-visibility-segment-009m input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .pf67-visibility-segment-009m label {
+            margin: 0;
+            padding: 7px 12px;
+            min-width: 70px;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 800;
+            cursor: pointer;
+            color: var(--bs-secondary-color);
+            border-left: 1px solid rgba(108, 117, 125, 0.16);
+        }
+
+        .pf67-visibility-segment-009m label:first-of-type {
+            border-left: 0;
+        }
+
+        .pf67-visibility-segment-009m input:checked + label {
+            background: rgba(13, 110, 253, 0.18);
+            color: var(--bs-body-color);
+        }
+
+        .pf67-flow-sort-zone-009m {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid rgba(108, 117, 125, 0.16);
+        }
+
+        .pf67-flow-sort-zone-009m select {
+            min-width: 250px;
+            max-width: 320px;
+            font-weight: 750;
+        }
+
+        .pf67-flow-console-hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 680px) {
+            .pf67-flow-search-line {
+                grid-template-columns: 1fr;
+            }
+
+            .pf67-flow-filter-strip-009m,
+            .pf67-flow-sort-zone-009m {
+                display: grid;
+                grid-template-columns: 1fr;
+            }
+
+            .pf67-flow-filter-menu-009m summary,
+            .pf67-flow-sort-zone-009m select,
+            .pf67-flow-search-line .btn {
+                width: 100%;
+            }
+
+            .pf67-flow-filter-menu-body-009m {
+                position: static;
+                box-shadow: none;
+            }
+
+            .pf67-visibility-segment-009m {
+                width: 100%;
+            }
+
+            .pf67-visibility-segment-009m label {
+                flex: 1;
+            }
+        }
+
+    
+        /* PF67 Patch 009N Backend Link Title Polish */
+        .pf67-protocol-card-title a,
+        .pf67-flow-console-card-title,
+        .pf67-flow-console-card-title:visited {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+
+        .pf67-protocol-card-title a:hover,
+        .pf67-protocol-card-title a:focus,
+        .pf67-flow-console-card-title:hover,
+        .pf67-flow-console-card-title:focus {
+            color: inherit !important;
+            text-decoration: underline !important;
+            text-decoration-thickness: 1px;
+            text-underline-offset: 4px;
+            text-decoration-color: rgba(108, 117, 125, 0.72);
+        }
+
+        .pf67-protocol-card:hover .pf67-protocol-card-title a,
+        .pf67-flow-console-card:hover .pf67-flow-console-card-title {
+            color: inherit !important;
+        }
+
+        .pf67-flow-console-card-title {
+            display: inline-block;
+        }
+
+    
+        /* PF67 Patch 009O Sitewide Typography Softening */
+        body,
+        body * {
+            font-weight: 400 !important;
+        }
+
+        strong,
+        b,
+        th,
+        label,
+        legend,
+        summary,
+        button,
+        .btn,
+        .badge,
+        .nav-link,
+        .navbar-brand,
+        .dropdown-item,
+        .form-label,
+        .modal-title,
+        .card-title,
+        .pf67-dashboard-kicker,
+        .pf67-dashboard-section-title,
+        .pf67-dashboard-card-title,
+        .pf67-dashboard-pill,
+        .pf67-flow-console-pill,
+        .pf67-flow-console-card-title,
+        .pf67-flow-console-card-subtitle,
+        .pf67-flow-filter-menu-009m summary,
+        .pf67-visibility-segment-009m label,
+        .pf67-visibility-pill,
+        .pf67-protocol-card-title,
+        .pf67-protocol-card-pill,
+        .pf67-protocol-filter-label,
+        .pf67-protocol-filter-pill,
+        .pf67-public-step-title,
+        .pf67-footer,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-weight: 400 !important;
+        }
+
+        /* Keep the current hierarchy by size, spacing, cards, and color; only soften weight. */
+        .pf67-dashboard-section-title,
+        .pf67-flow-console-card-title,
+        .pf67-protocol-card-title,
+        .pf67-dashboard-card-title {
+            letter-spacing: normal !important;
+        }
+
+    
+        /* PF67 Patch 009Q Public Protocol First Layout */
+        .pf67-public-board-grid {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(320px, 1fr)) !important;
+            gap: 18px !important;
+            align-items: start !important;
+        }
+
+        .pf67-public-board-column {
+            min-width: 0;
+        }
+
+        .pf67-public-board-column .pf67-dashboard-section + .pf67-dashboard-section {
+            margin-top: 18px;
+        }
+
+        .pf67-public-back-row {
+            margin-bottom: 14px;
+        }
+
+        .pf67-public-back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--bs-link-color);
+            text-decoration: none;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 999px;
+            padding: 6px 11px;
+            background: rgba(108, 117, 125, 0.08);
+            font-size: 0.92rem;
+        }
+
+        .pf67-public-back-button:hover,
+        .pf67-public-back-button:focus {
+            color: var(--bs-link-color);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            background: rgba(13, 110, 253, 0.10);
+            border-color: rgba(13, 110, 253, 0.35);
+        }
+
+        @media (max-width: 1180px) {
+            .pf67-public-board-grid {
+                grid-template-columns: repeat(2, minmax(320px, 1fr)) !important;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .pf67-public-board-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+    
+        /* PF67 Patch 009R Public Informational Flows */
+        .pf67-public-board-grid {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 450px), 1fr)) !important;
+            gap: 18px !important;
+            align-items: start !important;
+        }
+
+        .pf67-public-flow-card {
+            cursor: default;
+        }
+
+        .pf67-public-flow-card:hover,
+        .pf67-public-flow-card:focus {
+            text-decoration: none;
+        }
+
+        .pf67-public-protocol-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 18px;
+            background: rgba(108, 117, 125, 0.06);
+            padding: 12px;
+        }
+
+        .pf67-public-protocol-filter-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            align-items: center;
+            flex: 1 1 auto;
+            min-width: 220px;
+        }
+
+        .pf67-public-protocol-filter-pill {
+            border: 1px solid rgba(108, 117, 125, 0.26);
+            border-radius: 999px;
+            background: rgba(108, 117, 125, 0.08);
+            color: var(--bs-body-color);
+            padding: 5px 10px;
+            line-height: 1.2;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .pf67-public-protocol-filter-pill.is-active {
+            background: rgba(13, 110, 253, 0.18);
+            border-color: rgba(13, 110, 253, 0.38);
+        }
+
+        .pf67-public-protocol-sort {
+            min-width: 190px;
+            max-width: 240px;
+        }
+
+        @media (max-width: 520px) {
+            .pf67-public-protocol-controls {
+                display: grid;
+                grid-template-columns: 1fr;
+            }
+
+            .pf67-public-protocol-sort {
+                max-width: none;
+                width: 100%;
+            }
+        }
+
+    
+        /* PF67 Patch 009S Protocol Detail Surface Polish */
+        .pf67-protocol-detail-page .pf67-dashboard-hero,
+        .pf67-protocol-detail-page .pf67-protocol-header,
+        .pf67-protocol-detail-page .pf67-template-header,
+        .pf67-protocol-detail-page .pf67-protocol-title-area,
+        .pf67-protocol-detail-page .pf67-protocol-description-area,
+        .pf67-protocol-detail-page .pf67-template-title-area,
+        .pf67-protocol-detail-page .pf67-template-description-area,
+        .pf67-protocol-detail-page .pf67-protocol-document-header,
+        .pf67-protocol-detail-page .pf67-template-document-header,
+        .pf67-protocol-detail-page .pf67-protocol-detail-header {
+            max-width: none !important;
+            width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        .pf67-protocol-detail-page .pf67-dashboard-hero {
+            justify-content: flex-start !important;
+            text-align: left !important;
+        }
+
+        .pf67-protocol-detail-page .pf67-dashboard-description,
+        .pf67-protocol-detail-page .pf67-protocol-description,
+        .pf67-protocol-detail-page .pf67-template-description,
+        .pf67-protocol-detail-page .pf67-description-display,
+        .pf67-protocol-detail-page .pf67-description-view {
+            max-width: none !important;
+        }
+
+        .pf67-protocol-detail-page [data-pf67-inline-edit],
+        .pf67-protocol-detail-page [data-pf67-inline-editor],
+        .pf67-protocol-detail-page [data-pf67-editable],
+        .pf67-protocol-detail-page .pf67-inline-edit,
+        .pf67-protocol-detail-page .pf67-inline-editable,
+        .pf67-protocol-detail-page .pf67-editable-title,
+        .pf67-protocol-detail-page .pf67-editable-description,
+        .pf67-protocol-detail-page .pf67-title-display,
+        .pf67-protocol-detail-page .pf67-description-display,
+        .pf67-protocol-detail-page .pf67-category-display,
+        .pf67-protocol-detail-page .pf67-protocol-title-display,
+        .pf67-protocol-detail-page .pf67-protocol-description-display,
+        .pf67-protocol-detail-page .pf67-template-title-display,
+        .pf67-protocol-detail-page .pf67-template-description-display {
+            transform: none !important;
+            transition: color 0.12s ease, opacity 0.12s ease !important;
+        }
+
+        .pf67-protocol-detail-page [data-pf67-inline-edit]:hover,
+        .pf67-protocol-detail-page [data-pf67-inline-editor]:hover,
+        .pf67-protocol-detail-page [data-pf67-editable]:hover,
+        .pf67-protocol-detail-page .pf67-inline-edit:hover,
+        .pf67-protocol-detail-page .pf67-inline-editable:hover,
+        .pf67-protocol-detail-page .pf67-editable-title:hover,
+        .pf67-protocol-detail-page .pf67-editable-description:hover,
+        .pf67-protocol-detail-page .pf67-title-display:hover,
+        .pf67-protocol-detail-page .pf67-description-display:hover,
+        .pf67-protocol-detail-page .pf67-category-display:hover,
+        .pf67-protocol-detail-page .pf67-protocol-title-display:hover,
+        .pf67-protocol-detail-page .pf67-protocol-description-display:hover,
+        .pf67-protocol-detail-page .pf67-template-title-display:hover,
+        .pf67-protocol-detail-page .pf67-template-description-display:hover {
+            transform: none !important;
+            translate: none !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
+            outline: none !important;
+            border-color: transparent !important;
+        }
+
+        .pf67-quiet-edit-host {
+            position: relative;
+        }
+
+        .pf67-quiet-edit-button {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            z-index: 4;
+            border: 1px solid rgba(108, 117, 125, 0.24);
+            border-radius: 999px;
+            background: rgba(108, 117, 125, 0.08);
+            color: var(--bs-secondary-color);
+            padding: 2px 8px;
+            font-size: 0.76rem;
+            line-height: 1.35;
+            cursor: pointer;
+            opacity: 0.72;
+        }
+
+        .pf67-quiet-edit-button:hover,
+        .pf67-quiet-edit-button:focus {
+            opacity: 1;
+            color: var(--bs-body-color);
+            background: rgba(13, 110, 253, 0.10);
+            border-color: rgba(13, 110, 253, 0.30);
+        }
+
+        .pf67-quiet-edit-host:hover .pf67-quiet-edit-button,
+        .pf67-quiet-edit-host:focus-within .pf67-quiet-edit-button {
+            opacity: 1;
+        }
+
+        @media (max-width: 700px) {
+            .pf67-quiet-edit-button {
+                position: static;
+                margin-left: 8px;
+                vertical-align: middle;
+            }
+        }
+
+    
+        /* PF67 Patch 009T Protocol Header Alignment */
+        .pf67-protocol-detail-page {
+            --pf67-protocol-doc-width: min(100%, 1290px);
+        }
+
+        .pf67-protocol-detail-page .pf67-dashboard-hero,
+        .pf67-protocol-detail-page .pf67-protocol-header,
+        .pf67-protocol-detail-page .pf67-template-header,
+        .pf67-protocol-detail-page .pf67-protocol-title-area,
+        .pf67-protocol-detail-page .pf67-protocol-description-area,
+        .pf67-protocol-detail-page .pf67-template-title-area,
+        .pf67-protocol-detail-page .pf67-template-description-area,
+        .pf67-protocol-detail-page .pf67-protocol-document-header,
+        .pf67-protocol-detail-page .pf67-template-document-header,
+        .pf67-protocol-detail-page .pf67-protocol-detail-header,
+        .pf67-protocol-detail-page .pf67-template-detail-header,
+        .pf67-protocol-detail-page .pf67-protocol-hero,
+        .pf67-protocol-detail-page .pf67-template-hero {
+            width: var(--pf67-protocol-doc-width) !important;
+            max-width: var(--pf67-protocol-doc-width) !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            text-align: left !important;
+            justify-content: flex-start !important;
+        }
+
+        .pf67-protocol-detail-page .pf67-dashboard-hero > *,
+        .pf67-protocol-detail-page .pf67-protocol-header > *,
+        .pf67-protocol-detail-page .pf67-template-header > *,
+        .pf67-protocol-detail-page .pf67-protocol-document-header > *,
+        .pf67-protocol-detail-page .pf67-template-document-header > *,
+        .pf67-protocol-detail-page .pf67-protocol-detail-header > *,
+        .pf67-protocol-detail-page .pf67-template-detail-header > * {
+            max-width: none !important;
+            width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        .pf67-protocol-detail-page .pf67-dashboard-description,
+        .pf67-protocol-detail-page .pf67-protocol-description,
+        .pf67-protocol-detail-page .pf67-template-description,
+        .pf67-protocol-detail-page .pf67-description-display,
+        .pf67-protocol-detail-page .pf67-description-view,
+        .pf67-protocol-detail-page .pf67-protocol-description-display,
+        .pf67-protocol-detail-page .pf67-template-description-display {
+            max-width: none !important;
+            width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        .pf67-protocol-detail-page img {
+            max-width: 100%;
+        }
+
+        .pf67-protocol-detail-page .pf67-quiet-edit-button {
+            display: none !important;
+        }
+
+        .pf67-protocol-detail-page .pf67-quiet-edit-host {
+            position: static !important;
+        }
+
+        .pf67-protocol-detail-page [data-pf67-inline-edit],
+        .pf67-protocol-detail-page [data-pf67-inline-editor],
+        .pf67-protocol-detail-page [data-pf67-editable],
+        .pf67-protocol-detail-page .pf67-inline-edit,
+        .pf67-protocol-detail-page .pf67-inline-editable,
+        .pf67-protocol-detail-page .pf67-editable-title,
+        .pf67-protocol-detail-page .pf67-editable-description,
+        .pf67-protocol-detail-page .pf67-title-display,
+        .pf67-protocol-detail-page .pf67-description-display,
+        .pf67-protocol-detail-page .pf67-category-display,
+        .pf67-protocol-detail-page .pf67-protocol-title-display,
+        .pf67-protocol-detail-page .pf67-protocol-description-display,
+        .pf67-protocol-detail-page .pf67-template-title-display,
+        .pf67-protocol-detail-page .pf67-template-description-display {
+            transform: none !important;
+            translate: none !important;
+            left: auto !important;
+            right: auto !important;
+            transition: none !important;
+            box-sizing: border-box !important;
+        }
+
+        .pf67-protocol-detail-page [data-pf67-inline-edit]:hover,
+        .pf67-protocol-detail-page [data-pf67-inline-editor]:hover,
+        .pf67-protocol-detail-page [data-pf67-editable]:hover,
+        .pf67-protocol-detail-page .pf67-inline-edit:hover,
+        .pf67-protocol-detail-page .pf67-inline-editable:hover,
+        .pf67-protocol-detail-page .pf67-editable-title:hover,
+        .pf67-protocol-detail-page .pf67-editable-description:hover,
+        .pf67-protocol-detail-page .pf67-title-display:hover,
+        .pf67-protocol-detail-page .pf67-description-display:hover,
+        .pf67-protocol-detail-page .pf67-category-display:hover,
+        .pf67-protocol-detail-page .pf67-protocol-title-display:hover,
+        .pf67-protocol-detail-page .pf67-protocol-description-display:hover,
+        .pf67-protocol-detail-page .pf67-template-title-display:hover,
+        .pf67-protocol-detail-page .pf67-template-description-display:hover {
+            transform: none !important;
+            translate: none !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            padding-left: inherit;
+            padding-right: inherit;
+            background-color: transparent !important;
+            box-shadow: none !important;
+            outline: none !important;
+            border-color: transparent !important;
+        }
+
+        @media (max-width: 1340px) {
+            .pf67-protocol-detail-page {
+                --pf67-protocol-doc-width: 100%;
+            }
+        }
+
+    
+        /* PF67 Patch 009U Protocol Header Runtime Alignment */
+        .pf67-protocol-detail-page [data-pf67-header-align-target="true"] {
+            box-sizing: border-box !important;
+            max-width: none !important;
+            transition: none !important;
+        }
+
+        .pf67-protocol-detail-page [data-pf67-header-align-target="true"] > * {
+            max-width: none !important;
+        }
+
+        .pf67-protocol-detail-page [data-pf67-header-align-target="true"] img {
+            max-width: 100% !important;
+            height: auto;
+        }
+
+        .pf67-protocol-detail-page [data-pf67-header-align-target="true"] [class*="description"],
+        .pf67-protocol-detail-page [data-pf67-header-align-target="true"] [class*="Description"] {
+            max-width: none !important;
+        }
+
+    
+        /* PF67 Patch 010A Procedures Foundation */
+        .pf67-role-switch {
+            display: inline-flex;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(108, 117, 125, 0.08);
+            width: fit-content;
+        }
+
+        .pf67-role-switch a {
+            color: var(--bs-secondary-color);
+            text-decoration: none;
+            padding: 7px 13px;
+            line-height: 1.2;
+            border-left: 1px solid rgba(108, 117, 125, 0.16);
+        }
+
+        .pf67-role-switch a:first-child {
+            border-left: 0;
+        }
+
+        .pf67-role-switch a.is-active {
+            background: rgba(13, 110, 253, 0.18);
+            color: var(--bs-body-color);
+        }
+
+        .pf67-role-switch a:hover,
+        .pf67-role-switch a:focus {
+            background: rgba(13, 110, 253, 0.10);
+            color: var(--bs-body-color);
+            text-decoration: none;
+        }
+
+        .pf67-procedure-note {
+            color: var(--bs-secondary-color);
+            font-size: 0.92rem;
+            line-height: 1.45;
+            margin-top: 6px;
+        }
+
+        .pf67-role-action-form {
+            display: inline-flex;
+            margin: 0;
+        }
+
+        .pf67-role-action-button {
+            border: 1px solid rgba(108, 117, 125, 0.26);
+            border-radius: 999px;
+            background: rgba(108, 117, 125, 0.08);
+            color: var(--bs-secondary-color);
+            padding: 3px 9px;
+            line-height: 1.2;
+            font-size: 0.78rem;
+            cursor: pointer;
+        }
+
+        .pf67-role-action-button:hover,
+        .pf67-role-action-button:focus {
+            background: rgba(13, 110, 253, 0.10);
+            color: var(--bs-body-color);
+            border-color: rgba(13, 110, 253, 0.35);
+        }
+
+    
+
+        /* PF67 Patch 010B8 Procedure Runtime Stabilized */
+        .pf67-procedure-reference-note {
+            border: 1px dashed rgba(108, 117, 125, 0.28);
+            background: rgba(108, 117, 125, 0.055);
+            border-radius: 14px;
+            padding: 8px 10px;
+            margin: 8px 0;
+            color: var(--bs-secondary-color);
+            font-size: 0.9rem;
+        }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+        /* PF67 Patch 010C9 Restore Procedure Control Row Detection */
+        .pf67-role-action-form {
+            display: none !important;
+        }
+
+        body:not(.pf67-can-edit) .pf67-procedure-derived-step-surface {
+            background: inherit !important;
+            border-color: inherit !important;
+            box-shadow: inherit !important;
+            color: inherit !important;
+        }
+
+        body:not(.pf67-can-edit) .pf67-procedure-derived-instructions {
+            border-left: 0 !important;
+            background: transparent !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
+        }
+
+        body.pf67-can-edit .pf67-procedure-derived-step-surface {
+            background: inherit !important;
+            box-shadow: inherit !important;
+        }
+
+        body.pf67-can-edit .pf67-procedure-derived-instructions {
+            border-left: 3px solid rgba(13, 110, 253, 0.24);
+            background: rgba(108, 117, 125, 0.045);
+            border-radius: 12px;
+            padding: 8px 10px;
+        }
+
+        .pf67-procedure-reference-marker {
+            display: none !important;
+        }
+
+        .pf67-procedure-reference-control-row {
+            border: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            padding: 2px 0 !important;
+            margin: 8px 0 3px 0 !important;
+            min-height: 28px;
+            display: inline-flex !important;
+            gap: 8px !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+            width: 100%;
+        }
+
+        .pf67-procedure-reference-control-row .pf67-procedure-reference-label {
+            display: none !important;
+        }
+
+        .pf67-procedure-reference-control-row a,
+        .pf67-procedure-reference-control-row button {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.12s ease;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        .pf67-procedure-reference-control-row:hover a,
+        .pf67-procedure-reference-control-row:hover button,
+        .pf67-procedure-reference-control-row:focus-within a,
+        .pf67-procedure-reference-control-row:focus-within button,
+        .pf67-procedure-reference-control-row.is-editing a,
+        .pf67-procedure-reference-control-row.is-editing button {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        @media (hover: none) {
+            .pf67-procedure-reference-control-row a,
+            .pf67-procedure-reference-control-row button {
+                opacity: 1;
+                pointer-events: auto;
+            }
+        }
+
+        .pf67-procedure-inline-timing-editor {
+            width: 100%;
+            border: 1px solid var(--bs-border-color);
+            background: rgba(108, 117, 125, 0.075);
+            border-radius: 14px;
+            padding: 12px;
+            margin-top: 8px;
+        }
+
+        .pf67-procedure-inline-timing-editor h4 {
+            font-size: 1rem;
+            margin: 0 0 8px 0;
+        }
+
+        .pf67-procedure-inline-timing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .pf67-procedure-inline-timing-field {
+            display: grid;
+            grid-template-columns: 1fr 110px;
+            gap: 6px;
+            align-items: end;
+        }
+
+        .pf67-procedure-inline-timing-field span {
+            grid-column: 1 / -1;
+            color: var(--bs-secondary-color);
+            font-size: 0.88rem;
+        }
+
+        .pf67-procedure-inline-timing-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .pf67-normalized-action-pair {
+            display: inline-flex !important;
+            gap: 8px !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+        }
+
+        .pf67-normalized-action-pair > a,
+        .pf67-normalized-action-pair > button {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        .pf67-hidden-obscure-procedure-link {
+            display: none !important;
+        }
+
+        .pf67-hide-first-step-timing {
+            display: none !important;
+        }
+
+        .pf67-procedure-return-bar,
+        .pf67-return-to-parent-protocol {
+            border: 1px solid var(--bs-border-color);
+            border-radius: 999px;
+            background: rgba(108, 117, 125, 0.08);
+            padding: 7px 12px;
+            margin-bottom: 12px;
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pf67-procedure-return-bar a,
+        .pf67-return-to-parent-protocol {
+            color: var(--bs-link-color);
+            text-decoration: none;
+        }
+
+        .pf67-procedure-return-bar a:hover,
+        .pf67-procedure-return-bar a:focus,
+        .pf67-return-to-parent-protocol:hover,
+        .pf67-return-to-parent-protocol:focus {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .pf67-procedure-selector-tools {
+            border: 1px solid var(--bs-border-color);
+            border-radius: 18px;
+            background: rgba(108, 117, 125, 0.06);
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .pf67-procedure-selector-search {
+            max-width: 620px;
+            margin-bottom: 10px;
+        }
+
+        .pf67-procedure-choice-card {
+            display: block;
+        }
+
+        .pf67-procedure-choice-thumb {
+            display: block;
+            width: 86px;
+            aspect-ratio: 3 / 4;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--bs-border-color);
+            margin-bottom: 8px;
+            background: rgba(108, 117, 125, 0.10);
+        }
+
+        .pf67-procedure-choice-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+    
+
+
+        /* PF67 Patch 010C15 Repair Malformed Editor Delete Form */
+        .pf67-editor-delete-close-row {
+            display: inline-flex !important;
+            gap: 8px !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+        }
+
+        .pf67-editor-delete-close-row > a,
+        .pf67-editor-delete-close-row > button,
+        .pf67-editor-delete-close-row > form {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        .pf67-editor-close-beside-delete {
+            text-decoration: none;
+        }
+
+    
+
+        /* PF67 Patch 010C17 Close Button Order and Target Repair */
+        .pf67-editor-delete-close-row,
+        form[action*="delete"] + .pf67-editor-close-beside-delete,
+        form[action*="remove"] + .pf67-editor-close-beside-delete {
+            vertical-align: middle;
+        }
+
+        .pf67-editor-delete-close-row {
+            display: inline-flex !important;
+            gap: 8px !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+            flex-direction: row !important;
+        }
+
+        .pf67-editor-delete-close-row > form,
+        .pf67-editor-delete-close-row > button:not(.pf67-editor-close-beside-delete),
+        .pf67-editor-delete-close-row > a:not(.pf67-editor-close-beside-delete) {
+            order: 1 !important;
+        }
+
+        .pf67-editor-delete-close-row > .pf67-editor-close-beside-delete {
+            order: 2 !important;
+        }
+
+        .pf67-editor-delete-close-row > a,
+        .pf67-editor-delete-close-row > button,
+        .pf67-editor-delete-close-row > form {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        form[action*="delete"] {
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        form[action*="remove"] {
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .pf67-editor-close-beside-delete {
+            display: inline-block;
+            margin-left: 0 !important;
+            text-decoration: none;
+            vertical-align: middle;
+        }
+
+    
+        /* PF67 Patch 011B2 Safe Completed Flow Step Shading */
+        .pf67-step-list .pf67-step-button[data-pf67-step-completed="1"] {
+            background: rgba(25, 135, 84, 0.14) !important;
+            border-color: rgba(25, 135, 84, 0.34) !important;
+            color: inherit !important;
+        }
+
+        .pf67-step-list .pf67-step-button[data-pf67-step-completed="1"]:hover {
+            background: rgba(25, 135, 84, 0.20) !important;
+            border-color: rgba(25, 135, 84, 0.42) !important;
+        }
+
+        .pf67-step-list .pf67-step-button[data-pf67-step-completed="1"].active {
+            background: rgba(25, 135, 84, 0.30) !important;
+            border-color: rgba(25, 135, 84, 0.58) !important;
+            color: inherit !important;
+        }
+
+
+
+
+        /* PF67 Patch 011CD3 Stop Filter Flashing and Fix Active View Scope */
+        .pf67-keyword-filter-wrap {
+            border: 1px solid var(--bs-border-color);
+            background: rgba(108, 117, 125, 0.055);
+            border-radius: 18px;
+            padding: 8px 10px;
+            margin: 10px 0 14px 0;
+            display: grid;
+            grid-template-columns: minmax(260px, 1fr) auto auto;
+            align-items: center;
+            gap: 8px;
+            max-width: 760px;
+        }
+
+        .pf67-keyword-filter-wrap input {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .pf67-keyword-filter-count {
+            color: var(--bs-secondary-color);
+            font-size: 0.88rem;
+            white-space: nowrap;
+        }
+
+        .pf67-keyword-filter-reset {
+            white-space: nowrap;
+        }
+
+        @media (max-width: 560px) {
+            .pf67-keyword-filter-wrap {
+                grid-template-columns: 1fr auto;
+            }
+
+            .pf67-keyword-filter-count {
+                grid-column: 1 / -1;
+            }
+        }
+
+        .pf67-filter-hidden {
+            display: none !important;
+        }
+
+        .pf67-duration-pill {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid rgba(108, 117, 125, 0.32);
+            background: rgba(108, 117, 125, 0.12);
+            color: inherit;
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 0.78rem;
+            line-height: 1.35;
+            margin: 2px 4px 2px 0;
+            white-space: nowrap;
+        }
+
+        .pf67-duration-pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+            margin-top: 5px;
+        }
+
+    
+        /* PF67 Patch 012A3 Source-Level Flow Pill Spacing Repair */
+        .pf67-flow-stat-pills,
+        .pf67-flow-count-pills,
+        .pf67-flow-summary-pills,
+        .pf67-flow-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pf67-flow-stat-pills > *,
+        .pf67-flow-count-pills > *,
+        .pf67-flow-summary-pills > *,
+        .pf67-flow-pills > * {
+            margin-right: 0.35rem;
+        }
+
+    
+        /* PF67 Patch 012A4 Direct Backend Flow Pill Row Repair */
+        .pf67-flow-console-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pf67-flow-console-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+    
+
+        /* PF67 Patch 012A8 Remove Backend Flow Client-Side Hiding */
+        .pf67-flow-console-top-search {
+            max-width: 760px;
+            margin: 10px 0 14px 0;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pf67-flow-console-top-search .form-control {
+            width: 100%;
+        }
+
+        .pf67-flow-console-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pf67-flow-console-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
     </style>
 
     <script>
@@ -3688,7 +6324,7 @@
     {% block content %}{% endblock %}
 
     <div class="pf67-footer">
-        PF67 · <span class="pf67-footer-rev">Test Rev 008A Flow Start Dialog</span>
+        PF67 · <span class="pf67-footer-rev">Test Rev 012A8 Flow JS Removal</span>
         · App {{ pf67_revision }}
         · <span class="pf67-footer-loaded">Loaded <span id="pf67-loaded-stamp">...</span></span>
     </div>
@@ -3908,6 +6544,3206 @@ document.addEventListener("DOMContentLoaded", function pf67Patch007LLoadedStamp(
 
 <script>
 document.addEventListener("DOMContentLoaded", function pf67Patch008ALoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch008BLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch008CLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch008DLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009ALoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009BLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009CLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009DLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009EPublicNavCleanup() {
+    if (!window.location.pathname || window.location.pathname.indexOf("/public") !== 0) {
+        return;
+    }
+
+    var navLinks = Array.prototype.slice.call(document.querySelectorAll("nav a, .navbar a, header a"));
+
+    function nearestNavItem(link) {
+        return link.closest("li") || link.closest(".nav-item") || link;
+    }
+
+    navLinks.forEach(function(link) {
+        var label = (link.textContent || "").trim().toLowerCase();
+
+        if (label === "history" || label.indexOf("history") === 0) {
+            var item = nearestNavItem(link);
+            if (item && item.parentNode) {
+                item.parentNode.removeChild(item);
+            }
+            return;
+        }
+
+        if (label === "dashboard") {
+            link.setAttribute("href", "/public");
+        }
+
+        if (label === "flows") {
+            link.setAttribute("href", "/public/flows");
+        }
+    });
+
+    var nav = document.querySelector("nav ul, .navbar-nav, nav");
+    var hasProtocols = Array.prototype.slice.call(document.querySelectorAll("nav a, .navbar a, header a")).some(function(link) {
+        return (link.textContent || "").trim().toLowerCase() === "protocols";
+    });
+
+    if (nav && !hasProtocols) {
+        var sampleLi = nav.querySelector("li");
+        var a = document.createElement("a");
+        a.href = "/public/protocols";
+        a.textContent = "Protocols";
+
+        if (sampleLi) {
+            var li = document.createElement("li");
+            li.className = sampleLi.className;
+            a.className = (sampleLi.querySelector("a") || {}).className || "";
+            li.appendChild(a);
+            nav.appendChild(li);
+        } else {
+            a.className = "nav-link";
+            nav.appendChild(a);
+        }
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009ELoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009FPublicNavCleanup() {
+    if (!window.location.pathname || window.location.pathname.indexOf("/public") !== 0) {
+        return;
+    }
+
+    function textOf(node) {
+        return (node.textContent || "").replace(/\s+/g, " ").trim();
+    }
+
+    function navContainer(link) {
+        return link.closest("li") || link.closest(".nav-item") || link.closest(".dropdown") || link;
+    }
+
+    var allNavLinks = Array.prototype.slice.call(document.querySelectorAll("nav a, .navbar a, header a"));
+    var removeWords = ["history", "archive", "activity", "dev", "api"];
+
+    allNavLinks.forEach(function(link) {
+        var label = textOf(link).toLowerCase();
+
+        if (removeWords.some(function(word) { return label === word || label.indexOf(word + " ") === 0; })) {
+            var item = navContainer(link);
+            if (item && item.parentNode) {
+                item.parentNode.removeChild(item);
+            }
+            return;
+        }
+
+        if (label === "dashboard") {
+            link.setAttribute("href", "/public");
+        }
+
+        if (label === "flows") {
+            link.setAttribute("href", "/public/flows");
+        }
+
+        if (label === "protocols") {
+            link.setAttribute("href", "/public/protocols");
+        }
+    });
+
+    Array.prototype.slice.call(document.querySelectorAll(".dropdown-menu, .dropdown")).forEach(function(menu) {
+        var label = textOf(menu).toLowerCase();
+        if (removeWords.some(function(word) { return label.indexOf(word) !== -1; })) {
+            var item = menu.closest("li") || menu.closest(".nav-item") || menu;
+            if (item && item.parentNode) {
+                item.parentNode.removeChild(item);
+            }
+        }
+    });
+
+    var nav = document.querySelector("nav ul, .navbar-nav, nav");
+    if (!nav) {
+        return;
+    }
+
+    function hasNav(label) {
+        return Array.prototype.slice.call(document.querySelectorAll("nav a, .navbar a, header a")).some(function(link) {
+            return textOf(link).toLowerCase() === label.toLowerCase();
+        });
+    }
+
+    function addNav(label, href) {
+        if (hasNav(label)) {
+            return;
+        }
+
+        var sampleLi = nav.querySelector("li");
+        var a = document.createElement("a");
+        a.href = href;
+        a.textContent = label;
+
+        if (sampleLi) {
+            var li = document.createElement("li");
+            li.className = sampleLi.className;
+            var sampleA = sampleLi.querySelector("a");
+            a.className = sampleA ? sampleA.className : "nav-link";
+            li.appendChild(a);
+            nav.appendChild(li);
+        } else {
+            a.className = "nav-link";
+            nav.appendChild(a);
+        }
+    }
+
+    addNav("Protocols", "/public/protocols");
+    addNav("Flows", "/public/flows");
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009FLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009GPublicNavCleanup() {
+    var canEdit = {{ 'true' if can_edit else 'false' }};
+
+    if (canEdit) {
+        return;
+    }
+
+    function cleanText(node) {
+        return (node.textContent || "").replace(/\s+/g, " ").trim();
+    }
+
+    function closestNavItem(link) {
+        return link.closest("li") || link.closest(".nav-item") || link.closest(".dropdown") || link;
+    }
+
+    function removeNavItem(link) {
+        var item = closestNavItem(link);
+
+        if (item && item.parentNode) {
+            item.parentNode.removeChild(item);
+        }
+    }
+
+    var removeWords = ["history", "archive", "activity", "dev", "api", "calendar"];
+    var navLinks = Array.prototype.slice.call(document.querySelectorAll("nav a, .navbar a, header a"));
+
+    navLinks.forEach(function(link) {
+        var label = cleanText(link).toLowerCase();
+
+        if (removeWords.some(function(word) {
+            return label === word || label.indexOf(word + " ") === 0 || label.indexOf(word) !== -1;
+        })) {
+            removeNavItem(link);
+            return;
+        }
+
+        if (label === "dashboard") {
+            link.setAttribute("href", "{{ url_for('views.index') }}");
+        }
+
+        if (label === "flows") {
+            link.setAttribute("href", "{{ url_for('views.pf67_patch009g_public_flows') }}");
+        }
+
+        if (label === "protocols") {
+            link.setAttribute("href", "{{ url_for('views.pf67_patch009g_public_protocols') }}");
+        }
+    });
+
+    Array.prototype.slice.call(document.querySelectorAll(".dropdown-menu, .dropdown")).forEach(function(menu) {
+        var label = cleanText(menu).toLowerCase();
+
+        if (removeWords.some(function(word) { return label.indexOf(word) !== -1; })) {
+            var item = menu.closest("li") || menu.closest(".nav-item") || menu;
+
+            if (item && item.parentNode) {
+                item.parentNode.removeChild(item);
+            }
+        }
+    });
+
+    var nav = document.querySelector("nav ul, .navbar-nav, nav");
+
+    if (!nav) {
+        return;
+    }
+
+    function hasNav(label) {
+        return Array.prototype.slice.call(document.querySelectorAll("nav a, .navbar a, header a")).some(function(link) {
+            return cleanText(link).toLowerCase() === label.toLowerCase();
+        });
+    }
+
+    function addNav(label, href) {
+        if (hasNav(label)) {
+            return;
+        }
+
+        var sampleLi = nav.querySelector("li");
+        var a = document.createElement("a");
+        a.href = href;
+        a.textContent = label;
+
+        if (sampleLi) {
+            var li = document.createElement("li");
+            li.className = sampleLi.className;
+            var sampleA = sampleLi.querySelector("a");
+            a.className = sampleA ? sampleA.className : "nav-link";
+            li.appendChild(a);
+            nav.appendChild(li);
+        } else {
+            a.className = "nav-link";
+            nav.appendChild(a);
+        }
+    }
+
+    addNav("Protocols", "{{ url_for('views.pf67_patch009g_public_protocols') }}");
+    addNav("Flows", "{{ url_for('views.pf67_patch009g_public_flows') }}");
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009GLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009HPublicHeaderPolish() {
+    var canEdit = {{ 'true' if can_edit else 'false' }};
+    var publicUrls = {
+        dashboard: "{{ url_for('views.index') }}",
+        protocols: "{{ url_for('views.pf67_patch009g_public_protocols') }}",
+        flows: "{{ url_for('views.pf67_patch009g_public_flows') }}"
+    };
+
+    function cleanText(node) {
+        return (node.textContent || "").replace(/\s+/g, " ").trim();
+    }
+
+    function removeNode(node) {
+        if (node && node.parentNode) {
+            node.parentNode.removeChild(node);
+        }
+    }
+
+    function removeHeaderLabels() {
+        var headerScope = Array.prototype.slice.call(document.querySelectorAll("header, nav, .navbar, .pf67-header, .container-fluid"));
+
+        headerScope.forEach(function(scope) {
+            Array.prototype.slice.call(scope.querySelectorAll("span, small, em, strong, a, button, div")).forEach(function(el) {
+                var label = cleanText(el).toLowerCase();
+
+                if (label === "readonly" || label === "read only" || label === "edit mode") {
+                    removeNode(el);
+                }
+            });
+
+            Array.prototype.slice.call(scope.childNodes).forEach(function(node) {
+                if (node.nodeType === 3) {
+                    var value = (node.nodeValue || "").replace(/\s+/g, " ").trim().toLowerCase();
+
+                    if (value === "readonly" || value === "read only" || value === "edit mode") {
+                        node.nodeValue = "";
+                    }
+                }
+            });
+        });
+    }
+
+    function makeLink(label, href, className) {
+        var a = document.createElement("a");
+        a.href = href;
+        a.textContent = label;
+        a.className = className || "nav-link";
+        return a;
+    }
+
+    function rebuildPublicNav() {
+        if (canEdit) {
+            return;
+        }
+
+        document.documentElement.classList.add("pf67-public-nav-clean");
+
+        var nav = document.querySelector(".navbar-nav") || document.querySelector("nav ul") || document.querySelector("nav");
+
+        if (!nav) {
+            return;
+        }
+
+        var sampleItem = nav.querySelector("li") || nav.querySelector(".nav-item");
+        var sampleLink = nav.querySelector("a");
+        var itemClass = sampleItem ? sampleItem.className : "nav-item";
+        var linkClass = sampleLink ? sampleLink.className : "nav-link";
+
+        Array.prototype.slice.call(nav.children).forEach(function(child) {
+            var label = cleanText(child).toLowerCase();
+
+            if (
+                label.indexOf("dashboard") !== -1 ||
+                label.indexOf("protocol") !== -1 ||
+                label.indexOf("flow") !== -1 ||
+                label.indexOf("history") !== -1 ||
+                label.indexOf("archive") !== -1 ||
+                label.indexOf("activity") !== -1 ||
+                label.indexOf("calendar") !== -1 ||
+                label.indexOf("dev") !== -1 ||
+                label.indexOf("api") !== -1
+            ) {
+                removeNode(child);
+            }
+        });
+
+        Array.prototype.slice.call(nav.querySelectorAll("a")).forEach(function(link) {
+            var label = cleanText(link).toLowerCase();
+
+            if (
+                label.indexOf("history") !== -1 ||
+                label.indexOf("archive") !== -1 ||
+                label.indexOf("activity") !== -1 ||
+                label.indexOf("calendar") !== -1 ||
+                label.indexOf("dev") !== -1 ||
+                label.indexOf("api") !== -1
+            ) {
+                removeNode(link.closest("li") || link.closest(".nav-item") || link);
+            }
+        });
+
+        function addItem(label, href) {
+            var item;
+
+            if (sampleItem && sampleItem.tagName && sampleItem.tagName.toLowerCase() === "li") {
+                item = document.createElement("li");
+                item.className = itemClass;
+                item.appendChild(makeLink(label, href, linkClass));
+                nav.appendChild(item);
+            } else {
+                var a = makeLink(label, href, linkClass);
+                nav.appendChild(a);
+            }
+        }
+
+        addItem("Dashboard", publicUrls.dashboard);
+        addItem("Protocols", publicUrls.protocols);
+        addItem("Flows", publicUrls.flows);
+    }
+
+    function forcePublicDarkDefault() {
+        if (canEdit) {
+            return;
+        }
+
+        try {
+            if (!localStorage.getItem("pf67-theme") && !localStorage.getItem("pf67_theme") && !localStorage.getItem("theme")) {
+                localStorage.setItem("pf67-theme", "dark");
+            }
+        } catch (err) {
+            // localStorage can be unavailable in private modes; fall through to DOM attributes.
+        }
+
+        document.documentElement.setAttribute("data-bs-theme", "dark");
+        document.body.setAttribute("data-bs-theme", "dark");
+        document.documentElement.classList.add("dark");
+        document.body.classList.add("dark");
+    }
+
+    removeHeaderLabels();
+    rebuildPublicNav();
+    forcePublicDarkDefault();
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009HLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009INavDedup() {
+    var canEdit = {{ 'true' if can_edit else 'false' }};
+
+    if (canEdit) {
+        return;
+    }
+
+    var links = {
+        dashboard: "{{ url_for('views.index') }}",
+        protocols: "{{ url_for('views.pf67_patch009g_public_protocols') }}",
+        flows: "{{ url_for('views.pf67_patch009g_public_flows') }}"
+    };
+
+    function cleanText(node) {
+        return (node.textContent || "").replace(/\s+/g, " ").trim();
+    }
+
+    function removeNode(node) {
+        if (node && node.parentNode) {
+            node.parentNode.removeChild(node);
+        }
+    }
+
+    function navShellFor(link) {
+        return link.closest("li") || link.closest(".nav-item") || link.closest(".dropdown") || link;
+    }
+
+    function isManagedPublicLabel(label) {
+        label = (label || "").toLowerCase();
+
+        return (
+            label === "dashboard" ||
+            label === "protocols" ||
+            label === "flows" ||
+            label === "history" ||
+            label === "archive" ||
+            label === "activity" ||
+            label === "calendar" ||
+            label === "dev" ||
+            label === "api" ||
+            label.indexOf("history") !== -1 ||
+            label.indexOf("archive") !== -1 ||
+            label.indexOf("activity") !== -1 ||
+            label.indexOf("calendar") !== -1 ||
+            label.indexOf("dev") !== -1 ||
+            label.indexOf("api") !== -1
+        );
+    }
+
+    function removeManagedLinksEverywhere() {
+        var scopedLinks = Array.prototype.slice.call(document.querySelectorAll("header a, nav a, .navbar a, .pf67-header a"));
+
+        scopedLinks.forEach(function(link) {
+            var label = cleanText(link).toLowerCase();
+
+            if (isManagedPublicLabel(label)) {
+                removeNode(navShellFor(link));
+            }
+        });
+
+        Array.prototype.slice.call(document.querySelectorAll("header .dropdown, nav .dropdown, .navbar .dropdown")).forEach(function(drop) {
+            var label = cleanText(drop).toLowerCase();
+
+            if (isManagedPublicLabel(label)) {
+                removeNode(drop.closest("li") || drop.closest(".nav-item") || drop);
+            }
+        });
+    }
+
+    function findPrimaryNav() {
+        return (
+            document.querySelector(".navbar-nav") ||
+            document.querySelector("nav ul") ||
+            document.querySelector("header ul") ||
+            document.querySelector("nav") ||
+            document.querySelector(".navbar")
+        );
+    }
+
+    function addNavItem(nav, label, href, itemClass, linkClass, useLi) {
+        var a = document.createElement("a");
+        a.href = href;
+        a.textContent = label;
+        a.className = linkClass || "nav-link";
+
+        if (useLi) {
+            var li = document.createElement("li");
+            li.className = itemClass || "nav-item";
+            li.appendChild(a);
+            nav.appendChild(li);
+        } else {
+            nav.appendChild(a);
+        }
+    }
+
+    function rebuildCleanPublicNav() {
+        removeManagedLinksEverywhere();
+
+        var nav = findPrimaryNav();
+
+        if (!nav) {
+            return;
+        }
+
+        var sampleLi = nav.querySelector("li") || nav.querySelector(".nav-item");
+        var sampleLink = nav.querySelector("a");
+        var useLi = false;
+        var itemClass = "nav-item";
+        var linkClass = "nav-link";
+
+        if (sampleLi && sampleLi.tagName && sampleLi.tagName.toLowerCase() === "li") {
+            useLi = true;
+            itemClass = sampleLi.className || "nav-item";
+        } else if (nav.tagName && (nav.tagName.toLowerCase() === "ul" || nav.classList.contains("navbar-nav"))) {
+            useLi = true;
+        }
+
+        if (sampleLink) {
+            linkClass = sampleLink.className || "nav-link";
+        }
+
+        addNavItem(nav, "Dashboard", links.dashboard, itemClass, linkClass, useLi);
+        addNavItem(nav, "Protocols", links.protocols, itemClass, linkClass, useLi);
+        addNavItem(nav, "Flows", links.flows, itemClass, linkClass, useLi);
+
+        // Final sweep: keep only the newly added first instance of each managed label.
+        var seen = {};
+        Array.prototype.slice.call(document.querySelectorAll("header a, nav a, .navbar a, .pf67-header a")).forEach(function(link) {
+            var label = cleanText(link).toLowerCase();
+
+            if (label === "dashboard" || label === "protocols" || label === "flows") {
+                if (seen[label]) {
+                    removeNode(navShellFor(link));
+                } else {
+                    seen[label] = true;
+                }
+            }
+
+            if (
+                label.indexOf("history") !== -1 ||
+                label.indexOf("archive") !== -1 ||
+                label.indexOf("activity") !== -1 ||
+                label.indexOf("calendar") !== -1 ||
+                label.indexOf("dev") !== -1 ||
+                label.indexOf("api") !== -1
+            ) {
+                removeNode(navShellFor(link));
+            }
+        });
+    }
+
+    rebuildCleanPublicNav();
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009ILoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009JBackendFlowsNav() {
+    var canEdit = {{ 'true' if can_edit else 'false' }};
+
+    if (!canEdit) {
+        return;
+    }
+
+    var flowsUrl = "{{ url_for('views.pf67_patch009j_flows_console') }}";
+
+    Array.prototype.slice.call(document.querySelectorAll("nav a, .navbar a, header a")).forEach(function(link) {
+        var label = (link.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+
+        if (label === "flows" || label === "jobs") {
+            link.setAttribute("href", flowsUrl);
+        }
+    });
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009JLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009KLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009LBackendFlowsNav() {
+    var canEdit = {{ 'true' if can_edit else 'false' }};
+
+    if (!canEdit) {
+        return;
+    }
+
+    var flowsUrl = "{{ url_for('views.pf67_patch009l_flows_console') }}";
+
+    Array.prototype.slice.call(document.querySelectorAll("nav a, .navbar a, header a")).forEach(function(link) {
+        var label = (link.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+
+        if (label === "flows" || label === "jobs") {
+            link.setAttribute("href", flowsUrl);
+        }
+    });
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009LLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009MBackendFlowsNav() {
+    var canEdit = {{ 'true' if can_edit else 'false' }};
+
+    if (!canEdit) {
+        return;
+    }
+
+    var flowsUrl = "{{ url_for('views.pf67_patch009m_flows_console') }}";
+
+    Array.prototype.slice.call(document.querySelectorAll("nav a, .navbar a, header a")).forEach(function(link) {
+        var label = (link.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+
+        if (label === "flows" || label === "jobs") {
+            link.setAttribute("href", flowsUrl);
+        }
+    });
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009MLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009NLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009OLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009PLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009QPublicReturn() {
+    var canEdit = {{ 'true' if can_edit else 'false' }};
+
+    if (canEdit) {
+        return;
+    }
+
+    function isPublicContext() {
+        return true;
+    }
+
+    function storeReturnPoint() {
+        if (!isPublicContext()) {
+            return;
+        }
+
+        try {
+            sessionStorage.setItem("pf67PublicReturn", JSON.stringify({
+                url: window.location.pathname + window.location.search,
+                scrollY: window.scrollY || 0
+            }));
+        } catch (err) {
+            // Ignore private browsing/sessionStorage failures.
+        }
+    }
+
+    Array.prototype.slice.call(document.querySelectorAll("a[data-pf67-public-return-source]")).forEach(function(link) {
+        link.addEventListener("click", storeReturnPoint);
+    });
+
+    Array.prototype.slice.call(document.querySelectorAll("[data-pf67-public-back]")).forEach(function(button) {
+        button.addEventListener("click", function(event) {
+            event.preventDefault();
+
+            var fallback = button.getAttribute("href") || "{{ url_for('views.index') }}";
+
+            try {
+                var stored = JSON.parse(sessionStorage.getItem("pf67PublicReturn") || "{}");
+
+                if (stored && stored.url) {
+                    sessionStorage.setItem("pf67PublicRestoreScroll", String(stored.scrollY || 0));
+                    window.location.href = stored.url;
+                    return;
+                }
+            } catch (err) {
+                // Fall through to fallback.
+            }
+
+            if (window.history.length > 1) {
+                window.history.back();
+                return;
+            }
+
+            window.location.href = fallback;
+        });
+    });
+
+    try {
+        var restore = sessionStorage.getItem("pf67PublicRestoreScroll");
+
+        if (restore !== null) {
+            sessionStorage.removeItem("pf67PublicRestoreScroll");
+            var y = parseInt(restore, 10);
+
+            if (!Number.isNaN(y)) {
+                window.setTimeout(function() {
+                    window.scrollTo(0, y);
+                }, 60);
+            }
+        }
+    } catch (err) {
+        // Ignore private browsing/sessionStorage failures.
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009QLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009RLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009SProtocolSurfacePolish() {
+    var canEdit = {{ 'true' if can_edit else 'false' }};
+    var path = window.location.pathname || "";
+    var looksLikeProtocolDetail = (
+        path.indexOf("/templates/") !== -1 ||
+        path.indexOf("/protocol") !== -1 ||
+        document.querySelector(".pf67-protocol-toc") ||
+        document.querySelector(".pf67-protocol-document") ||
+        document.querySelector("[data-pf67-panel-open]")
+    );
+
+    if (!looksLikeProtocolDetail) {
+        return;
+    }
+
+    document.body.classList.add("pf67-protocol-detail-page");
+
+    if (!canEdit) {
+        return;
+    }
+
+    var selectors = [
+        "[data-pf67-inline-edit]",
+        "[data-pf67-inline-editor]",
+        "[data-pf67-editable]",
+        ".pf67-inline-edit",
+        ".pf67-inline-editable",
+        ".pf67-editable-title",
+        ".pf67-editable-description",
+        ".pf67-title-display",
+        ".pf67-description-display",
+        ".pf67-category-display",
+        ".pf67-protocol-title-display",
+        ".pf67-protocol-description-display",
+        ".pf67-template-title-display",
+        ".pf67-template-description-display"
+    ];
+
+    var seen = [];
+
+    function isUsableTarget(element) {
+        if (!element || seen.indexOf(element) !== -1) {
+            return false;
+        }
+
+        if (element.closest("form") || element.matches("input, textarea, select, button, a")) {
+            return false;
+        }
+
+        var rect = element.getBoundingClientRect();
+
+        if (rect.width < 80 || rect.height < 18) {
+            return false;
+        }
+
+        return true;
+    }
+
+    selectors.forEach(function(selector) {
+        Array.prototype.slice.call(document.querySelectorAll(selector)).forEach(function(element) {
+            if (!isUsableTarget(element)) {
+                return;
+            }
+
+            seen.push(element);
+            element.classList.add("pf67-quiet-edit-host");
+
+            if (element.querySelector(".pf67-quiet-edit-button")) {
+                return;
+            }
+
+            var button = document.createElement("button");
+            button.type = "button";
+            button.className = "pf67-quiet-edit-button";
+            button.textContent = "Edit";
+            button.title = "Edit this area";
+
+            button.addEventListener("click", function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                var clickEvent = new MouseEvent("click", {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                });
+
+                element.dispatchEvent(clickEvent);
+            });
+
+            element.appendChild(button);
+        });
+    });
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009SLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009TDisable009SEditChips() {
+    var path = window.location.pathname || "";
+    var looksLikeProtocolDetail = (
+        path.indexOf("/templates/") !== -1 ||
+        path.indexOf("/protocol") !== -1 ||
+        document.querySelector(".pf67-protocol-toc") ||
+        document.querySelector(".pf67-protocol-document") ||
+        document.querySelector("[data-pf67-panel-open]")
+    );
+
+    if (!looksLikeProtocolDetail) {
+        return;
+    }
+
+    document.body.classList.add("pf67-protocol-detail-page");
+
+    Array.prototype.slice.call(document.querySelectorAll(".pf67-quiet-edit-button")).forEach(function(button) {
+        if (button && button.parentNode) {
+            button.parentNode.removeChild(button);
+        }
+    });
+
+    Array.prototype.slice.call(document.querySelectorAll(".pf67-quiet-edit-host")).forEach(function(node) {
+        node.classList.remove("pf67-quiet-edit-host");
+    });
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009TLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009UProtocolHeaderRuntimeAlignment() {
+    var canEdit = {{ 'true' if can_edit else 'false' }};
+    var path = window.location.pathname || "";
+    var looksLikeProtocolDetail = (
+        path.indexOf("/templates/") !== -1 ||
+        path.indexOf("/protocol") !== -1 ||
+        document.querySelector(".pf67-protocol-toc") ||
+        document.querySelector(".pf67-protocol-document") ||
+        document.querySelector("[data-pf67-panel-open]")
+    );
+
+    if (!looksLikeProtocolDetail) {
+        return;
+    }
+
+    document.body.classList.add("pf67-protocol-detail-page");
+
+    function rectIsUseful(rect) {
+        return rect && rect.width > 120 && rect.height > 20;
+    }
+
+    function findMainHeading() {
+        var headings = Array.prototype.slice.call(document.querySelectorAll("h1, h2"));
+
+        return headings.find(function(heading) {
+            var text = (heading.textContent || "").trim();
+
+            if (!text) {
+                return false;
+            }
+
+            if (text.toLowerCase() === "dashboard" || text.toLowerCase() === "protocols" || text.toLowerCase() === "flows") {
+                return false;
+            }
+
+            return true;
+        }) || null;
+    }
+
+    function findHeaderTarget(heading) {
+        if (!heading) {
+            return null;
+        }
+
+        var current = heading;
+        var best = heading;
+        var maxClimb = 6;
+
+        while (current && current.parentElement && maxClimb > 0) {
+            var parent = current.parentElement;
+            var parentText = (parent.textContent || "").replace(/\s+/g, " ").trim();
+            var rect = parent.getBoundingClientRect();
+
+            if (
+                rectIsUseful(rect) &&
+                parentText.length > 20 &&
+                parentText.length < 6000 &&
+                !parent.matches("body, html, main") &&
+                !parent.classList.contains("container") &&
+                !parent.classList.contains("container-fluid")
+            ) {
+                best = parent;
+            }
+
+            current = parent;
+            maxClimb -= 1;
+        }
+
+        return best;
+    }
+
+    function findDocumentBounds() {
+        var candidates = Array.prototype.slice.call(document.querySelectorAll(
+            ".pf67-protocol-toc, .pf67-template-toc, .pf67-toc, [class*='toc'], " +
+            ".pf67-protocol-document, .pf67-template-document, .pf67-protocol-steps, .pf67-step-list, " +
+            "[class*='step'], [class*='Step']"
+        ));
+
+        var useful = candidates
+            .map(function(node) {
+                return {
+                    node: node,
+                    rect: node.getBoundingClientRect()
+                };
+            })
+            .filter(function(item) {
+                var rect = item.rect;
+                var text = (item.node.textContent || "").trim();
+
+                return (
+                    rectIsUseful(rect) &&
+                    rect.top > 120 &&
+                    text.length > 15 &&
+                    rect.width < window.innerWidth - 20
+                );
+            });
+
+        if (!useful.length) {
+            return null;
+        }
+
+        var minLeft = Math.min.apply(null, useful.map(function(item) { return item.rect.left; }));
+        var maxRight = Math.max.apply(null, useful.map(function(item) { return item.rect.right; }));
+
+        if (maxRight - minLeft < 300) {
+            return null;
+        }
+
+        return {
+            left: minLeft,
+            right: maxRight,
+            width: maxRight - minLeft
+        };
+    }
+
+    function alignHeader() {
+        var heading = findMainHeading();
+        var target = findHeaderTarget(heading);
+        var bounds = findDocumentBounds();
+
+        if (!heading || !target || !bounds) {
+            return;
+        }
+
+        var parent = target.parentElement || document.body;
+        var parentRect = parent.getBoundingClientRect();
+
+        if (!rectIsUseful(parentRect)) {
+            return;
+        }
+
+        var leftInParent = bounds.left - parentRect.left;
+
+        target.setAttribute("data-pf67-header-align-target", "true");
+        target.style.setProperty("width", bounds.width + "px", "important");
+        target.style.setProperty("max-width", bounds.width + "px", "important");
+        target.style.setProperty("margin-left", leftInParent + "px", "important");
+        target.style.setProperty("margin-right", "0", "important");
+        target.style.setProperty("text-align", "left", "important");
+
+        Array.prototype.slice.call(target.querySelectorAll("img")).forEach(function(img) {
+            img.style.setProperty("max-width", "100%", "important");
+            img.style.setProperty("height", "auto", "important");
+        });
+    }
+
+    // Run after images/layout settle, then again on resize.
+    alignHeader();
+    window.setTimeout(alignHeader, 120);
+    window.setTimeout(alignHeader, 400);
+
+    var resizeTimer = null;
+
+    window.addEventListener("resize", function() {
+        if (resizeTimer) {
+            window.clearTimeout(resizeTimer);
+        }
+
+        resizeTimer = window.setTimeout(alignHeader, 120);
+    });
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch009ULoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010ALoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010BLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010B2LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010B3LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010B4LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010B5LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010B7LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010B8SmallLabelCleanup() {
+    Array.prototype.slice.call(document.querySelectorAll("a, button")).forEach(function(node) {
+        var label = (node.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+
+        if (label === "add step here") {
+            node.textContent = "Add Step";
+        }
+    });
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010B8LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010B9LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010B10LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010B11LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010B12LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010CLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C2LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C3LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C4LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C5LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C6LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C7LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C8LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C9RestoreProcedureControlRowDetection() {
+    var canEdit = {{ 'true' if can_edit else 'false' }};
+    var path = window.location.pathname || "";
+    var templateMatch = path.match(/\/templates\/(\d+)/);
+
+    if (canEdit) {
+        document.body.classList.add("pf67-can-edit");
+    }
+
+    function textOf(node) {
+        return (node.textContent || "").replace(/\s+/g, " ").trim();
+    }
+
+    function isAddStep(node) {
+        var text = textOf(node).toLowerCase();
+        return text === "add step" || text === "add step here";
+    }
+
+    function isInsertProcedure(node) {
+        return textOf(node).toLowerCase() === "insert procedure";
+    }
+
+    function isMoveControl(node) {
+        var text = textOf(node).toLowerCase();
+        var raw = "";
+
+        if (node.getAttribute) {
+            raw = (node.getAttribute("href") || "") + " " + (node.getAttribute("action") || "") + " " + (node.getAttribute("name") || "") + " " + (node.className || "");
+        }
+
+        raw = String(raw).toLowerCase();
+
+        return (
+            text.indexOf("move up") !== -1 ||
+            text.indexOf("move down") !== -1 ||
+            text === "↑" ||
+            text === "↓" ||
+            raw.indexOf("move") !== -1 ||
+            raw.indexOf("reorder") !== -1
+        );
+    }
+
+    function normalizeAddStepLabels() {
+        Array.prototype.slice.call(document.querySelectorAll("a, button")).forEach(function(node) {
+            if (textOf(node).toLowerCase() === "add step here") {
+                node.textContent = "Add Step";
+            }
+        });
+    }
+
+    function addInsertProcedurePeers() {
+        if (!canEdit || !templateMatch) {
+            return;
+        }
+
+        var href = "/protocols/" + templateMatch[1] + "/insert-procedure-patch010b9";
+
+        Array.prototype.slice.call(document.querySelectorAll("a, button")).filter(isAddStep).forEach(function(addStep) {
+            var parent = addStep.parentElement || addStep;
+            var existing = Array.prototype.slice.call(parent.querySelectorAll("a, button")).find(isInsertProcedure);
+
+            if (!existing) {
+                existing = document.createElement("a");
+                existing.textContent = "Insert Procedure";
+                existing.href = href;
+                addStep.insertAdjacentElement("beforebegin", existing);
+            }
+
+            if (existing.tagName.toLowerCase() === "a") {
+                existing.setAttribute("href", href);
+            }
+
+            existing.className = addStep.className;
+            existing.style.marginLeft = "";
+            existing.style.marginRight = "";
+            existing.setAttribute("data-pf67-insert-procedure-peer", "true");
+
+            parent.classList.add("pf67-normalized-action-pair");
+
+            if (existing.nextElementSibling !== addStep) {
+                parent.insertBefore(existing, addStep);
+            }
+        });
+    }
+
+    function syncInsertProcedureVisibility() {
+        Array.prototype.slice.call(document.querySelectorAll("[data-pf67-insert-procedure-peer]")).forEach(function(insertLink) {
+            var parent = insertLink.parentElement;
+
+            if (!parent) {
+                return;
+            }
+
+            var addStep = Array.prototype.slice.call(parent.querySelectorAll("a, button")).find(function(node) {
+                return node !== insertLink && isAddStep(node);
+            });
+
+            if (!addStep) {
+                return;
+            }
+
+            var style = window.getComputedStyle(addStep);
+            insertLink.style.display = style.display;
+            insertLink.style.visibility = style.visibility;
+            insertLink.style.opacity = style.opacity;
+            insertLink.style.pointerEvents = style.pointerEvents;
+        });
+    }
+
+    function markerForSurface(surface) {
+        return surface.querySelector(".pf67-procedure-reference-marker");
+    }
+
+    function referenceIdFromMarker(surface) {
+        var marker = markerForSurface(surface);
+
+        if (marker) {
+            return marker.getAttribute("data-pf67-reference-step-id") || "";
+        }
+
+        return "";
+    }
+
+    function procedureIdFromMarker(surface) {
+        var marker = markerForSurface(surface);
+
+        if (marker) {
+            return marker.getAttribute("data-pf67-procedure-template-id") || "";
+        }
+
+        return "";
+    }
+
+    function extractLastNumber(value) {
+        var nums = String(value || "").match(/\d+/g);
+
+        if (!nums || !nums.length) {
+            return "";
+        }
+
+        return nums[nums.length - 1];
+    }
+
+    function referenceIdFallback(surface) {
+        var fromData = surface.getAttribute("data-pf67-reference-step-id");
+
+        if (fromData) {
+            return fromData;
+        }
+
+        var found = "";
+
+        Array.prototype.slice.call(surface.querySelectorAll("a[href], form[action], button")).some(function(node) {
+            if (isMoveControl(node)) {
+                return false;
+            }
+
+            var value = "";
+
+            if (node.getAttribute) {
+                value = (node.getAttribute("href") || "") + " " + (node.getAttribute("action") || "") + " " + (node.getAttribute("data-step-id") || "");
+            }
+
+            found = extractLastNumber(value);
+
+            return Boolean(found);
+        });
+
+        if (found) {
+            surface.setAttribute("data-pf67-reference-step-id", found);
+        }
+
+        return found;
+    }
+
+    function procedureIdFallback(surface) {
+        var found = "";
+
+        Array.prototype.slice.call(surface.querySelectorAll("a[href]")).some(function(link) {
+            var href = link.getAttribute("href") || "";
+
+            if (href.indexOf("/templates/") === -1) {
+                return false;
+            }
+
+            found = extractLastNumber(href);
+
+            return Boolean(found);
+        });
+
+        return found;
+    }
+
+    function referenceIdForSurface(surface) {
+        return referenceIdFromMarker(surface) || referenceIdFallback(surface);
+    }
+
+    function procedureIdForSurface(surface) {
+        return procedureIdFromMarker(surface) || procedureIdFallback(surface);
+    }
+
+    function groupByReferenceId() {
+        var surfaces = Array.prototype.slice.call(document.querySelectorAll(".pf67-procedure-derived-step-surface"));
+        var map = {};
+        var order = [];
+        var fallbackGroups = [];
+        var currentFallback = [];
+
+        surfaces.forEach(function(surface) {
+            var refId = referenceIdForSurface(surface);
+
+            if (refId) {
+                if (!map[refId]) {
+                    map[refId] = [];
+                    order.push(refId);
+                }
+
+                map[refId].push(surface);
+
+                if (currentFallback.length) {
+                    fallbackGroups.push(currentFallback);
+                    currentFallback = [];
+                }
+
+                return;
+            }
+
+            /*
+              Last-resort fallback: group contiguous derived surfaces. This can show
+              Open/Edit Procedure only if a Procedure template link is detectable, but it
+              avoids losing all controls when the marker is unavailable.
+            */
+            if (!currentFallback.length) {
+                currentFallback.push(surface);
+                return;
+            }
+
+            var prev = currentFallback[currentFallback.length - 1];
+            var walker = prev.nextElementSibling;
+            var adjacent = false;
+
+            while (walker) {
+                if (walker === surface) {
+                    adjacent = true;
+                    break;
+                }
+
+                if (walker.classList && walker.classList.contains("pf67-procedure-reference-control-row")) {
+                    break;
+                }
+
+                var text = textOf(walker).toLowerCase();
+                var onlyControls = text === "" || text.indexOf("add step") !== -1 || text.indexOf("insert procedure") !== -1;
+
+                if (!onlyControls) {
+                    break;
+                }
+
+                walker = walker.nextElementSibling;
+            }
+
+            if (adjacent) {
+                currentFallback.push(surface);
+            } else {
+                fallbackGroups.push(currentFallback);
+                currentFallback = [surface];
+            }
+        });
+
+        if (currentFallback.length) {
+            fallbackGroups.push(currentFallback);
+        }
+
+        var groups = order.map(function(refId) {
+            return {
+                refId: refId,
+                surfaces: map[refId]
+            };
+        });
+
+        fallbackGroups.forEach(function(group, index) {
+            var refId = referenceIdForSurface(group[0]) || "";
+
+            if (refId) {
+                groups.push({
+                    refId: refId,
+                    surfaces: group
+                });
+            }
+        });
+
+        return groups;
+    }
+
+    function createProcedureControlRow(group) {
+        if (!templateMatch || !group.refId) {
+            return null;
+        }
+
+        var first = group.surfaces[0];
+        var procedureId = procedureIdForSurface(first);
+        var returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+        var row = document.createElement("div");
+        row.className = "pf67-procedure-reference-control-row";
+        row.setAttribute("data-pf67-procedure-reference-row", group.refId);
+
+        var label = document.createElement("span");
+        label.className = "pf67-procedure-reference-label";
+        label.textContent = "Procedure";
+        row.appendChild(label);
+
+        var timing = document.createElement("button");
+        timing.className = "btn btn-outline-secondary btn-sm";
+        timing.type = "button";
+        timing.setAttribute("data-pf67-inline-timing-trigger", "true");
+        timing.setAttribute("data-pf67-reference-step-id", group.refId);
+        timing.textContent = "Timing Window";
+        row.appendChild(timing);
+
+        if (procedureId) {
+            var edit = document.createElement("a");
+            edit.className = "btn btn-outline-secondary btn-sm";
+            edit.href = "/templates/" + procedureId + "?return_to=" + returnTo;
+            edit.textContent = "Open/Edit Procedure";
+            row.appendChild(edit);
+        }
+
+        var up = document.createElement("a");
+        up.className = "btn btn-outline-secondary btn-sm";
+        up.href = "/protocols/" + templateMatch[1] + "/procedure-reference/" + group.refId + "/move-up-c7";
+        up.textContent = "Move Up";
+        row.appendChild(up);
+
+        var down = document.createElement("a");
+        down.className = "btn btn-outline-secondary btn-sm";
+        down.href = "/protocols/" + templateMatch[1] + "/procedure-reference/" + group.refId + "/move-down-c7";
+        down.textContent = "Move Down";
+        row.appendChild(down);
+
+        return row;
+    }
+
+    function installProcedureControlRows() {
+        if (!canEdit || !templateMatch) {
+            return;
+        }
+
+        groupByReferenceId().forEach(function(group) {
+            if (!group.refId) {
+                return;
+            }
+
+            if (document.querySelector('[data-pf67-procedure-reference-row="' + group.refId + '"]')) {
+                return;
+            }
+
+            var row = createProcedureControlRow(group);
+
+            if (!row || !group.surfaces.length) {
+                return;
+            }
+
+            group.surfaces[0].insertAdjacentElement("beforebegin", row);
+        });
+    }
+
+    function buildTimingField(field) {
+        var wrap = document.createElement("label");
+        wrap.className = "pf67-procedure-inline-timing-field";
+
+        var label = document.createElement("span");
+        label.textContent = field.label;
+        wrap.appendChild(label);
+
+        var input = document.createElement("input");
+        input.className = "form-control form-control-sm";
+        input.type = "number";
+        input.min = "0";
+        input.step = "1";
+        input.value = field.value === null || field.value === undefined ? "" : String(field.value);
+        input.setAttribute("data-column", field.column);
+        input.setAttribute("data-key", field.key);
+        wrap.appendChild(input);
+
+        var select = document.createElement("select");
+        select.className = "form-select form-select-sm";
+        select.setAttribute("data-unit-for", field.column);
+
+        ["minutes", "hours", "days"].forEach(function(unit) {
+            var option = document.createElement("option");
+            option.value = unit;
+            option.textContent = unit.charAt(0).toUpperCase() + unit.slice(1);
+
+            if (field.unit === unit) {
+                option.selected = true;
+            }
+
+            select.appendChild(option);
+        });
+
+        wrap.appendChild(select);
+        return wrap;
+    }
+
+    function openInlineTimingEditor(row, stepId) {
+        if (!templateMatch || !stepId) {
+            return;
+        }
+
+        var existing = row.querySelector(".pf67-procedure-inline-timing-editor");
+
+        if (existing) {
+            existing.remove();
+            row.classList.remove("is-editing");
+            return;
+        }
+
+        row.classList.add("is-editing");
+
+        var panel = document.createElement("div");
+        panel.className = "pf67-procedure-inline-timing-editor";
+        panel.innerHTML = "<h4>Timing Window</h4><div class='text-muted small mb-2'>Loading...</div>";
+        row.appendChild(panel);
+
+        fetch("/protocols/" + templateMatch[1] + "/procedure-reference/" + stepId + "/timing-inline-c8")
+            .then(function(response) { return response.ok ? response.json() : Promise.reject(response); })
+            .then(function(data) {
+                if (!data || !data.ok) {
+                    throw new Error((data && data.error) || "Unable to load timing.");
+                }
+
+                panel.innerHTML = "";
+
+                var title = document.createElement("h4");
+                title.textContent = "Timing Window";
+
+                if (data.procedure_name) {
+                    title.textContent = "Timing Window - " + data.procedure_name;
+                }
+
+                panel.appendChild(title);
+
+                var grid = document.createElement("div");
+                grid.className = "pf67-procedure-inline-timing-grid";
+                panel.appendChild(grid);
+
+                if (!data.fields || !data.fields.length) {
+                    var empty = document.createElement("div");
+                    empty.className = "text-muted small";
+                    empty.textContent = "No timing fields are available for this Procedure reference.";
+                    grid.appendChild(empty);
+                } else {
+                    data.fields.forEach(function(field) {
+                        grid.appendChild(buildTimingField(field));
+                    });
+                }
+
+                var actions = document.createElement("div");
+                actions.className = "pf67-procedure-inline-timing-actions";
+
+                var save = document.createElement("button");
+                save.className = "btn btn-primary btn-sm";
+                save.type = "button";
+                save.textContent = "Save Timing";
+
+                var close = document.createElement("button");
+                close.className = "btn btn-outline-secondary btn-sm";
+                close.type = "button";
+                close.textContent = "Close";
+
+                actions.appendChild(save);
+                actions.appendChild(close);
+                panel.appendChild(actions);
+
+                close.addEventListener("click", function() {
+                    panel.remove();
+                    row.classList.remove("is-editing");
+                });
+
+                save.addEventListener("click", function() {
+                    var fields = Array.prototype.slice.call(panel.querySelectorAll("input[data-column]")).map(function(input) {
+                        var column = input.getAttribute("data-column");
+                        var select = panel.querySelector("select[data-unit-for='" + column + "']");
+
+                        return {
+                            column: column,
+                            key: input.getAttribute("data-key") || "",
+                            value: input.value,
+                            unit: select ? select.value : "minutes"
+                        };
+                    });
+
+                    save.disabled = true;
+                    save.textContent = "Saving...";
+
+                    fetch("/protocols/" + templateMatch[1] + "/procedure-reference/" + stepId + "/timing-inline-c8", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ fields: fields })
+                    })
+                        .then(function(response) { return response.ok ? response.json() : Promise.reject(response); })
+                        .then(function(saved) {
+                            if (!saved || !saved.ok) {
+                                throw new Error((saved && saved.error) || "Unable to save timing.");
+                            }
+
+                            save.textContent = "Saved";
+                            window.setTimeout(function() {
+                                panel.remove();
+                                row.classList.remove("is-editing");
+                            }, 450);
+                        })
+                        .catch(function() {
+                            save.disabled = false;
+                            save.textContent = "Save Timing";
+                            alert("Unable to save timing. Please try again.");
+                        });
+                });
+            })
+            .catch(function() {
+                panel.innerHTML = "<h4>Timing Window</h4><div class='text-muted'>Unable to load timing editor.</div>";
+            });
+    }
+
+    function attachInlineTimingHandlers() {
+        Array.prototype.slice.call(document.querySelectorAll("[data-pf67-inline-timing-trigger]")).forEach(function(button) {
+            if (button.getAttribute("data-pf67-timing-bound") === "true") {
+                return;
+            }
+
+            button.setAttribute("data-pf67-timing-bound", "true");
+
+            button.addEventListener("click", function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                var row = button.closest(".pf67-procedure-reference-control-row");
+                var stepId = button.getAttribute("data-pf67-reference-step-id");
+
+                if (row && stepId) {
+                    openInlineTimingEditor(row, stepId);
+                }
+            });
+        });
+    }
+
+    function hideObscureProcedureLinks() {
+        Array.prototype.slice.call(document.querySelectorAll(".pf67-procedure-derived-step-surface")).forEach(function(surface) {
+            Array.prototype.slice.call(surface.querySelectorAll("a, button, form")).forEach(function(ctrl) {
+                ctrl.classList.add("pf67-hidden-obscure-procedure-link");
+                ctrl.setAttribute("data-pf67-derived-control-hidden", "true");
+            });
+
+            var next = surface.nextElementSibling;
+            var scanned = 0;
+
+            while (next && scanned < 4) {
+                if (next.classList && next.classList.contains("pf67-procedure-derived-step-surface")) {
+                    break;
+                }
+
+                if (next.classList && next.classList.contains("pf67-procedure-reference-control-row")) {
+                    break;
+                }
+
+                var text = textOf(next).toLowerCase();
+                var hasTinyOrProcedureLink = (
+                    text.length <= 2 ||
+                    (next.querySelector && next.querySelector("a[href*='procedure-reference'], a[href*='steps'], a[href*='step']"))
+                );
+
+                var hasValidAddInsert = text.indexOf("add step") !== -1 || text.indexOf("insert procedure") !== -1;
+
+                if (hasTinyOrProcedureLink && !hasValidAddInsert) {
+                    next.classList.add("pf67-hidden-obscure-procedure-link");
+                }
+
+                next = next.nextElementSibling;
+                scanned += 1;
+            }
+        });
+    }
+
+    function disableProcedureDerivedSurfaceClicks() {
+        Array.prototype.slice.call(document.querySelectorAll(".pf67-procedure-derived-step-surface")).forEach(function(surface) {
+            if (surface.getAttribute("data-pf67-click-disabled") === "true") {
+                return;
+            }
+
+            surface.setAttribute("data-pf67-click-disabled", "true");
+
+            surface.addEventListener("click", function(event) {
+                if (event.target.closest("input, textarea, select")) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+            }, true);
+        });
+    }
+
+    function hideFirstStepTimingIfNeeded() {
+        var pathLower = (window.location.pathname || "").toLowerCase();
+
+        if (pathLower.indexOf("step") === -1) {
+            return;
+        }
+
+        var nums = (window.location.pathname || "").match(/\d+/g) || [];
+        var stepId = nums.length ? nums[nums.length - 1] : "";
+        var templateId = "";
+
+        var match = (window.location.pathname || "").match(/\/templates\/(\d+)/);
+
+        if (match) {
+            templateId = match[1];
+        } else if (nums.length) {
+            templateId = nums[0];
+        }
+
+        var url = "/pf67/patch010c7/step-context?step_id=" + encodeURIComponent(stepId) + "&template_id=" + encodeURIComponent(templateId);
+
+        fetch(url)
+            .then(function(response) { return response.ok ? response.json() : null; })
+            .then(function(data) {
+                if (!data || !data.hide_timing) {
+                    return;
+                }
+
+                var timingWords = [
+                    "timing before this step",
+                    "ideal is the required wait",
+                    "ideal",
+                    "check",
+                    "limit",
+                    "risk",
+                    "failure",
+                    "minimum",
+                    "maximum",
+                    "wait minutes",
+                    "duration minutes"
+                ];
+
+                Array.prototype.slice.call(document.querySelectorAll("label, legend, h2, h3, h4, h5, .form-label, .form-group, .mb-3, .row, fieldset, section")).forEach(function(node) {
+                    var txt = textOf(node).toLowerCase();
+
+                    if (!txt) {
+                        return;
+                    }
+
+                    var matched = timingWords.some(function(word) {
+                        return txt.indexOf(word) !== -1;
+                    });
+
+                    if (!matched) {
+                        return;
+                    }
+
+                    var hasTimingInput = Boolean(node.querySelector && node.querySelector("input[name*='ideal'], input[name*='check'], input[name*='limit'], input[name*='risk'], input[name*='failure'], input[name*='wait'], input[name*='duration'], input[name*='minimum'], input[name*='maximum']"));
+
+                    if (hasTimingInput || txt.indexOf("timing before this step") !== -1 || txt.indexOf("ideal is the required wait") !== -1) {
+                        node.classList.add("pf67-hide-first-step-timing");
+                    }
+                });
+            })
+            .catch(function() {});
+    }
+
+    function injectReturnBarIfNeeded() {
+        var params = new URLSearchParams(window.location.search || "");
+        var returnTo = params.get("return_to");
+
+        try {
+            returnTo = returnTo || sessionStorage.getItem("pf67ProcedureReturnTo") || "";
+        } catch (err) {
+            returnTo = returnTo || "";
+        }
+
+        if (!returnTo || document.querySelector(".pf67-procedure-return-bar") || document.querySelector(".pf67-return-to-parent-protocol")) {
+            return;
+        }
+
+        var main = document.querySelector("main") || document.querySelector(".container") || document.body;
+        var link = document.createElement("a");
+        link.className = "pf67-return-to-parent-protocol";
+        link.href = returnTo;
+        link.textContent = "Return to parent Protocol";
+
+        link.addEventListener("click", function() {
+            try {
+                sessionStorage.removeItem("pf67ProcedureReturnTo");
+            } catch (err) {}
+        });
+
+        main.insertBefore(link, main.firstChild);
+    }
+
+    function run() {
+        normalizeAddStepLabels();
+        addInsertProcedurePeers();
+        installProcedureControlRows();
+        attachInlineTimingHandlers();
+        syncInsertProcedureVisibility();
+        hideObscureProcedureLinks();
+        disableProcedureDerivedSurfaceClicks();
+        injectReturnBarIfNeeded();
+    }
+
+    run();
+    hideFirstStepTimingIfNeeded();
+    window.setTimeout(run, 300);
+    window.setTimeout(run, 1000);
+    window.setInterval(function() {
+        syncInsertProcedureVisibility();
+        hideObscureProcedureLinks();
+        disableProcedureDerivedSurfaceClicks();
+    }, 250);
+    document.addEventListener("mousemove", syncInsertProcedureVisibility, { passive: true });
+    document.addEventListener("focusin", syncInsertProcedureVisibility);
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C9LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C10LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C11LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C12LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C13LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C14LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C15LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C16LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch010C17LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch011ALoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch011A2LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch011B2LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch011B4LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch011B5LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch011CDLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch011CD2LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch011CD3StableKeywordFilters() {
+    var path = window.location.pathname || "";
+    var filterTimer = null;
+
+    function textOf(node) {
+        return (node && node.textContent ? node.textContent : "").replace(/\s+/g, " ").trim();
+    }
+
+    function isActuallyVisible(node) {
+        if (!node || !node.getBoundingClientRect) {
+            return false;
+        }
+
+        var rect = node.getBoundingClientRect();
+        var style = window.getComputedStyle(node);
+
+        return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden";
+    }
+
+    function closestCard(link) {
+        return link.closest(".pf67-card, .card, .list-group-item, .pf67-protocol-card, .pf67-template-card, .pf67-flow-card, article, .col-md-4, .col-md-6, .col-lg-4, .col-lg-3, .col-xl-4, .col-xl-3") || link.parentElement;
+    }
+
+    function uniqueCardsForLinks(selector) {
+        var seen = [];
+        var cards = [];
+
+        Array.prototype.slice.call(document.querySelectorAll(selector)).forEach(function(link) {
+            var card = closestCard(link);
+
+            if (!card || seen.indexOf(card) !== -1) {
+                return;
+            }
+
+            seen.push(card);
+            cards.push(card);
+        });
+
+        return cards;
+    }
+
+    function templateCards() {
+        return uniqueCardsForLinks("a[href^='/templates/'], a[href*='/templates/']");
+    }
+
+    function flowCards() {
+        return uniqueCardsForLinks("a[href^='/jobs/'], a[href*='/jobs/'], a[href^='/flows/'], a[href*='/flows/']");
+    }
+
+    function pageKind() {
+        if (document.querySelector(".pf67-keyword-filter-wrap")) {
+            return "";
+        }
+
+        var bodyText = textOf(document.body).toLowerCase();
+
+        if ((path.indexOf("/templates") === 0 || path.indexOf("/protocols") === 0 || bodyText.indexOf("protocols") !== -1 || bodyText.indexOf("procedures") !== -1) && templateCards().length >= 2) {
+            return "templates";
+        }
+
+        if ((path.indexOf("/jobs") === 0 || path.indexOf("/flows") === 0 || bodyText.indexOf("flows") !== -1) && flowCards().length >= 2) {
+            return "";
+        }
+
+        return "";
+    }
+
+    function findProtocolProcedureToggle() {
+        var candidates = Array.prototype.slice.call(document.querySelectorAll(".btn-group, .nav, .nav-pills, .nav-tabs, .pf67-toggle, .pf67-segmented-toggle, .pf67-protocol-toggle, .pf67-view-toggle, .d-flex, .mb-3, .mb-2"));
+
+        var best = null;
+        var bestScore = -1;
+
+        candidates.forEach(function(node) {
+            var text = textOf(node).toLowerCase();
+
+            if (text.indexOf("protocol") === -1 || text.indexOf("procedure") === -1) {
+                return;
+            }
+
+            var rect = node.getBoundingClientRect();
+            var score = 0;
+
+            if (rect.top < 450) {
+                score += 6;
+            }
+
+            if (node.querySelector("a, button")) {
+                score += 5;
+            }
+
+            if (text.length < 180) {
+                score += 3;
+            }
+
+            if (score > bestScore) {
+                best = node;
+                bestScore = score;
+            }
+        });
+
+        return best;
+    }
+
+    function insertPoint(kind) {
+        if (kind === "templates") {
+            var toggle = findProtocolProcedureToggle();
+
+            if (toggle && toggle.parentElement) {
+                return {
+                    parent: toggle.parentElement,
+                    after: toggle
+                };
+            }
+        }
+
+        var hero = document.querySelector(".pf67-dashboard-hero");
+        if (hero && hero.parentElement) {
+            return {
+                parent: hero.parentElement,
+                after: hero
+            };
+        }
+
+        var heading = document.querySelector("main h1, main h2, .container h1, .container h2, h1, h2");
+
+        if (heading && heading.parentElement) {
+            return {
+                parent: heading.parentElement,
+                after: heading
+            };
+        }
+
+        var main = document.querySelector("main") || document.querySelector(".container") || document.body;
+
+        return {
+            parent: main,
+            after: null
+        };
+    }
+
+    function activeTemplateRole() {
+        var params = new URLSearchParams(window.location.search || "");
+        var role = (params.get("role") || params.get("view") || params.get("type") || "").toLowerCase();
+
+        if (role.indexOf("procedure") !== -1) {
+            return "procedure";
+        }
+
+        if (role.indexOf("protocol") !== -1) {
+            return "protocol";
+        }
+
+        var active = Array.prototype.slice.call(document.querySelectorAll(".active, [aria-selected='true'], [aria-pressed='true']")).find(function(node) {
+            var text = textOf(node).toLowerCase();
+            return text.indexOf("protocol") !== -1 || text.indexOf("procedure") !== -1;
+        });
+
+        if (active) {
+            var activeText = textOf(active).toLowerCase();
+
+            if (activeText.indexOf("procedure") !== -1) {
+                return "procedure";
+            }
+
+            if (activeText.indexOf("protocol") !== -1) {
+                return "protocol";
+            }
+        }
+
+        return "";
+    }
+
+    function cardRole(card) {
+        var explicit = (
+            card.getAttribute("data-protocol-role") ||
+            card.getAttribute("data-role") ||
+            card.getAttribute("data-pf67-role") ||
+            ""
+        ).toLowerCase();
+
+        if (explicit.indexOf("procedure") !== -1) {
+            return "procedure";
+        }
+
+        if (explicit.indexOf("protocol") !== -1) {
+            return "protocol";
+        }
+
+        var text = textOf(card).toLowerCase();
+
+        /*
+          This is intentionally conservative. Avoid classifying a Protocol card as
+          Procedure merely because it mentions a Procedure inside its description.
+          Prefer visible view scope, and only use card text when it has obvious pill/label wording.
+        */
+        if (text.indexOf("procedure ·") !== -1 || text.indexOf("procedure\n") !== -1 || text.indexOf("procedure ") === 0) {
+            return "procedure";
+        }
+
+        if (text.indexOf("protocol ·") !== -1 || text.indexOf("protocol\n") !== -1 || text.indexOf("protocol ") === 0) {
+            return "protocol";
+        }
+
+        return "";
+    }
+
+    function currentlyVisibleTemplateCards() {
+        var cards = templateCards();
+        var visible = cards.filter(function(card) {
+            return isActuallyVisible(card) && !card.classList.contains("pf67-filter-hidden");
+        });
+
+        /*
+          When the filter is active, hidden matched-out cards are no longer visible.
+          For recalculation, use all cards that belong to visible layout containers before
+          our own filter class is considered. This avoids the count bouncing.
+        */
+        var queryIndependentVisible = cards.filter(function(card) {
+            var wasHidden = card.classList.contains("pf67-filter-hidden");
+
+            if (wasHidden) {
+                card.classList.remove("pf67-filter-hidden");
+            }
+
+            var visibleNow = isActuallyVisible(card);
+
+            if (wasHidden) {
+                card.classList.add("pf67-filter-hidden");
+            }
+
+            return visibleNow;
+        });
+
+        return queryIndependentVisible.length ? queryIndependentVisible : visible;
+    }
+
+    function activeCards(kind) {
+        if (kind === "flows") {
+            return flowCards();
+        }
+
+        var cards = currentlyVisibleTemplateCards();
+        var role = activeTemplateRole();
+
+        if (!role) {
+            return cards;
+        }
+
+        var roleCards = cards.filter(function(card) {
+            var foundRole = cardRole(card);
+
+            return !foundRole || foundRole === role;
+        });
+
+        return roleCards.length ? roleCards : cards;
+    }
+
+    function allCards(kind) {
+        if (kind === "flows") {
+            return flowCards();
+        }
+
+        return templateCards();
+    }
+
+    function installKeywordFilter(kind) {
+        var cards = allCards(kind);
+
+        if (cards.length < 2) {
+            return;
+        }
+
+        var wrap = document.createElement("div");
+        wrap.className = "pf67-keyword-filter-wrap";
+        wrap.setAttribute("data-pf67-filter-kind", kind);
+
+        var input = document.createElement("input");
+        input.className = "form-control form-control-sm";
+        input.type = "search";
+        input.placeholder = kind === "flows" ? "Filter Flows..." : "Filter...";
+        input.setAttribute("aria-label", input.placeholder);
+
+        var reset = document.createElement("button");
+        reset.className = "btn btn-outline-secondary btn-sm pf67-keyword-filter-reset";
+        reset.type = "button";
+        reset.textContent = "Reset";
+
+        var count = document.createElement("span");
+        count.className = "pf67-keyword-filter-count";
+
+        wrap.appendChild(input);
+        wrap.appendChild(reset);
+        wrap.appendChild(count);
+
+        var point = insertPoint(kind);
+
+        if (point.after && point.after.nextSibling) {
+            point.parent.insertBefore(wrap, point.after.nextSibling);
+        } else if (point.after) {
+            point.parent.appendChild(wrap);
+        } else {
+            point.parent.insertBefore(wrap, point.parent.firstChild);
+        }
+
+        function applyFilter() {
+            var query = input.value.trim().toLowerCase();
+            var scopeCards = activeCards(kind);
+            var scopeSet = scopeCards;
+            var visible = 0;
+
+            allCards(kind).forEach(function(card) {
+                if (scopeSet.indexOf(card) === -1) {
+                    card.classList.remove("pf67-filter-hidden");
+                    return;
+                }
+
+                var haystack = textOf(card).toLowerCase();
+                var match = !query || haystack.indexOf(query) !== -1;
+
+                if (match) {
+                    card.classList.remove("pf67-filter-hidden");
+                    visible += 1;
+                } else {
+                    card.classList.add("pf67-filter-hidden");
+                }
+            });
+
+            count.textContent = visible + " of " + scopeCards.length;
+        }
+
+        function scheduleFilter() {
+            if (filterTimer) {
+                window.clearTimeout(filterTimer);
+            }
+
+            filterTimer = window.setTimeout(applyFilter, 70);
+        }
+
+        input.addEventListener("input", applyFilter);
+
+        reset.addEventListener("click", function() {
+            input.value = "";
+            applyFilter();
+            input.focus();
+        });
+
+        if (kind === "templates") {
+            document.addEventListener("click", function(event) {
+                var target = event.target.closest("a, button, label, input");
+
+                if (!target) {
+                    return;
+                }
+
+                var label = textOf(target).toLowerCase();
+
+                if (label.indexOf("protocol") !== -1 || label.indexOf("procedure") !== -1) {
+                    scheduleFilter();
+                }
+            });
+        }
+
+        applyFilter();
+        window.setTimeout(applyFilter, 250);
+    }
+
+    function templateIdFromHref(href) {
+        var match = String(href || "").match(/\/templates\/(\d+)/);
+
+        if (match) {
+            return match[1];
+        }
+
+        return "";
+    }
+
+    function findDurationRow(card, titleLink) {
+        var candidates = [
+            ".pf67-card-pills",
+            ".pf67-pill-row",
+            ".pf67-template-meta",
+            ".pf67-card-meta",
+            ".pf67-small",
+            ".card-body"
+        ];
+
+        for (var i = 0; i < candidates.length; i += 1) {
+            var found = card.querySelector(candidates[i]);
+
+            if (found) {
+                return found;
+            }
+        }
+
+        var row = document.createElement("div");
+        row.className = "pf67-duration-pill-row";
+
+        if (titleLink && titleLink.parentElement) {
+            titleLink.parentElement.insertAdjacentElement("afterend", row);
+        } else {
+            card.insertBefore(row, card.firstChild);
+        }
+
+        return row;
+    }
+
+    function installDurationPills() {
+        var cards = templateCards();
+
+        if (!cards.length) {
+            return;
+        }
+
+        fetch("/pf67/patch011cd/template-durations")
+            .then(function(response) {
+                return response.ok ? response.json() : null;
+            })
+            .then(function(data) {
+                if (!data || !data.ok || !data.durations) {
+                    return;
+                }
+
+                cards.forEach(function(card) {
+                    if (card.querySelector(".pf67-duration-pill")) {
+                        return;
+                    }
+
+                    var links = Array.prototype.slice.call(card.querySelectorAll("a[href*='/templates/']"));
+                    var titleLink = links.find(function(link) {
+                        return templateIdFromHref(link.getAttribute("href"));
+                    });
+
+                    if (!titleLink) {
+                        return;
+                    }
+
+                    var templateId = templateIdFromHref(titleLink.getAttribute("href"));
+                    var duration = data.durations[templateId];
+
+                    if (!duration || !duration.label) {
+                        return;
+                    }
+
+                    var pill = document.createElement("span");
+                    pill.className = "pf67-duration-pill";
+                    pill.textContent = duration.label;
+                    pill.setAttribute("title", "Estimated total duration");
+
+                    var row = findDurationRow(card, titleLink);
+
+                    if (!row.classList.contains("pf67-duration-pill-row") && row.className.indexOf("pf67-small") === -1) {
+                        var pillRow = document.createElement("div");
+                        pillRow.className = "pf67-duration-pill-row";
+                        row.appendChild(pillRow);
+                        row = pillRow;
+                    }
+
+                    row.appendChild(pill);
+                });
+            })
+            .catch(function() {});
+    }
+
+    var kind = pageKind();
+
+    if (kind) {
+        installKeywordFilter(kind);
+    }
+
+    if (kind === "templates") {
+        installDurationPills();
+    }
+});
+</script>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch011CD3LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch011CD4DurationPillPlacementFix() {
+    function textOf(node) {
+        return (node && node.textContent ? node.textContent : "").replace(/\s+/g, " ").trim();
+    }
+
+    function closestCard(node) {
+        return node.closest(".pf67-card, .card, .list-group-item, .pf67-protocol-card, .pf67-template-card, article, .col-md-4, .col-md-6, .col-lg-4, .col-lg-3, .col-xl-4, .col-xl-3") || node.parentElement;
+    }
+
+    function isLikelyPill(node) {
+        if (!node || node.nodeType !== 1) {
+            return false;
+        }
+
+        var className = String(node.className || "").toLowerCase();
+        var text = textOf(node).toLowerCase();
+
+        return (
+            className.indexOf("pill") !== -1 ||
+            className.indexOf("badge") !== -1 ||
+            className.indexOf("chip") !== -1 ||
+            className.indexOf("tag") !== -1 ||
+            text.indexOf("step") !== -1 ||
+            text === "protocol" ||
+            text === "procedure" ||
+            text === "public" ||
+            text === "private"
+        );
+    }
+
+    function childPills(row) {
+        return Array.prototype.slice.call(row.children || []).filter(function(child) {
+            return isLikelyPill(child);
+        });
+    }
+
+    function looksLikeStepCount(node) {
+        var text = textOf(node).toLowerCase();
+        return /\b\d+\s+steps?\b/.test(text) || /\bsteps?\s+\d+\b/.test(text);
+    }
+
+    function looksLikeRolePill(node) {
+        var text = textOf(node).toLowerCase();
+        return text === "protocol" || text === "procedure";
+    }
+
+    function looksLikeVisibilityPill(node) {
+        var text = textOf(node).toLowerCase();
+        return text === "public" || text === "private";
+    }
+
+    function scorePillRow(row) {
+        var pills = childPills(row);
+
+        if (!pills.length) {
+            return -1;
+        }
+
+        var score = 0;
+        var rowText = textOf(row).toLowerCase();
+
+        if (pills.some(looksLikeStepCount)) {
+            score += 10;
+        }
+
+        if (pills.some(looksLikeRolePill)) {
+            score += 8;
+        }
+
+        if (pills.some(looksLikeVisibilityPill)) {
+            score += 5;
+        }
+
+        if (rowText.indexOf("step") !== -1) {
+            score += 4;
+        }
+
+        if (rowText.indexOf("protocol") !== -1 || rowText.indexOf("procedure") !== -1) {
+            score += 4;
+        }
+
+        if (row.className && String(row.className).toLowerCase().indexOf("pill") !== -1) {
+            score += 3;
+        }
+
+        if (row.className && String(row.className).toLowerCase().indexOf("meta") !== -1) {
+            score += 2;
+        }
+
+        return score;
+    }
+
+    function findExistingPillRow(card) {
+        var candidates = Array.prototype.slice.call(card.querySelectorAll(".pf67-card-pills, .pf67-pill-row, .pf67-template-meta, .pf67-card-meta, .pf67-small, .small, .card-body, div, p"));
+
+        var best = null;
+        var bestScore = -1;
+
+        candidates.forEach(function(row) {
+            if (row.querySelector(".pf67-duration-pill") && !row.querySelector("[class*='step'], [class*='badge'], [class*='pill']")) {
+                return;
+            }
+
+            var score = scorePillRow(row);
+
+            if (score > bestScore) {
+                best = row;
+                bestScore = score;
+            }
+        });
+
+        return bestScore >= 8 ? best : null;
+    }
+
+    function moveDurationPill(pill) {
+        var card = closestCard(pill);
+
+        if (!card) {
+            return false;
+        }
+
+        var row = findExistingPillRow(card);
+
+        if (!row) {
+            return false;
+        }
+
+        var pills = childPills(row).filter(function(child) {
+            return child !== pill;
+        });
+
+        var stepPill = pills.find(looksLikeStepCount);
+        var rolePill = pills.find(looksLikeRolePill);
+
+        pill.classList.add("pf67-duration-pill-inline");
+
+        if (stepPill && stepPill.parentElement === row) {
+            stepPill.insertAdjacentElement("afterend", pill);
+            return true;
+        }
+
+        if (rolePill && rolePill.parentElement === row) {
+            row.insertBefore(pill, rolePill);
+            return true;
+        }
+
+        row.appendChild(pill);
+        return true;
+    }
+
+    function cleanEmptyDurationRows() {
+        Array.prototype.slice.call(document.querySelectorAll(".pf67-duration-pill-row")).forEach(function(row) {
+            if (!row.querySelector(".pf67-duration-pill") && textOf(row) === "") {
+                row.remove();
+            }
+        });
+    }
+
+    function relocateDurationPills() {
+        Array.prototype.slice.call(document.querySelectorAll(".pf67-duration-pill")).forEach(function(pill) {
+            moveDurationPill(pill);
+        });
+
+        cleanEmptyDurationRows();
+    }
+
+    relocateDurationPills();
+    window.setTimeout(relocateDurationPills, 250);
+    window.setTimeout(relocateDurationPills, 700);
+    window.setTimeout(relocateDurationPills, 1400);
+});
+</script>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch011CD4LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch012ALoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch012A2LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch012A3LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch012A4LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch012A8LoadedStamp() {
     var loadedStamp = document.getElementById("pf67-loaded-stamp");
 
     if (loadedStamp) {

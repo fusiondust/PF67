@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Procedure Timing{% endblock %}
+
+{% block content %}
+
+<div class="pf67-dashboard-hero">
+    <div>
+        <div class="pf67-dashboard-kicker">ProtocolFlow67</div>
+        <h1>Procedure Timing</h1>
+        <p class="pf67-dashboard-description">
+            Edit the parent Protocol timing window for this Procedure reference. The Procedure controls its own step titles and instructions.
+        </p>
+    </div>
+</div>
+
+<section class="pf67-dashboard-section">
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <a class="btn btn-outline-secondary btn-sm" href="{{ return_to }}">Cancel</a>
+        {% if procedure %}
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('views.template_detail', template_id=procedure.id, return_to=return_to) }}">Open/Edit Procedure</a>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <div class="text-muted small">Procedure reference</div>
+        <div class="h5 mb-1">{{ procedure.name if procedure else "Procedure not found" }}</div>
+    </div>
+
+    {% if timing_fields %}
+        <form method="post" class="pf67-procedure-reference-timing-form">
+            <input type="hidden" name="return_to" value="{{ return_to }}">
+            <div class="pf67-procedure-reference-timing-grid">
+                {% for field in timing_fields %}
+                    <label class="form-label">
+                        <span>{{ field.label }}</span>
+                        <input class="form-control"
+                               type="number"
+                               min="0"
+                               step="1"
+                               name="{{ field.name }}"
+                               value="{{ field.value }}">
+                    </label>
+                {% endfor %}
+            </div>
+
+            <div class="text-muted small mb-3">
+                Values are stored in minutes where the corresponding field exists.
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-primary btn-sm" type="submit">Save Timing</button>
+                <a class="btn btn-outline-secondary btn-sm" href="{{ return_to }}">Cancel</a>
+            </div>
+        </form>
+    {% else %}
+        <div class="text-muted">
+            No editable timing fields were detected on this Procedure reference.
+        </div>
+    {% endif %}
+</section>
+
+{% endblock %}

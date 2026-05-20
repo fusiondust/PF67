@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}PF67 · Public Protocols{% endblock %}
+
+{% block content %}
+
+<div class="pf67-dashboard-hero">
+    <div>
+        <div class="pf67-dashboard-kicker">ProtocolFlow67</div>
+        <h1>Public Protocols</h1>
+        <p class="pf67-dashboard-description">
+            Public Protocols are read-only process definitions. They explain how visible Flows are meant to move.
+        </p>
+    </div>
+</div>
+
+{% if public_protocols %}
+    <div class="pf67-public-protocol-grid">
+        {% for template in public_protocols %}
+            <a class="pf67-public-protocol-card" href="{{ url_for('views.pf67_patch009f_public_protocol_detail', template_id=template.id) }}">
+                <div class="pf67-dashboard-card-title">{{ template.name }}</div>
+                <div class="pf67-dashboard-card-subtitle">
+                    {% if template.category is defined and template.category %}
+                        {{ template.category }}
+                    {% else %}
+                        No Category
+                    {% endif %}
+                </div>
+                <div class="pf67-dashboard-meta">
+                    <span class="pf67-dashboard-pill">{{ template.steps|length }} step{% if template.steps|length != 1 %}s{% endif %}</span>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <section class="pf67-dashboard-section">
+        <div class="text-muted">No public Protocols are currently visible.</div>
+    </section>
+{% endif %}
+
+{% endblock %}
