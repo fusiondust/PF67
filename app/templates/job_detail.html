@@ -179,7 +179,93 @@
 
             <div class="col-md-8 pf67-job-detail-main-column">
                 <div class="tab-content">
-                    {% for step in pf67_patch011a_ordered_flow_steps(job.steps) %}
+                    {% if all_steps_completed %}
+                <div class="tab-pane fade {% if not selected_step_id %}show active{% endif %} pf67-flow-complete-summary"
+                     id="pf67-flow-complete-summary"
+                     role="tabpanel"
+                     data-pf67-flow-complete-summary>
+                    <section class="pf67-flow-complete-card">
+                        <div class="pf67-flow-complete-header">
+                            <div>
+                                <div class="pf67-flow-complete-kicker">Flow Complete</div>
+                                <h3 class="mb-1">{{ job.name }}</h3>
+                                <div class="pf67-flow-complete-meta">
+                                    {% if flow_started_display %}
+                                        <span>Started {{ flow_started_display }}</span>
+                                    {% endif %}
+                                    {% if flow_completed_display %}
+                                        <span>Completed {{ flow_completed_display }}</span>
+                                    {% endif %}
+                                    <span>{{ job.steps|length }} Steps</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pf67-flow-complete-steps">
+                            {% for item in flow_summary_steps %}
+                                {% set step = item.step %}
+                                <article class="pf67-flow-complete-step">
+                            <div class="pf67-flow-complete-step-heading pf67-flow-complete-step-heading-013d4">
+                                {% set outcome = item.completion_outcome or "limit" %}
+                                <span class="pf67-flow-complete-step-outcome is-{{ outcome }}"
+                                      aria-label="{{ outcome }}">
+                                    {% if outcome == "risk" %}!{% elif outcome == "failure" %}X{% else %}✓{% endif %}
+                                </span>
+                                <span class="pf67-flow-complete-step-title-inline">{{ step.name }}</span>
+                                {% if item.completed_display %}
+                                    <span class="pf67-flow-complete-step-completed-inline">{{ item.completed_display }}</span>
+                                {% endif %}
+                            </div>
+
+                                    <div class="pf67-flow-complete-step-title">
+                                        {{ step.name }}
+                                    </div>
+                                    <div class="pf67-flow-complete-step-meta">
+                                        {% if item.completed_display %}
+                                            <span>Completed {{ item.completed_display }}</span>
+                                        {% else %}
+                                            <span>Not completed</span>
+                                        {% endif %}
+                                        {% if item.timing and item.timing.status_label %}
+                                            <span>{{ item.timing.status_label }}</span>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if item.notes %}
+                                        <div class="pf67-flow-complete-notes">
+                                            {% for note in item.notes %}
+                                                <div class="pf67-flow-complete-note">
+                                                    {% if note.title %}
+                                                        <div class="pf67-flow-complete-note-title">
+                                                            {{ note.title }}
+                                                        </div>
+                                                    {% endif %}
+                                                    {% if note.preview_image_url %}
+                                                        <img class="pf67-flow-complete-note-image"
+                                                             src="{{ note.preview_image_url }}"
+                                                             alt="">
+                                                    {% endif %}
+                                                    {% if note.note_html %}
+                                                        <div class="pf67-flow-complete-note-body">
+                                                            {{ note.note_html|safe }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="pf67-flow-complete-empty-note">
+                                            No notes recorded for this step.
+                                        </div>
+                                    {% endif %}
+                                </article>
+                            {% endfor %}
+                        </div>
+                    </section>
+                </div>
+
+{% endif %}
+{% for step in pf67_patch011a_ordered_flow_steps(job.steps) %}
                         {% set timing = step_timing.get(step.id) %}
                         {% set is_active = step.id == selected_step_id %}
                         {% set notes_for_step = step_notes.get(step.id, []) %}

@@ -6722,6 +6722,384 @@
             margin: 3px 0 1px 0 !important;
         }
 
+    
+        /* PF67 Patch 013D First Incomplete Step and Completed Flow Summary */
+        .pf67-flow-complete-card {
+            border: 1px solid rgba(128, 128, 128, 0.22);
+            border-radius: 18px;
+            background: rgba(128, 128, 128, 0.055);
+            padding: 18px;
+            margin-bottom: 18px;
+        }
+
+        .pf67-flow-complete-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .pf67-flow-complete-kicker {
+            color: var(--bs-success, #198754);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .pf67-flow-complete-meta,
+        .pf67-flow-complete-step-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            color: var(--bs-secondary-color);
+            font-size: 0.9rem;
+        }
+
+        .pf67-flow-complete-steps {
+            display: grid;
+            gap: 12px;
+        }
+
+        .pf67-flow-complete-step {
+            border: 1px solid rgba(128, 128, 128, 0.16);
+            border-radius: 14px;
+            background: rgba(128, 128, 128, 0.04);
+            padding: 14px;
+        }
+
+        .pf67-flow-complete-step-title {
+            font-weight: 700;
+            font-size: 1rem;
+            line-height: 1.25;
+            margin-bottom: 5px;
+        }
+
+        .pf67-flow-complete-notes {
+            display: grid;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .pf67-flow-complete-note {
+            border-top: 1px solid rgba(128, 128, 128, 0.15);
+            padding-top: 10px;
+        }
+
+        .pf67-flow-complete-note-title {
+            font-weight: 650;
+            margin-bottom: 5px;
+        }
+
+        .pf67-flow-complete-note-body {
+            font-size: 0.95rem;
+            line-height: 1.45;
+        }
+
+        .pf67-flow-complete-note-body img,
+        .pf67-flow-complete-note-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            margin: 6px 0;
+        }
+
+        .pf67-flow-complete-empty-note {
+            color: var(--bs-secondary-color);
+            font-size: 0.88rem;
+            margin-top: 8px;
+        }
+
+    
+        /* PF67 Patch 013D2 Completed Flow State and Summary Cleanup */
+        .pf67-flow-complete-step {
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            padding: 10px 0 12px 0 !important;
+        }
+
+        .pf67-flow-complete-step + .pf67-flow-complete-step {
+            margin-top: 2px;
+        }
+
+        .pf67-flow-complete-step-heading {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 7px;
+        }
+
+        .pf67-flow-complete-step-title {
+            flex: 1 1 auto;
+            min-width: 0;
+            font-weight: 700;
+            font-size: 1rem;
+            line-height: 1.25;
+            margin-bottom: 0 !important;
+        }
+
+        .pf67-flow-complete-step-completed {
+            flex: 0 0 auto;
+            color: var(--bs-secondary-color);
+            font-size: 0.88rem;
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        .pf67-flow-complete-step-meta {
+            display: none !important;
+        }
+
+        .pf67-flow-complete-notes {
+            display: grid;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .pf67-flow-complete-note {
+            border: 1px solid rgba(128, 128, 128, 0.20) !important;
+            border-radius: 12px;
+            background: rgba(128, 128, 128, 0.035);
+            padding: 10px !important;
+        }
+
+        .pf67-flow-complete-empty-note {
+            display: none !important;
+        }
+
+        @media (max-width: 640px) {
+            .pf67-flow-complete-step-heading {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 3px;
+            }
+
+            .pf67-flow-complete-step-completed {
+                text-align: left;
+            }
+        }
+
+    
+        /* PF67 Patch 013D3 Completed Summary Outcome Badges */
+        .pf67-flow-complete-step-heading {
+            display: flex !important;
+            align-items: baseline !important;
+            justify-content: flex-start !important;
+            gap: 0.55rem !important;
+            margin-bottom: 7px !important;
+        }
+
+        .pf67-flow-complete-step-outcome {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            width: 1.22rem;
+            height: 1.22rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-right: 0.1rem;
+        }
+
+        .pf67-flow-complete-step-outcome.is-limit {
+            color: #fff;
+            background: var(--bs-success, #198754);
+        }
+
+        .pf67-flow-complete-step-outcome.is-risk {
+            color: #111;
+            background: var(--bs-warning, #ffc107);
+        }
+
+        .pf67-flow-complete-step-outcome.is-failure {
+            color: #fff;
+            background: var(--bs-danger, #dc3545);
+        }
+
+        .pf67-flow-complete-step-outcome.is-none {
+            color: var(--bs-secondary-color);
+            background: rgba(128, 128, 128, 0.22);
+        }
+
+        .pf67-flow-complete-step-title {
+            display: inline !important;
+            flex: 0 1 auto !important;
+            min-width: 0;
+            color: var(--bs-emphasis-color, #212529);
+            font-weight: 750 !important;
+            font-size: 1rem;
+            line-height: 1.25;
+            margin-bottom: 0 !important;
+        }
+
+        .pf67-flow-complete-step-completed {
+            display: inline !important;
+            flex: 0 0 auto !important;
+            color: var(--bs-secondary-color);
+            font-size: 0.88rem;
+            white-space: nowrap;
+            text-align: left !important;
+            margin-left: 0.45rem;
+        }
+
+        .pf67-flow-complete-step-meta {
+            display: none !important;
+        }
+
+        .pf67-flow-complete-step {
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+        }
+
+        .pf67-flow-complete-note {
+            border: 1px solid rgba(128, 128, 128, 0.20) !important;
+            border-radius: 12px;
+            background: rgba(128, 128, 128, 0.035);
+            padding: 10px !important;
+        }
+
+        .pf67-flow-complete-empty-note {
+            display: none !important;
+        }
+
+        @media (max-width: 640px) {
+            .pf67-flow-complete-step-heading {
+                flex-wrap: wrap;
+                gap: 0.45rem;
+            }
+
+            .pf67-flow-complete-step-completed {
+                margin-left: 0;
+            }
+        }
+
+    
+        /* PF67 Patch 013D4 Completed Summary Inline Date and Outcome Symbols */
+        .pf67-flow-complete-step-heading-013d4 {
+            display: flex !important;
+            align-items: baseline !important;
+            justify-content: flex-start !important;
+            flex-wrap: wrap !important;
+            gap: 0.42rem !important;
+            margin-bottom: 7px !important;
+        }
+
+        .pf67-flow-complete-step-outcome {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            width: 1.12rem;
+            height: 1.12rem;
+            border-radius: 0.25rem;
+            font-size: 0.76rem;
+            font-weight: 700;
+            line-height: 1;
+            transform: translateY(-0.02rem);
+        }
+
+        .pf67-flow-complete-step-outcome.is-limit {
+            color: #fff;
+            background: var(--bs-success, #198754);
+        }
+
+        .pf67-flow-complete-step-outcome.is-risk {
+            color: #111;
+            background: var(--bs-warning, #ffc107);
+        }
+
+        .pf67-flow-complete-step-outcome.is-failure {
+            color: #fff;
+            background: var(--bs-danger, #dc3545);
+        }
+
+        .pf67-flow-complete-step-outcome.is-none {
+            color: var(--bs-secondary-color);
+            background: rgba(128, 128, 128, 0.22);
+        }
+
+        .pf67-flow-complete-step-title-inline {
+            display: inline !important;
+            color: var(--bs-body-color);
+            font-weight: 500 !important;
+            font-size: 1rem;
+            line-height: 1.25;
+        }
+
+        .pf67-flow-complete-step-completed-inline {
+            display: inline !important;
+            color: var(--bs-secondary-color);
+            font-size: 0.88rem;
+            white-space: nowrap;
+            margin-left: 0.45rem;
+        }
+
+        .pf67-flow-complete-step > .pf67-flow-complete-step-title,
+        .pf67-flow-complete-step > .pf67-flow-complete-step-meta {
+            display: none !important;
+        }
+
+        .pf67-flow-complete-step {
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+        }
+
+        .pf67-flow-complete-note {
+            border: 1px solid rgba(128, 128, 128, 0.20) !important;
+            border-radius: 12px;
+            background: rgba(128, 128, 128, 0.035);
+            padding: 10px !important;
+        }
+
+        .pf67-flow-complete-empty-note {
+            display: none !important;
+        }
+
+    
+        /* PF67 Patch 013D5 Plain Summary Outcome Symbols */
+        .pf67-flow-complete-step-outcome {
+            display: inline !important;
+            width: auto !important;
+            height: auto !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            font-size: 1.02rem !important;
+            font-weight: 700 !important;
+            line-height: 1 !important;
+            transform: none !important;
+            margin-right: 0.08rem !important;
+        }
+
+        .pf67-flow-complete-step-outcome.is-limit {
+            color: var(--bs-success, #198754) !important;
+            background: transparent !important;
+        }
+
+        .pf67-flow-complete-step-outcome.is-risk {
+            color: #d68500 !important;
+            background: transparent !important;
+        }
+
+        .pf67-flow-complete-step-outcome.is-failure {
+            color: var(--bs-danger, #dc3545) !important;
+            background: transparent !important;
+        }
+
+        .pf67-flow-complete-step-outcome.is-none {
+            color: var(--bs-secondary-color) !important;
+            background: transparent !important;
+        }
+
     </style>
 
     <script>
@@ -6833,7 +7211,7 @@
     {% block content %}{% endblock %}
 
     <div class="pf67-footer">
-        PF67 · <span class="pf67-footer-rev">Test Rev 013C4 Mobile Step Focus</span>
+        PF67 · <span class="pf67-footer-rev">Test Rev 013D5 Plain Outcome Symbols</span>
         · App {{ pf67_revision }}
         · <span class="pf67-footer-loaded">Loaded <span id="pf67-loaded-stamp">...</span></span>
     </div>
@@ -10476,6 +10854,61 @@ document.addEventListener("DOMContentLoaded", function pf67Patch013C3LoadedStamp
 
 <script>
 document.addEventListener("DOMContentLoaded", function pf67Patch013C4LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013DLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013D2LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013D3LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013D4LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013D5LoadedStamp() {
     var loadedStamp = document.getElementById("pf67-loaded-stamp");
 
     if (loadedStamp) {

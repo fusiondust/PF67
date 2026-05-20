@@ -621,6 +621,164 @@ def get_step_notes(step, edit_note_id=None):
     return notes
 
 
+
+
+
+def step_completion_outcome(step):
+    completed_at = getattr(step, "completed_at", None)
+
+    if not completed_at:
+        return "none"
+
+    def datetime_from_value(value):
+        if not value:
+            return None
+
+        if hasattr(value, "year") and hasattr(value, "month") and hasattr(value, "day"):
+            return value
+
+        return None
+
+    def first_datetime_from_attrs(names):
+        for name in names:
+            value = datetime_from_value(getattr(step, name, None))
+
+            if value:
+                return value
+
+        return None
+
+    def first_minutes_from_attrs(names):
+        for name in names:
+            value = getattr(step, name, None)
+
+            if value is None or value == "":
+                continue
+
+            try:
+                return int(value)
+            except Exception:
+                continue
+
+        return None
+
+    def first_datetime_from_box(keys):
+        try:
+            box = step_timing_box(step)
+        except Exception:
+            box = None
+
+        if not isinstance(box, dict):
+            return None
+
+        for key in keys:
+            value = datetime_from_value(box.get(key))
+
+            if value:
+                return value
+
+        return None
+
+    failure_at = first_datetime_from_attrs([
+        "failure_at",
+        "fail_at",
+        "failed_at",
+        "failure_time",
+        "failure_due_at",
+        "spoiled_at",
+        "spoilage_at"
+    ]) or first_datetime_from_box([
+        "failure_at",
+        "fail_at",
+        "failure_due_at",
+        "spoiled_at",
+        "spoilage_at"
+    ])
+
+    limit_at = first_datetime_from_attrs([
+        "limit_at",
+        "risk_at",
+        "limit_time",
+        "risk_time",
+        "late_at",
+        "latest_at"
+    ]) or first_datetime_from_box([
+        "limit_at",
+        "risk_at",
+        "limit_time",
+        "risk_time",
+        "late_at",
+        "latest_at"
+    ])
+
+    if not limit_at or not failure_at:
+        anchor_at = first_datetime_from_attrs([
+            "started_at",
+            "start_at",
+            "available_at",
+            "due_at",
+            "ideal_at",
+            "scheduled_at",
+            "created_at"
+        ])
+
+        if anchor_at:
+            if not limit_at:
+                limit_minutes = first_minutes_from_attrs([
+                    "limit_minutes",
+                    "risk_minutes",
+                    "late_minutes",
+                    "latest_minutes"
+                ])
+
+                if limit_minutes is not None:
+                    limit_at = anchor_at + timedelta(minutes=limit_minutes)
+
+            if not failure_at:
+                failure_minutes = first_minutes_from_attrs([
+                    "failure_minutes",
+                    "fail_minutes",
+                    "spoilage_minutes",
+                    "detrimental_minutes"
+                ])
+
+                if failure_minutes is not None:
+                    failure_at = anchor_at + timedelta(minutes=failure_minutes)
+
+    if failure_at and completed_at >= failure_at:
+        return "failure"
+
+    if limit_at and completed_at > limit_at:
+        return "risk"
+
+    return "limit"
+
+def sync_job_completion_state(job):
+    if not job or not getattr(job, "steps", None):
+        return
+
+    completed_steps = [step for step in job.steps if step.completed_at]
+    all_steps_complete = bool(job.steps) and len(completed_steps) == len(job.steps)
+
+    if all_steps_complete:
+        completed_at = max(step.completed_at for step in completed_steps)
+        job.completed_at = completed_at
+
+        try:
+            if hasattr(job, "status"):
+                job.status = "completed"
+        except Exception:
+            pass
+    else:
+        if getattr(job, "completed_at", None):
+            job.completed_at = None
+
+        try:
+            if hasattr(job, "status") and str(job.status or "").lower() == "completed":
+                job.status = "active"
+        except Exception:
+            pass
+
 def get_default_step_id(job, edit_note_id=None):
     if edit_note_id:
         note = JobNote.query.get(edit_note_id)
@@ -628,22 +786,11 @@ def get_default_step_id(job, edit_note_id=None):
         if note and note.job_id == job.id and note.job_step_id:
             return note.job_step_id
 
-    best_step = None
-    best_rank = 999
-
     for step in job.steps:
-        status = calculate_step_status(step)
-        rank = STEP_URGENCY.get(status, 999)
-
-        if best_step is None or rank < best_rank:
-            best_step = step
-            best_rank = rank
-
-    if best_step:
-        return best_step.id
+        if not step.completed_at:
+            return step.id
 
     return None
-
 
 def build_recent_movements():
     items = []
@@ -1235,6 +1382,38 @@ def job_detail(job_id):
             "box": step_timing_box(step)
         }
 
+    all_steps_completed = bool(job.steps) and all(step.completed_at for step in job.steps)
+    pf67_013d2_synced_completion_state = False
+
+    if all_steps_completed and not getattr(job, "completed_at", None):
+        sync_job_completion_state(job)
+        pf67_013d2_synced_completion_state = True
+
+    if pf67_013d2_synced_completion_state:
+        db.session.commit()
+
+    flow_started_display = display_short_datetime(job.started_at) if job.started_at else ""
+    flow_completed_at = job.completed_at
+
+    if not flow_completed_at:
+        completed_times = [step.completed_at for step in job.steps if step.completed_at]
+
+        if completed_times:
+            flow_completed_at = max(completed_times)
+
+    flow_completed_display = display_short_datetime(flow_completed_at) if flow_completed_at else ""
+
+    flow_summary_steps = []
+
+    for step in job.steps:
+        flow_summary_steps.append({
+            "step": step,
+            "notes": step_notes.get(step.id, []),
+            "timing": step_timing.get(step.id, {}),
+            "completed_display": display_short_datetime(step.completed_at) if step.completed_at else "",
+            "completion_outcome": step_completion_outcome(step)
+        })
+
     return render_template(
         "job_detail.html",
         job=job,
@@ -1245,6 +1424,10 @@ def job_detail(job_id):
         step_timing=step_timing,
         general_note=general_note,
         edit_note_id=edit_note_id,
+        all_steps_completed=all_steps_completed,
+        flow_summary_steps=flow_summary_steps,
+        flow_started_display=flow_started_display,
+        flow_completed_display=flow_completed_display,
         now_value=datetime_local_value(datetime.utcnow()),
         now_display=display_short_datetime(datetime.utcnow())
     )
@@ -1485,6 +1668,7 @@ def complete_step(step_id):
     step = JobStep.query.get_or_404(step_id)
 
     step.completed_at = datetime.utcnow()
+    sync_job_completion_state(step.job)
 
     note_html = request.form.get("note_html", "").strip()
     note_title = request.form.get("title", "").strip()
@@ -1528,6 +1712,7 @@ def uncomplete_step(step_id):
     step = JobStep.query.get_or_404(step_id)
 
     step.completed_at = None
+    sync_job_completion_state(step.job)
 
     if step.job.status == "pending":
         step.job.status = "active"
