@@ -3,59 +3,393 @@
 {% block title %}PF67 · Flows
 
 
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch012DFlowFilters() {
+    var consoleRoot = document.querySelector("[data-pf67-flow-console]");
+    var grid = document.querySelector("[data-pf67-flow-grid]");
+    var empty = document.querySelector("[data-pf67-flow-empty]");
+    var cards = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-flow-card]"));
+
+    if (!consoleRoot || !grid || !cards.length) {
+        return;
+    }
+
+    var searchInput = document.querySelector("[data-pf67-flow-q]");
+    var resetButton = document.querySelector("[data-pf67-flow-reset]");
+    var resultCount = document.querySelector("[data-pf67-flow-filter-count]");
+    var statusChecks = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-status]"));
+    var priorityChecks = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-priority]"));
+    var visibilityRadios = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-visibility]"));
+    var sortSelect = document.querySelector("[data-pf67-flow-sort]");
+
+    function textValue(value) {
+        return String(value || "").trim().toLowerCase();
+    }
+
+    function numberValue(value, fallback) {
+        var parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    function controlByValue(controls, value) {
+        return controls.find(function(control) {
+            return control.value === value;
+        });
+    }
+
+    function checkedValues(controls, excludeAll) {
+        return controls.filter(function(control) {
+            return control.checked && !(excludeAll && control.value === "all");
+        }).map(function(control) {
+            return control.value;
+        });
+    }
+
+    function statusAllIsLogicalAll() {
+        var active = controlByValue(statusChecks, "active");
+        var scheduled = controlByValue(statusChecks, "scheduled");
+        var completed = controlByValue(statusChecks, "completed");
+
+        return Boolean(active && active.checked && scheduled && scheduled.checked && completed && completed.checked);
+    }
+
+    function selectedStatuses() {
+        var all = controlByValue(statusChecks, "all");
+
+        if ((all && all.checked) || statusAllIsLogicalAll()) {
+            return ["active", "scheduled", "completed"];
+        }
+
+        return checkedValues(statusChecks, true);
+    }
+
+    function selectedPriorities() {
+        var all = controlByValue(priorityChecks, "all");
+        var specifics = checkedValues(priorityChecks, true);
+
+        if ((all && all.checked) || specifics.length === 0) {
+            return [];
+        }
+
+        return specifics;
+    }
+
+    function selectedVisibility() {
+        var selected = visibilityRadios.find(function(control) {
+            return control.checked;
+        });
+
+        return selected ? selected.value : "all";
+    }
+
+    function labelFor(values, fallback, labels) {
+        if (!values || values.length === 0) {
+            return fallback;
+        }
+
+        return values.map(function(value) {
+            return labels[value] || value;
+        }).join(", ");
+    }
+
+    function updateSummaries() {
+        var statusValues = selectedStatuses();
+        var priorityValues = selectedPriorities();
+        var statusSummary = document.querySelector("[data-pf67-status-summary]");
+        var prioritySummary = document.querySelector("[data-pf67-priority-summary]");
+
+        if (statusSummary) {
+            if (statusValues.length === 3) {
+                statusSummary.textContent = "All Statuses";
+            } else {
+                statusSummary.textContent = labelFor(statusValues, "No Statuses", {
+                    active: "Active",
+                    scheduled: "Scheduled",
+                    completed: "Completed"
+                });
+            }
+        }
+
+        if (prioritySummary) {
+            prioritySummary.textContent = labelFor(priorityValues, "All Priorities", {
+                critical: "Critical",
+                high: "High",
+                normal: "Normal",
+                low: "Low"
+            });
+        }
+    }
+
+    function syncStatusChanged(changed) {
+        var all = controlByValue(statusChecks, "all");
+        var active = controlByValue(statusChecks, "active");
+        var scheduled = controlByValue(statusChecks, "scheduled");
+        var completed = controlByValue(statusChecks, "completed");
+
+        if (!changed) {
+            return;
+        }
+
+        if (changed.value === "all") {
+            if (changed.checked) {
+                [active, scheduled, completed].forEach(function(control) {
+                    if (control) {
+                        control.checked = true;
+                    }
+                });
+            } else {
+                if (active) {
+                    active.checked = true;
+                }
+
+                if (scheduled) {
+                    scheduled.checked = true;
+                }
+
+                if (completed) {
+                    completed.checked = false;
+                }
+            }
+        } else if (all) {
+            all.checked = statusAllIsLogicalAll();
+        }
+    }
+
+    function syncPriorityChanged(changed) {
+        var all = controlByValue(priorityChecks, "all");
+        var specifics = priorityChecks.filter(function(control) {
+            return control.value !== "all";
+        });
+
+        if (!changed || !all) {
+            return;
+        }
+
+        if (changed.value === "all") {
+            if (changed.checked) {
+                specifics.forEach(function(control) {
+                    control.checked = false;
+                });
+            } else if (!specifics.some(function(control) { return control.checked; })) {
+                all.checked = true;
+            }
+        } else {
+            if (changed.checked) {
+                all.checked = false;
+            } else if (!specifics.some(function(control) { return control.checked; })) {
+                all.checked = true;
+            }
+        }
+    }
+
+    function cardMatches(card) {
+        var query = textValue(searchInput ? searchInput.value : "");
+        var statuses = selectedStatuses();
+        var priorities = selectedPriorities();
+        var visibility = selectedVisibility();
+
+        var status = textValue(card.getAttribute("data-status"));
+        var priority = textValue(card.getAttribute("data-priority"));
+        var cardVisibility = textValue(card.getAttribute("data-visibility"));
+        var searchText = textValue(card.getAttribute("data-search") || card.textContent);
+
+        if (statuses.indexOf(status) === -1) {
+            return false;
+        }
+
+        if (visibility !== "all" && cardVisibility !== visibility) {
+            return false;
+        }
+
+        if (priorities.length && priorities.indexOf(priority) === -1) {
+            return false;
+        }
+
+        if (query && searchText.indexOf(query) === -1) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function compareCards(a, b) {
+        var sortValue = sortSelect ? sortSelect.value : "started_desc";
+
+        if (sortValue === "started_asc") {
+            return numberValue(a.getAttribute("data-started"), 0) - numberValue(b.getAttribute("data-started"), 0);
+        }
+
+        if (sortValue === "estimated") {
+            return numberValue(a.getAttribute("data-estimated"), 9999999999999) - numberValue(b.getAttribute("data-estimated"), 9999999999999);
+        }
+
+        if (sortValue === "priority") {
+            return numberValue(b.getAttribute("data-priority-rank"), 0) - numberValue(a.getAttribute("data-priority-rank"), 0);
+        }
+
+        if (sortValue === "progress") {
+            return numberValue(b.getAttribute("data-progress"), 0) - numberValue(a.getAttribute("data-progress"), 0);
+        }
+
+        if (sortValue === "name") {
+            return textValue(a.getAttribute("data-name")).localeCompare(textValue(b.getAttribute("data-name")));
+        }
+
+        return numberValue(b.getAttribute("data-started"), 0) - numberValue(a.getAttribute("data-started"), 0);
+    }
+
+    function setCount(name, value) {
+        var target = document.querySelector('[data-pf67-count="' + name + '"]');
+
+        if (target) {
+            target.textContent = String(value);
+        }
+    }
+
+    function applyFilters() {
+        var visibleCards = [];
+        var counts = {
+            active: 0,
+            scheduled: 0,
+            completed: 0,
+            public: 0,
+            private: 0
+        };
+
+        cards.sort(compareCards).forEach(function(card) {
+            grid.appendChild(card);
+        });
+
+        cards.forEach(function(card) {
+            var matches = cardMatches(card);
+
+            card.classList.toggle("pf67-flow-console-hidden", !matches);
+
+            if (!matches) {
+                return;
+            }
+
+            visibleCards.push(card);
+
+            var status = textValue(card.getAttribute("data-status"));
+            var visibility = textValue(card.getAttribute("data-visibility"));
+
+            if (Object.prototype.hasOwnProperty.call(counts, status)) {
+                counts[status] += 1;
+            }
+
+            if (visibility === "public") {
+                counts.public += 1;
+            } else if (visibility === "private") {
+                counts.private += 1;
+            }
+        });
+
+        setCount("shown", visibleCards.length);
+        setCount("active", counts.active);
+        setCount("scheduled", counts.scheduled);
+        setCount("completed", counts.completed);
+        setCount("public", counts.public);
+        setCount("private", counts.private);
+
+        if (resultCount) {
+            resultCount.textContent = String(visibleCards.length) + " of " + String(cards.length);
+        }
+
+        if (empty) {
+            empty.classList.toggle("pf67-flow-console-hidden", visibleCards.length > 0);
+            empty.style.display = visibleCards.length > 0 ? "none" : "";
+        }
+
+        updateSummaries();
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener("input", applyFilters);
+    }
+
+    if (resetButton) {
+        resetButton.addEventListener("click", function() {
+            if (searchInput) {
+                searchInput.value = "";
+            }
+
+            applyFilters();
+
+            if (searchInput) {
+                searchInput.focus();
+            }
+        });
+    }
+
+    statusChecks.forEach(function(control) {
+        control.addEventListener("change", function() {
+            syncStatusChanged(control);
+            applyFilters();
+        });
+    });
+
+    priorityChecks.forEach(function(control) {
+        control.addEventListener("change", function() {
+            syncPriorityChanged(control);
+            applyFilters();
+        });
+    });
+
+    visibilityRadios.forEach(function(control) {
+        control.addEventListener("change", applyFilters);
+    });
+
+    if (sortSelect) {
+        sortSelect.addEventListener("change", applyFilters);
+    }
+
+    applyFilters();
+});
+</script>
+
+
 {% endblock %}
 
 {% block content %}
 
 <div class="pf67-flows-console-hero">
     <div>
-        <div class="pf67-dashboard-kicker">ProtocolFlow67</div>
-        <h1>Flows</h1>
+<h2 class="mb-0">Flows</h2>
         <p class="pf67-flows-console-description">
             Track live and scheduled work created from Protocols. Counts give the quick pulse; refine the view when you need to focus on status, visibility, priority, or sequence.
         </p>
     </div>
 </div>
 
-<form class="pf67-flow-console-top-search"
-      method="get"
-      action="{{ url_for('views.pf67_patch009j_flows_console') }}">
-    <input class="form-control"
-           id="pf67-flow-q"
-           name="q"
-           type="search"
-           value="{{ filters.q if filters is defined and filters.q is defined else '' }}"
-           placeholder="Filter Flows..."
-           aria-label="Filter Flows">
-    <button class="btn btn-outline-secondary" type="submit">Filter</button>
-</form>
-
 <section class="pf67-flow-console-controls" data-pf67-flow-console>
-    <div class="pf67-flow-console-summary">
-        <span class="pf67-flow-console-pill">
-            <span>{{ total_count }}</span>
-            <span>Flows</span>
-        </span>
-        <span class="pf67-flow-console-pill">
-            <span>Active</span>
-            <span>{{ counts.active }}</span>
-        </span>
-        <span class="pf67-flow-console-pill">
-            <span>Scheduled</span>
-            <span>{{ counts.scheduled }}</span>
-        </span>
-        <span class="pf67-flow-console-pill">
-            <span>Completed</span>
-            <span>{{ counts.completed }}</span>
-        </span>
-        <span class="pf67-flow-console-pill">
-            <span>Public</span>
-            <span>{{ counts.public }}</span>
-        </span>
-        <span class="pf67-flow-console-pill">
-            <span>Private</span>
-            <span>{{ counts.private }}</span>
-        </span>
+    <div class="pf67-flow-console-search-row pf67-standard-filter-row" aria-label="Flow keyword filter">
+        <input class="form-control form-control-sm"
+               id="pf67-flow-q"
+               type="search"
+               value=""
+               placeholder="Filter Flows..."
+               aria-label="Filter Flows"
+               data-pf67-flow-q>
+        <button class="btn btn-outline-secondary btn-sm pf67-flow-filter-reset"
+                type="button"
+                data-pf67-flow-reset>Reset</button>
+        <span class="pf67-keyword-filter-count"
+              data-pf67-flow-filter-count>{{ total_count }} of {{ total_count }}</span>
+    </div>
+
+<div class="pf67-flow-console-summary">
+        <span class="pf67-flow-console-pill"><span data-pf67-count="shown">{{ total_count }}</span><span>Flows</span></span>
+        <span class="pf67-flow-console-pill"><span>Active</span><span data-pf67-count="active">{{ counts.active }}</span></span>
+        <span class="pf67-flow-console-pill"><span>Scheduled</span><span data-pf67-count="scheduled">{{ counts.scheduled }}</span></span>
+        <span class="pf67-flow-console-pill"><span>Completed</span><span data-pf67-count="completed">{{ counts.completed }}</span></span>
+        <span class="pf67-flow-console-pill"><span>Public</span><span data-pf67-count="public">{{ counts.public }}</span></span>
+        <span class="pf67-flow-console-pill"><span>Private</span><span data-pf67-count="private">{{ counts.private }}</span></span>
     </div>
 
     <details class="pf67-flow-console-refine">
@@ -64,14 +398,14 @@
         <div class="pf67-flow-console-refine-inner pf67-flow-console-refine-inner-009m">
 <div class="pf67-flow-filter-strip-009m">
                 <details class="pf67-flow-filter-menu-009m" data-pf67-filter-menu>
-                    <summary data-pf67-status-summary>Active</summary>
+                    <summary data-pf67-status-summary>Active, Scheduled</summary>
                     <div class="pf67-flow-filter-menu-body-009m">
                         <label class="pf67-flow-filter-check-009m">
                             <input type="checkbox" data-pf67-status value="active" checked>
                             <span>Active</span>
                         </label>
                         <label class="pf67-flow-filter-check-009m">
-                            <input type="checkbox" data-pf67-status value="scheduled">
+                            <input type="checkbox" data-pf67-status value="scheduled" checked>
                             <span>Scheduled</span>
                         </label>
                         <label class="pf67-flow-filter-check-009m">
@@ -140,7 +474,7 @@
 {% if flows %}
     <div class="pf67-flow-console-grid" data-pf67-flow-grid>
         {% for item in flows %}
-            <article class="pf67-flow-console-card"
+            <article class="pf67-flow-console-card{% if item.group_key == "completed" %} pf67-flow-console-hidden{% endif %}"
                      data-pf67-flow-card
                      data-status="{{ item.group_key }}"
                      data-visibility="{% if item.is_private %}private{% else %}public{% endif %}"
@@ -224,6 +558,357 @@
 
 
 
+
+
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch012DFlowFilters() {
+    var consoleRoot = document.querySelector("[data-pf67-flow-console]");
+    var grid = document.querySelector("[data-pf67-flow-grid]");
+    var empty = document.querySelector("[data-pf67-flow-empty]");
+    var cards = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-flow-card]"));
+
+    if (!consoleRoot || !grid || !cards.length) {
+        return;
+    }
+
+    var searchInput = document.querySelector("[data-pf67-flow-q]");
+    var resetButton = document.querySelector("[data-pf67-flow-reset]");
+    var resultCount = document.querySelector("[data-pf67-flow-filter-count]");
+    var statusChecks = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-status]"));
+    var priorityChecks = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-priority]"));
+    var visibilityRadios = Array.prototype.slice.call(document.querySelectorAll("[data-pf67-visibility]"));
+    var sortSelect = document.querySelector("[data-pf67-flow-sort]");
+
+    function textValue(value) {
+        return String(value || "").trim().toLowerCase();
+    }
+
+    function numberValue(value, fallback) {
+        var parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    function controlByValue(controls, value) {
+        return controls.find(function(control) {
+            return control.value === value;
+        });
+    }
+
+    function checkedValues(controls, excludeAll) {
+        return controls.filter(function(control) {
+            return control.checked && !(excludeAll && control.value === "all");
+        }).map(function(control) {
+            return control.value;
+        });
+    }
+
+    function statusAllIsLogicalAll() {
+        var active = controlByValue(statusChecks, "active");
+        var scheduled = controlByValue(statusChecks, "scheduled");
+        var completed = controlByValue(statusChecks, "completed");
+
+        return Boolean(active && active.checked && scheduled && scheduled.checked && completed && completed.checked);
+    }
+
+    function selectedStatuses() {
+        var all = controlByValue(statusChecks, "all");
+
+        if ((all && all.checked) || statusAllIsLogicalAll()) {
+            return ["active", "scheduled", "completed"];
+        }
+
+        return checkedValues(statusChecks, true);
+    }
+
+    function selectedPriorities() {
+        var all = controlByValue(priorityChecks, "all");
+        var specifics = checkedValues(priorityChecks, true);
+
+        if ((all && all.checked) || specifics.length === 0) {
+            return [];
+        }
+
+        return specifics;
+    }
+
+    function selectedVisibility() {
+        var selected = visibilityRadios.find(function(control) {
+            return control.checked;
+        });
+
+        return selected ? selected.value : "all";
+    }
+
+    function labelFor(values, fallback, labels) {
+        if (!values || values.length === 0) {
+            return fallback;
+        }
+
+        return values.map(function(value) {
+            return labels[value] || value;
+        }).join(", ");
+    }
+
+    function updateSummaries() {
+        var statusValues = selectedStatuses();
+        var priorityValues = selectedPriorities();
+        var statusSummary = document.querySelector("[data-pf67-status-summary]");
+        var prioritySummary = document.querySelector("[data-pf67-priority-summary]");
+
+        if (statusSummary) {
+            if (statusValues.length === 3) {
+                statusSummary.textContent = "All Statuses";
+            } else {
+                statusSummary.textContent = labelFor(statusValues, "No Statuses", {
+                    active: "Active",
+                    scheduled: "Scheduled",
+                    completed: "Completed"
+                });
+            }
+        }
+
+        if (prioritySummary) {
+            prioritySummary.textContent = labelFor(priorityValues, "All Priorities", {
+                critical: "Critical",
+                high: "High",
+                normal: "Normal",
+                low: "Low"
+            });
+        }
+    }
+
+    function syncStatusChanged(changed) {
+        var all = controlByValue(statusChecks, "all");
+        var active = controlByValue(statusChecks, "active");
+        var scheduled = controlByValue(statusChecks, "scheduled");
+        var completed = controlByValue(statusChecks, "completed");
+
+        if (!changed) {
+            return;
+        }
+
+        if (changed.value === "all") {
+            if (changed.checked) {
+                [active, scheduled, completed].forEach(function(control) {
+                    if (control) {
+                        control.checked = true;
+                    }
+                });
+            } else {
+                if (active) {
+                    active.checked = true;
+                }
+
+                if (scheduled) {
+                    scheduled.checked = true;
+                }
+
+                if (completed) {
+                    completed.checked = false;
+                }
+            }
+        } else if (all) {
+            all.checked = statusAllIsLogicalAll();
+        }
+    }
+
+    function syncPriorityChanged(changed) {
+        var all = controlByValue(priorityChecks, "all");
+        var specifics = priorityChecks.filter(function(control) {
+            return control.value !== "all";
+        });
+
+        if (!changed || !all) {
+            return;
+        }
+
+        if (changed.value === "all") {
+            if (changed.checked) {
+                specifics.forEach(function(control) {
+                    control.checked = false;
+                });
+            } else if (!specifics.some(function(control) { return control.checked; })) {
+                all.checked = true;
+            }
+        } else {
+            if (changed.checked) {
+                all.checked = false;
+            } else if (!specifics.some(function(control) { return control.checked; })) {
+                all.checked = true;
+            }
+        }
+    }
+
+    function cardMatches(card) {
+        var query = textValue(searchInput ? searchInput.value : "");
+        var statuses = selectedStatuses();
+        var priorities = selectedPriorities();
+        var visibility = selectedVisibility();
+
+        var status = textValue(card.getAttribute("data-status"));
+        var priority = textValue(card.getAttribute("data-priority"));
+        var cardVisibility = textValue(card.getAttribute("data-visibility"));
+        var searchText = textValue(card.getAttribute("data-search") || card.textContent);
+
+        if (statuses.indexOf(status) === -1) {
+            return false;
+        }
+
+        if (visibility !== "all" && cardVisibility !== visibility) {
+            return false;
+        }
+
+        if (priorities.length && priorities.indexOf(priority) === -1) {
+            return false;
+        }
+
+        if (query && searchText.indexOf(query) === -1) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function compareCards(a, b) {
+        var sortValue = sortSelect ? sortSelect.value : "started_desc";
+
+        if (sortValue === "started_asc") {
+            return numberValue(a.getAttribute("data-started"), 0) - numberValue(b.getAttribute("data-started"), 0);
+        }
+
+        if (sortValue === "estimated") {
+            return numberValue(a.getAttribute("data-estimated"), 9999999999999) - numberValue(b.getAttribute("data-estimated"), 9999999999999);
+        }
+
+        if (sortValue === "priority") {
+            return numberValue(b.getAttribute("data-priority-rank"), 0) - numberValue(a.getAttribute("data-priority-rank"), 0);
+        }
+
+        if (sortValue === "progress") {
+            return numberValue(b.getAttribute("data-progress"), 0) - numberValue(a.getAttribute("data-progress"), 0);
+        }
+
+        if (sortValue === "name") {
+            return textValue(a.getAttribute("data-name")).localeCompare(textValue(b.getAttribute("data-name")));
+        }
+
+        return numberValue(b.getAttribute("data-started"), 0) - numberValue(a.getAttribute("data-started"), 0);
+    }
+
+    function setCount(name, value) {
+        var target = document.querySelector('[data-pf67-count="' + name + '"]');
+
+        if (target) {
+            target.textContent = String(value);
+        }
+    }
+
+    function applyFilters() {
+        var visibleCards = [];
+        var counts = {
+            active: 0,
+            scheduled: 0,
+            completed: 0,
+            public: 0,
+            private: 0
+        };
+
+        cards.sort(compareCards).forEach(function(card) {
+            grid.appendChild(card);
+        });
+
+        cards.forEach(function(card) {
+            var matches = cardMatches(card);
+
+            card.classList.toggle("pf67-flow-console-hidden", !matches);
+
+            if (!matches) {
+                return;
+            }
+
+            visibleCards.push(card);
+
+            var status = textValue(card.getAttribute("data-status"));
+            var visibility = textValue(card.getAttribute("data-visibility"));
+
+            if (Object.prototype.hasOwnProperty.call(counts, status)) {
+                counts[status] += 1;
+            }
+
+            if (visibility === "public") {
+                counts.public += 1;
+            } else if (visibility === "private") {
+                counts.private += 1;
+            }
+        });
+
+        setCount("shown", visibleCards.length);
+        setCount("active", counts.active);
+        setCount("scheduled", counts.scheduled);
+        setCount("completed", counts.completed);
+        setCount("public", counts.public);
+        setCount("private", counts.private);
+
+        if (resultCount) {
+            resultCount.textContent = String(visibleCards.length) + " of " + String(cards.length);
+        }
+
+        if (empty) {
+            empty.classList.toggle("pf67-flow-console-hidden", visibleCards.length > 0);
+            empty.style.display = visibleCards.length > 0 ? "none" : "";
+        }
+
+        updateSummaries();
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener("input", applyFilters);
+    }
+
+    if (resetButton) {
+        resetButton.addEventListener("click", function() {
+            if (searchInput) {
+                searchInput.value = "";
+            }
+
+            applyFilters();
+
+            if (searchInput) {
+                searchInput.focus();
+            }
+        });
+    }
+
+    statusChecks.forEach(function(control) {
+        control.addEventListener("change", function() {
+            syncStatusChanged(control);
+            applyFilters();
+        });
+    });
+
+    priorityChecks.forEach(function(control) {
+        control.addEventListener("change", function() {
+            syncPriorityChanged(control);
+            applyFilters();
+        });
+    });
+
+    visibilityRadios.forEach(function(control) {
+        control.addEventListener("change", applyFilters);
+    });
+
+    if (sortSelect) {
+        sortSelect.addEventListener("change", applyFilters);
+    }
+
+    applyFilters();
+});
+</script>
 
 
 {% endblock %}

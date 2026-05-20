@@ -6213,6 +6213,515 @@
             white-space: nowrap;
         }
 
+    
+        /* PF67 Patch 012C Filter Layout Standardization */
+        .pf67-flow-console-controls {
+            border: 0 !important;
+            background: transparent !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            margin-bottom: 18px;
+        }
+
+        .pf67-flow-console-search-row,
+        .pf67-flow-console-top-search,
+        .pf67-keyword-filter-wrap {
+            max-width: 760px;
+            margin: 10px 0 10px 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        .pf67-flow-console-search-row .form-control,
+        .pf67-flow-console-top-search .form-control,
+        .pf67-keyword-filter-wrap .form-control {
+            width: 100%;
+        }
+
+        .pf67-keyword-filter-wrap {
+            display: grid !important;
+            grid-template-columns: minmax(260px, 1fr) auto auto;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pf67-keyword-filter-wrap input {
+            min-width: 0;
+        }
+
+        .pf67-flow-console-summary {
+            margin-top: 0 !important;
+        }
+
+        .pf67-flow-console-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 560px) {
+            .pf67-keyword-filter-wrap {
+                grid-template-columns: 1fr auto;
+            }
+
+            .pf67-keyword-filter-count {
+                grid-column: 1 / -1;
+            }
+        }
+
+    
+        /* PF67 Patch 012D Page Title and Filter Visual Standardization */
+        :root {
+            --pf67-standard-filter-width: 380px;
+}
+
+.pf67-flow-console-search-row,
+        .pf67-flow-console-top-search,
+        .pf67-keyword-filter-wrap {
+            max-width: var(--pf67-standard-filter-width) !important;
+            width: 100%;
+            margin: 10px 0 10px 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        .pf67-flow-console-search-row,
+        .pf67-keyword-filter-wrap {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pf67-flow-console-search-row .form-control,
+        .pf67-flow-console-top-search .form-control,
+        .pf67-keyword-filter-wrap .form-control,
+        .pf67-keyword-filter-wrap input {
+            height: calc(1.5em + 0.5rem + 2px) !important;
+            min-height: calc(1.5em + 0.5rem + 2px) !important;
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.875rem !important;
+            line-height: 1.5 !important;
+        }
+
+        .pf67-flow-filter-reset,
+        .pf67-keyword-filter-reset {
+            white-space: nowrap;
+        }
+
+        .pf67-keyword-filter-count {
+            color: var(--bs-secondary-color);
+            font-size: 0.88rem;
+            white-space: nowrap;
+        }
+
+        .pf67-flow-console-controls {
+            border: 0 !important;
+            background: transparent !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+        }
+
+        @media (max-width: 560px) {
+            .pf67-flow-console-search-row,
+            .pf67-keyword-filter-wrap {
+                max-width: 100% !important;
+                grid-template-columns: 1fr auto;
+            }
+
+            .pf67-keyword-filter-count {
+                grid-column: 1 / -1;
+            }
+        }
+
+    
+
+
+        /* PF67 Patch 013A3 Mini Timeline Script Placement Repair */
+        .pf67-job-mini-timeline-wrap {
+            height: 45px;
+            width: 100%;
+            margin: 6px 0 14px 0;
+            border: 1px solid rgba(128, 128, 128, 0.22);
+            border-radius: 12px;
+            background: rgba(128, 128, 128, 0.06);
+            overflow: hidden;
+        }
+
+        .pf67-job-mini-timeline-stage {
+            height: 45px;
+            width: 100%;
+            cursor: default;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .pf67-job-mini-timeline-svg {
+            display: block;
+        }
+
+        .pf67-job-mini-timeline-line {
+            stroke: rgba(128, 128, 128, 0.42);
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+
+        .pf67-job-mini-timeline-tick {
+            stroke: rgba(128, 128, 128, 0.42);
+            stroke-width: 1.25;
+            stroke-linecap: round;
+        }
+
+        .pf67-job-mini-timeline-dot {
+            fill: rgba(128, 128, 128, 0.50);
+            stroke: rgba(128, 128, 128, 0.80);
+            stroke-width: 1.5;
+        }
+
+        .pf67-job-mini-timeline-marker {
+            cursor: pointer;
+            outline: none;
+        }
+
+        .pf67-job-mini-timeline-marker.is-complete .pf67-job-mini-timeline-dot {
+            fill: var(--bs-success, #198754);
+            stroke: var(--bs-success, #198754);
+            opacity: 0.92;
+        }
+
+        .pf67-job-mini-timeline-marker.is-active .pf67-job-mini-timeline-dot {
+            fill: var(--bs-primary, #0d6efd);
+            stroke: var(--bs-primary, #0d6efd);
+            stroke-width: 2;
+            opacity: 1;
+        }
+
+        .pf67-job-mini-timeline-marker.is-active .pf67-job-mini-timeline-tick {
+            stroke: var(--bs-primary, #0d6efd);
+            stroke-width: 1.75;
+        }
+
+        .pf67-job-mini-timeline-marker:hover .pf67-job-mini-timeline-dot,
+        .pf67-job-mini-timeline-marker:focus .pf67-job-mini-timeline-dot {
+            filter: brightness(1.08);
+        }
+
+    
+
+
+
+        /* PF67 Patch 013B4 Native Page Scroll Rails and Larger Timeline Dots */
+        :root {
+            --pf67-job-side-rail-width: 350px;
+            --pf67-job-step-row-height: 95px;
+        }
+
+        .pf67-job-detail-page-row {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: flex-start !important;
+        }
+
+        .pf67-job-detail-content-area {
+            order: 1 !important;
+            min-width: 0 !important;
+        }
+
+        .pf67-job-detail-story-column {
+            order: 2 !important;
+            min-width: 0 !important;
+        }
+
+        @media (min-width: 1200px) {
+            .pf67-job-detail-content-area {
+                flex: 1 1 calc(100% - var(--pf67-job-side-rail-width) - var(--bs-gutter-x, 1.5rem)) !important;
+                width: auto !important;
+                max-width: calc(100% - var(--pf67-job-side-rail-width) - var(--bs-gutter-x, 1.5rem)) !important;
+            }
+
+            .pf67-job-detail-story-column {
+                flex: 0 0 var(--pf67-job-side-rail-width) !important;
+                width: var(--pf67-job-side-rail-width) !important;
+                max-width: var(--pf67-job-side-rail-width) !important;
+            }
+        }
+
+        @media (max-width: 1199.98px) {
+            .pf67-job-detail-content-area,
+            .pf67-job-detail-story-column {
+                flex: 1 1 100% !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+        }
+
+        .pf67-job-detail-workspace-row {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            align-items: flex-start !important;
+            gap: var(--bs-gutter-x, 1.5rem);
+        }
+
+        .pf67-job-detail-steps-column {
+            flex: 0 0 var(--pf67-job-side-rail-width) !important;
+            width: var(--pf67-job-side-rail-width) !important;
+            max-width: var(--pf67-job-side-rail-width) !important;
+            min-width: var(--pf67-job-side-rail-width) !important;
+            overflow-x: hidden !important;
+            overflow-y: visible !important;
+        }
+
+        .pf67-job-detail-main-column {
+            flex: 1 1 auto !important;
+            width: auto !important;
+            max-width: none !important;
+            min-width: min(620px, 100%) !important;
+        }
+
+        @media (max-width: 880px) {
+            .pf67-job-detail-workspace-row {
+                flex-wrap: wrap !important;
+            }
+
+            .pf67-job-detail-steps-column,
+            .pf67-job-detail-main-column {
+                flex: 1 1 100% !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+            }
+        }
+
+        .pf67-job-detail-steps-column .list-group,
+        .pf67-job-detail-steps-column .nav,
+        .pf67-job-detail-steps-column .pf67-step-list,
+        .pf67-job-detail-steps-column .pf67-steps-list,
+        .pf67-job-detail-steps-column [data-pf67-step-list] {
+            columns: 1 !important;
+            column-count: 1 !important;
+            column-width: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            flex-wrap: nowrap !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+            align-items: stretch !important;
+            width: 100% !important;
+            height: auto !important;
+            max-height: none !important;
+            min-height: 0 !important;
+            overflow-y: visible !important;
+            overflow-x: hidden !important;
+            padding-right: 0 !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-button,
+        .pf67-job-detail-steps-column [data-pf67-step-id],
+        .pf67-job-detail-steps-column .list-group-item,
+        .pf67-job-detail-steps-column .nav-link {
+            box-sizing: border-box !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: var(--pf67-job-step-row-height) !important;
+            min-height: var(--pf67-job-step-row-height) !important;
+            max-height: var(--pf67-job-step-row-height) !important;
+            flex: 0 0 var(--pf67-job-step-row-height) !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-button {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: stretch !important;
+            gap: 3px !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-title,
+        .pf67-job-detail-steps-column .pf67-step-button-title,
+        .pf67-job-detail-steps-column [data-pf67-step-title] {
+            display: block !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            line-height: 1.22 !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-time,
+        .pf67-job-detail-steps-column .pf67-step-subtitle,
+        .pf67-job-detail-steps-column .pf67-small,
+        .pf67-job-detail-steps-column small {
+            display: block !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            line-height: 1.18 !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-button > *,
+        .pf67-job-detail-steps-column [data-pf67-step-id] > * {
+            min-width: 0;
+            max-width: 100%;
+            flex: 0 0 auto;
+        }
+
+        .pf67-job-detail-story-column {
+            overflow-x: hidden !important;
+            overflow-y: visible !important;
+        }
+
+        .pf67-job-detail-story-column .sticky-xl-top {
+            position: static !important;
+            top: auto !important;
+        }
+
+        .pf67-job-detail-story-column .pf67-timeline,
+        .pf67-job-detail-story-column .pf67-timeline-list,
+        .pf67-job-detail-story-column .pf67-story-list,
+        .pf67-job-detail-story-column .pf67-project-story-list,
+        .pf67-job-detail-story-column .pf67-activity-list,
+        .pf67-job-detail-story-column .list-group,
+        .pf67-job-detail-story-column [data-pf67-story-list],
+        .pf67-job-detail-story-column [data-pf67-timeline-list] {
+            height: auto !important;
+            max-height: none !important;
+            min-height: 0 !important;
+            overflow-y: visible !important;
+            overflow-x: hidden !important;
+        }
+
+        .pf67-job-detail-story-column .pf67-timeline-item,
+        .pf67-job-detail-story-column .list-group-item {
+            flex: 0 0 auto !important;
+            min-height: 86px !important;
+            height: auto !important;
+            overflow-x: hidden !important;
+        }
+
+        .pf67-job-detail-main-column {
+            min-width: 0 !important;
+        }
+
+        .pf67-job-detail-main-column img,
+        .pf67-job-detail-main-column video,
+        .pf67-job-detail-main-column iframe {
+            max-width: 100%;
+        }
+
+        .pf67-job-mini-timeline-marker {
+            pointer-events: bounding-box;
+        }
+
+    
+        /* PF67 Patch 013C Step List Title Split and Meta Line */
+        .pf67-job-detail-steps-column .pf67-step-button {
+            justify-content: center !important;
+            gap: 4px !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-title {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            line-height: 1.18 !important;
+            max-height: 2.42em !important;
+            overflow: hidden !important;
+            white-space: normal !important;
+            text-overflow: clip !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-title-line {
+            max-width: 100% !important;
+            min-width: 0 !important;
+            line-height: 1.18 !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-title-line.is-split {
+            display: block !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-title-line.is-unsplit {
+            display: -webkit-box !important;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            white-space: normal !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-meta-line {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.85rem !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            line-height: 1.15 !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-meta-line .pf67-small,
+        .pf67-job-detail-steps-column .pf67-step-meta-line .pf67-step-time {
+            display: inline-block !important;
+            flex: 0 1 auto !important;
+            min-width: 0 !important;
+            max-width: 50% !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            line-height: 1.15 !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-context-watermark {
+            pointer-events: none;
+        }
+
+    
+        /* PF67 Patch 013C2 Step List Title Divider */
+        .pf67-job-detail-steps-column .pf67-step-button {
+            gap: 0 !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-title-divider {
+            display: block !important;
+            width: 100% !important;
+            height: 1px !important;
+            min-height: 1px !important;
+            max-height: 1px !important;
+            margin: 2px 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            border-top: 1px solid rgba(128, 128, 128, 0.26) !important;
+            flex: 0 0 1px !important;
+            overflow: hidden !important;
+        }
+
+        .pf67-job-detail-steps-column .pf67-step-meta-line {
+            margin-top: 0 !important;
+        }
+
+    
+        /* PF67 Patch 013C3 Step Divider Spacing Tweak */
+        .pf67-job-detail-steps-column .pf67-step-title-divider {
+            margin: 3px 0 1px 0 !important;
+        }
+
     </style>
 
     <script>
@@ -6324,7 +6833,7 @@
     {% block content %}{% endblock %}
 
     <div class="pf67-footer">
-        PF67 · <span class="pf67-footer-rev">Test Rev 012A8 Flow JS Removal</span>
+        PF67 · <span class="pf67-footer-rev">Test Rev 013C4 Mobile Step Focus</span>
         · App {{ pf67_revision }}
         · <span class="pf67-footer-loaded">Loaded <span id="pf67-loaded-stamp">...</span></span>
     </div>
@@ -9116,8 +9625,75 @@ document.addEventListener("DOMContentLoaded", function pf67Patch011CD3StableKeyw
         return best;
     }
 
+
+    function findTemplateCategoryFilterAnchor() {
+        var candidates = Array.prototype.slice.call(document.querySelectorAll(
+            "[data-pf67-category-filter], " +
+            ".pf67-category-filter, " +
+            ".pf67-protocol-category-filter, " +
+            ".pf67-category-strip, " +
+            ".pf67-category-buttons, " +
+            ".pf67-category-row, " +
+            ".pf67-protocol-category-row, " +
+            ".pf67-template-category-row, " +
+            ".pf67-filter-categories, " +
+            "section, div"
+        ));
+
+        var best = null;
+        var bestScore = -1;
+
+        candidates.forEach(function(node) {
+            if (!node || node.classList.contains("pf67-keyword-filter-wrap")) {
+                return;
+            }
+
+            var text = textOf(node).toLowerCase();
+            var className = String(node.className || "").toLowerCase();
+            var score = 0;
+
+            if (className.indexOf("category") !== -1) {
+                score += 8;
+            }
+
+            if (text.indexOf("category") !== -1 || text.indexOf("categories") !== -1) {
+                score += 8;
+            }
+
+            if (node.querySelector("a, button, input, label")) {
+                score += 3;
+            }
+
+            var rect = node.getBoundingClientRect ? node.getBoundingClientRect() : { top: 9999 };
+
+            if (rect.top < 650) {
+                score += 2;
+            }
+
+            if (text.length > 500) {
+                score -= 4;
+            }
+
+            if (score > bestScore) {
+                best = node;
+                bestScore = score;
+            }
+        });
+
+        return bestScore >= 8 ? best : null;
+    }
+
     function insertPoint(kind) {
         if (kind === "templates") {
+            var categoryAnchor = findTemplateCategoryFilterAnchor();
+
+            if (categoryAnchor && categoryAnchor.parentElement) {
+                return {
+                    parent: categoryAnchor.parentElement,
+                    before: categoryAnchor
+                };
+            }
+
             var toggle = findProtocolProcedureToggle();
 
             if (toggle && toggle.parentElement) {
@@ -9309,7 +9885,9 @@ document.addEventListener("DOMContentLoaded", function pf67Patch011CD3StableKeyw
 
         var point = insertPoint(kind);
 
-        if (point.after && point.after.nextSibling) {
+        if (point.before && point.before.parentElement) {
+            point.parent.insertBefore(wrap, point.before);
+        } else if (point.after && point.after.nextSibling) {
             point.parent.insertBefore(wrap, point.after.nextSibling);
         } else if (point.after) {
             point.parent.appendChild(wrap);
@@ -9744,6 +10322,160 @@ document.addEventListener("DOMContentLoaded", function pf67Patch012A4LoadedStamp
 
 <script>
 document.addEventListener("DOMContentLoaded", function pf67Patch012A8LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch012CLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch012DLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch012D2LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013ALoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013A2LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013A3LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013BLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013B2LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013B3LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013B4LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013CLoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013C2LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013C3LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013C4LoadedStamp() {
     var loadedStamp = document.getElementById("pf67-loaded-stamp");
 
     if (loadedStamp) {

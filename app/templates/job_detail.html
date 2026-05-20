@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}PF67 · Flow{% endblock %}
+{% block title %}PF67 · Flow
+
+
+
+{% endblock %}
 
 {% block content %}
 
-<div class="row">
-    <div class="col-xl-9">
+<div class="row pf67-job-detail-page-row">
+    <div class="col-xl-9 pf67-job-detail-content-area">
         <div class="mb-3 d-flex justify-content-between align-items-start gap-3">
             <div>
                 <h2 class="mb-1">{{ job.name }}</h2>
@@ -82,6 +86,14 @@
             {% endif %}
         </div>
 
+        <div class="pf67-job-mini-timeline-wrap"
+             data-pf67-mini-timeline
+             aria-label="Flow step timeline">
+            <div class="pf67-job-mini-timeline-stage"
+                 data-pf67-mini-timeline-stage
+                 title="Click a marker to select a step."></div>
+        </div>
+
         {% if can_edit %}
             <div class="collapse mb-3" id="general-note-panel">
                 <div class="border rounded p-3">
@@ -124,8 +136,8 @@
             </div>
         {% endif %}
 
-        <div class="row">
-            <div class="col-md-4">
+        <div class="row pf67-job-detail-workspace-row">
+            <div class="col-md-4 pf67-job-detail-steps-column">
                 <div class="nav flex-column nav-pills pf67-step-list" id="step-tabs" role="tablist">
                     {% for step in pf67_patch011a_ordered_flow_steps(job.steps) %}
                         {% set timing = step_timing.get(step.id) %}
@@ -139,13 +151,24 @@
                             type="button"
                             role="tab"
                             data-pf67-step-id="{{ step.id }}" data-pf67-step-completed="{% if step.completed_at %}1{% else %}0{% endif %}" title="Right-click for actions">
-                            <span class="pf67-step-title">{{ step.name }}</span>
-                            <span class="pf67-small">{{ timing.status_label if timing else "" }}</span>
-                            {% if timing and timing.compact_label %}
-                                <span class="pf67-step-time" title="{{ timing.compact_title }}">
-                                    {{ timing.compact_label }}
-                                </span>
-                            {% endif %}
+                                                        {% set step_nav_title_parts = (step.name or "").split(" - ", 1) %}
+                            <span class="pf67-step-title" title="{{ step.name }}">
+                                {% if step_nav_title_parts|length > 1 %}
+                                    <span class="pf67-step-title-line is-split">{{ step_nav_title_parts[0] }}</span>
+                                    <span class="pf67-step-title-line is-split">{{ step_nav_title_parts[1] }}</span>
+                                {% else %}
+                                    <span class="pf67-step-title-line is-unsplit">{{ step.name }}</span>
+                                {% endif %}
+                            </span>
+                            <span class="pf67-step-title-divider" aria-hidden="true"></span>
+                            <span class="pf67-step-meta-line">
+                                <span class="pf67-small">{{ timing.status_label if timing else "" }}</span>
+                                {% if timing and timing.compact_label %}
+                                    <span class="pf67-step-time" title="{{ timing.compact_title }}">
+                                        {{ timing.compact_label }}
+                                    </span>
+                                {% endif %}
+                            </span>
                             {% if step.context_tag %}
                                 <span class="pf67-step-context-watermark">{{ step.context_tag }}</span>
                             {% endif %}
@@ -154,7 +177,7 @@
                 </div>
             </div>
 
-            <div class="col-md-8">
+            <div class="col-md-8 pf67-job-detail-main-column">
                 <div class="tab-content">
                     {% for step in pf67_patch011a_ordered_flow_steps(job.steps) %}
                         {% set timing = step_timing.get(step.id) %}
@@ -407,7 +430,7 @@
         </div>
     </div>
 
-    <div class="col-xl-3">
+    <div class="col-xl-3 pf67-job-detail-story-column">
         <div class="sticky-xl-top" style="top: 70px;">
             <h3 class="h5">Timeline / Project Story</h3>
 
@@ -445,6 +468,10 @@
         </div>
     </div>
 </div>
+
+
+
+
 
 {% if can_edit %}
 
@@ -1452,5 +1479,295 @@ document.addEventListener("DOMContentLoaded", function pf67Patch011B5FlowHeaderA
 </script>
 
 {% endif %}
+
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013B4MiniStepTimeline() {
+    var wrap = document.querySelector("[data-pf67-mini-timeline]");
+    var stage = document.querySelector("[data-pf67-mini-timeline-stage]");
+    var stepButtons = Array.prototype.slice.call(document.querySelectorAll(".pf67-step-button[data-pf67-step-id]"));
+
+    if (!wrap || !stage || stepButtons.length === 0) {
+        return;
+    }
+
+    var svgNS = "http://www.w3.org/2000/svg";
+
+    function textOf(node) {
+        return (node && node.textContent ? node.textContent : "").replace(/\s+/g, " ").trim();
+    }
+
+    function stepIsCompleted(button) {
+        if (button.getAttribute("data-pf67-step-completed") === "1") {
+            return true;
+        }
+
+        var text = textOf(button).toLowerCase();
+
+        return button.classList.contains("is-complete") ||
+               button.classList.contains("completed") ||
+               text.indexOf("completed") !== -1 ||
+               text.indexOf("complete") !== -1 && text.indexOf("uncomplete") === -1;
+    }
+
+    function stepIsActive(button) {
+        return button.classList.contains("active") ||
+               button.getAttribute("aria-selected") === "true" ||
+               button.getAttribute("aria-current") === "true";
+    }
+
+    function items() {
+        return stepButtons.map(function(button, index) {
+            var title = textOf(button.querySelector(".pf67-step-title")) || textOf(button).split("Due")[0] || ("Step " + (index + 1));
+            var timing = textOf(button.querySelector(".pf67-step-time")) || textOf(button.querySelector(".pf67-small")) || "";
+
+            return {
+                button: button,
+                index: index,
+                title: title,
+                timing: timing,
+                completed: stepIsCompleted(button),
+                active: stepIsActive(button)
+            };
+        });
+    }
+
+    function createSvgElement(name) {
+        return document.createElementNS(svgNS, name);
+    }
+
+    function setAttributes(node, attrs) {
+        Object.keys(attrs).forEach(function(key) {
+            node.setAttribute(key, attrs[key]);
+        });
+    }
+
+    function xForIndex(index, count, width) {
+        if (count <= 1) {
+            return width / 2;
+        }
+
+        return 14 + (index * ((width - 28) / (count - 1)));
+    }
+
+    function render() {
+        var data = items();
+        var width = Math.max(260, Math.floor(stage.clientWidth || wrap.clientWidth || 260));
+        var height = 45;
+        var midY = 22;
+
+        stage.innerHTML = "";
+
+        var svg = createSvgElement("svg");
+        setAttributes(svg, {
+            class: "pf67-job-mini-timeline-svg",
+            viewBox: "0 0 " + width + " " + height,
+            width: "100%",
+            height: String(height),
+            role: "img",
+            "aria-label": "Flow step timeline"
+        });
+
+        var baseline = createSvgElement("line");
+        setAttributes(baseline, {
+            class: "pf67-job-mini-timeline-line",
+            x1: String(xForIndex(0, data.length, width)),
+            y1: String(midY),
+            x2: String(xForIndex(data.length - 1, data.length, width)),
+            y2: String(midY)
+        });
+        svg.appendChild(baseline);
+
+        data.forEach(function(item) {
+            var x = xForIndex(item.index, data.length, width);
+            var group = createSvgElement("g");
+            var classes = ["pf67-job-mini-timeline-marker"];
+
+            if (item.completed) {
+                classes.push("is-complete");
+            }
+
+            if (item.active) {
+                classes.push("is-active");
+            }
+
+            setAttributes(group, {
+                class: classes.join(" "),
+                transform: "translate(" + x + " " + midY + ")",
+                tabindex: "0",
+                role: "button",
+                "aria-label": item.title
+            });
+
+            var hit = createSvgElement("circle");
+            setAttributes(hit, {
+                class: "pf67-job-mini-timeline-hit",
+                cx: "0",
+                cy: "0",
+                r: "14",
+                fill: "transparent"
+            });
+            group.appendChild(hit);
+
+            var tick = createSvgElement("line");
+            setAttributes(tick, {
+                class: "pf67-job-mini-timeline-tick",
+                x1: "0",
+                y1: "-11",
+                x2: "0",
+                y2: "11"
+            });
+            group.appendChild(tick);
+
+            var circle = createSvgElement("circle");
+            setAttributes(circle, {
+                class: "pf67-job-mini-timeline-dot",
+                cx: "0",
+                cy: "0",
+                r: item.active ? "11" : "8"
+            });
+            group.appendChild(circle);
+
+            var title = createSvgElement("title");
+            title.textContent = item.title + (item.timing ? " · " + item.timing : "");
+            group.appendChild(title);
+
+            group.addEventListener("click", function(event) {
+                event.preventDefault();
+                item.button.click();
+                window.setTimeout(render, 80);
+            });
+
+            group.addEventListener("keydown", function(event) {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    item.button.click();
+                    window.setTimeout(render, 80);
+                }
+            });
+
+            svg.appendChild(group);
+        });
+
+        stage.appendChild(svg);
+    }
+
+    stepButtons.forEach(function(button) {
+        button.addEventListener("click", function() {
+            window.setTimeout(render, 80);
+        });
+
+        button.addEventListener("shown.bs.tab", function() {
+            window.setTimeout(render, 80);
+        });
+    });
+
+    if (window.ResizeObserver) {
+        var observer = new ResizeObserver(function() {
+            render();
+        });
+
+        observer.observe(stage);
+    } else {
+        window.addEventListener("resize", render);
+    }
+
+    render();
+});
+</script>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch013C4MobileStepFocus() {
+    var stepButtons = Array.prototype.slice.call(document.querySelectorAll(".pf67-step-button[data-pf67-step-id]"));
+    var mainColumn = document.querySelector(".pf67-job-detail-main-column");
+
+    if (!stepButtons.length || !mainColumn) {
+        return;
+    }
+
+    function isMobileLayout() {
+        return window.matchMedia && window.matchMedia("(max-width: 880px)").matches;
+    }
+
+    function targetFromButton(button) {
+        var selector = button.getAttribute("data-bs-target") ||
+                       button.getAttribute("data-target") ||
+                       button.getAttribute("href");
+
+        if (selector && selector.charAt(0) === "#") {
+            try {
+                var target = document.querySelector(selector);
+
+                if (target) {
+                    return target;
+                }
+            } catch (error) {}
+        }
+
+        var activePane = mainColumn.querySelector(".tab-pane.active.show") ||
+                         mainColumn.querySelector(".tab-pane.active") ||
+                         mainColumn.querySelector(".active[data-pf67-step-pane]") ||
+                         mainColumn.querySelector("[data-pf67-step-pane].active");
+
+        return activePane || mainColumn;
+    }
+
+    function focusAndScrollToStep(button) {
+        if (!isMobileLayout()) {
+            return;
+        }
+
+        window.setTimeout(function() {
+            var target = targetFromButton(button);
+            var scrollTarget = mainColumn;
+
+            if (target && target !== mainColumn) {
+                scrollTarget = target.closest(".pf67-job-detail-main-column") || mainColumn;
+            }
+
+            if (!scrollTarget) {
+                return;
+            }
+
+            if (!scrollTarget.hasAttribute("tabindex")) {
+                scrollTarget.setAttribute("tabindex", "-1");
+            }
+
+            try {
+                scrollTarget.focus({ preventScroll: true });
+            } catch (error) {
+                try {
+                    scrollTarget.focus();
+                } catch (innerError) {}
+            }
+
+            var headerOffset = 72;
+            var top = scrollTarget.getBoundingClientRect().top + window.pageYOffset - headerOffset;
+
+            window.scrollTo({
+                top: Math.max(0, top),
+                behavior: "smooth"
+            });
+        }, 150);
+    }
+
+    stepButtons.forEach(function(button) {
+        button.addEventListener("click", function() {
+            focusAndScrollToStep(button);
+        });
+
+        button.addEventListener("shown.bs.tab", function() {
+            focusAndScrollToStep(button);
+        });
+    });
+});
+</script>
+
 
 {% endblock %}
