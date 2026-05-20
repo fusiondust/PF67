@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}PF67{% endblock %} - ProtocolFlow</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <nav>
         <ul>
-            <li><a href="{{ url_for('main.dashboard') }}" {% if request.endpoint == 'main.dashboard' %}class="active"{% endif %}>Dashboard</a></li>
-            <li><a href="{{ url_for('main.protocols') }}" {% if 'protocol' in request.endpoint %}class="active"{% endif %}>Protocols</a></li>
-            <li><a href="{{ url_for('main.flows') }}" {% if 'flow' in request.endpoint %}class="active"{% endif %}>Flows</a></li>
+            <li><a href="{{ url_for('views.dashboard') }}" {% if request.endpoint == 'views.dashboard' %}class="active"{% endif %}>Dashboard</a></li>
+            <li><a href="{{ url_for('views.protocols') }}" {% if request.endpoint and 'protocol' in request.endpoint %}class="active"{% endif %}>Protocols</a></li>
+            <li><a href="{{ url_for('views.flows') }}" {% if request.endpoint and 'flow' in request.endpoint %}class="active"{% endif %}>Flows</a></li>
         </ul>
     </nav>
     

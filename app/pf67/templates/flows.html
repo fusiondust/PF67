@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-header">
     <h1>Flows</h1>
-    <a href="{{ url_for('main.create_flow') }}" class="btn btn-primary">+ New Flow</a>
+    <a href="{{ url_for('views.create_flow') }}" class="btn btn-primary">+ New Flow</a>
 </div>
 
 <div class="filter-bar">
@@ -24,14 +24,19 @@
     <tbody>
         {% for flow in flows %}
         <tr>
-            <td><a href="{{ url_for('main.view_flow', flow_id=flow.id) }}">{{ flow.name }}</a></td>
+            <td><a href="{{ url_for('views.flow_detail', flow_id=flow.id) }}">{{ flow.name }}</a></td>
             <td>{{ flow.protocol.name if flow.protocol else '-' }}</td>
             <td><span class="status-badge status-{{ flow.status|lower }}">{{ flow.status }}</span></td>
             <td>{{ flow.started_at.strftime('%Y-%m-%d %H:%M') if flow.started_at else '-' }}</td>
-            <td>{{ flow.current_step.name if flow.current_step else '-' }}</td>
             <td>
-                <a href="{{ url_for('main.edit_flow', flow_id=flow.id) }}" class="btn btn-sm">Edit</a>
-                <a href="{{ url_for('main.delete_flow', flow_id=flow.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this flow?')">Delete</a>
+                {% set current = flow.steps|selectattr('status', 'equalto', 'pending')|first %}
+                {{ current.name if current else '-' }}
+            </td>
+            <td class="actions">
+                <a href="{{ url_for('views.edit_flow', flow_id=flow.id) }}" class="btn btn-sm">Edit</a>
+                <form method="POST" action="{{ url_for('views.delete_flow', flow_id=flow.id) }}" style="display:inline;" onsubmit="return confirm('Delete this flow?')">
+                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                </form>
             </td>
         </tr>
         {% else %}
