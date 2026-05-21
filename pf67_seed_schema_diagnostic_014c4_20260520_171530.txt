@@ -1,0 +1,585 @@
+PF67 Seed Schema Diagnostic 014C4
+Root: /volume1/docker/pf67
+Database: /volume1/docker/pf67/data/db/pf67.sqlite3
+Timestamp: 20260520_171530
+
+=== All tables ===
+- attachments
+- backlog_ai_audit
+- backlog_items
+- backlog_settings
+- job_notes
+- job_steps
+- jobs
+- protocol_attachments
+- protocol_templates
+- step_templates
+
+=== protocol_templates ===
+Count: 21
+
+Columns:
+  cid=0 name=id type=INTEGER notnull=1 default=None pk=1
+  cid=1 name=name type=VARCHAR(200) notnull=1 default=None pk=0
+  cid=2 name=description type=TEXT notnull=0 default=None pk=0
+  cid=3 name=current_version type=INTEGER notnull=0 default=None pk=0
+  cid=4 name=created_at type=DATETIME notnull=0 default=None pk=0
+  cid=5 name=category type=TEXT notnull=1 default='' pk=0
+  cid=6 name=is_private type=INTEGER notnull=1 default=0 pk=0
+  cid=7 name=protocol_role type=TEXT notnull=1 default='protocol' pk=0
+  cid=8 name=can_start_flow type=INTEGER notnull=1 default=1 pk=0
+
+Foreign keys:
+  (none)
+
+Indexes:
+  (none)
+
+Likely title/name columns: name
+Likely instruction/content columns: description
+Likely type/procedure columns: protocol_role
+Likely public/visibility columns: is_private
+Likely timing columns: 
+Likely parent columns: 
+
+Distinct values for likely type/procedure/public columns:
+  is_private: ["0", "1"]
+  protocol_role: ["procedure", "protocol"]
+
+Longest text samples from likely instruction/content columns:
+  description:
+    {"rowid": 20, "length": 779, "sample": "<p>Sample fermentation observation Protocol for testing PF67 timing windows on a sugar-wash style fermenter. This is a timing/workflow sample only and does not include distillation or collection instructions.</p><figure "}
+    {"rowid": 22, "length": 775, "sample": "<p>Sample equipment workflow for testing cooldown, water-line checks, cleaning, and storage notes for a reflux column and condenser. It does not include operation or product collection instructions.</p><figure class=\"pf6"}
+    {"rowid": 21, "length": 751, "sample": "<p>Sample wine-kit Protocol for a conical fermenter. This is intended to test long waits, kit-style stage notes, racking/clearing readiness, and final bottling readiness.</p><figure class=\"pf67-reference-image\" style=\"ma"}
+    {"rowid": 17, "length": 715, "sample": "<p>Reusable Procedure for checking condenser water-line connections before any workflow that relies on steady cooling water.</p><figure class=\"pf67-reference-image\" style=\"margin: 12px 0;\"><img src=\"https://source.unspla"}
+    {"rowid": 23, "length": 708, "sample": "<p>Sample broccoli microgreen Protocol for testing blackout timing, daily moisture checks, light transition, and harvest readiness.</p><figure class=\"pf67-reference-image\" style=\"margin: 12px 0;\"><img src=\"https://source"}
+
+Sample rows:
+{
+  "id": "2",
+  "name": "Pale Ale Fermentation",
+  "description": "Demo protocol for a beer fermentation and dry-hop schedule.",
+  "current_version": "1",
+  "created_at": "2026-05-13 20:59:39.872825",
+  "category": "Brewing",
+  "is_private": "0",
+  "protocol_role": "protocol",
+  "can_start_flow": "1"
+}
+{
+  "id": "4",
+  "name": "Prepare Petri Dish - LME",
+  "description": "Preparing Light Malt Extract (LME) agar petri dishes involves sterilizing a mixture of water, LME, and agar (typically ~10-12g LME and 7-20g agar per 500ml-1L water), pouring it into sterile dishes in a clean environment, and allowing it to solidify to create a nutrient-rich, sterile growth medium for mushrooms.",
+  "current_version": "1",
+  "created_at": "2026-05-14 20:51:05.573800",
+  "category": "Mycology",
+  "is_private": "0",
+  "protocol_role": "protocol",
+  "can_start_flow": "1"
+}
+{
+  "id": "5",
+  "name": "Mung Microgreens - Yellow Tray Method",
+  "description": "Dark-grown yellow mung microgreens/sprouts using nested tray sets. Terms: insert tray = inner perforated white tray; catch tray = outer green water tray; tray set = one insert tray nested inside one catch tray. Use one hot water bottle filled with room-temperature water as a gentle weight for the first 3 days after loading. After the weighted phase, remove the weight and keep the tray dark with the lid inverted to create air space. No light exposure is specified; this procedure targets sweet yellow mung growth.",
+  "current_version": "1.1",
+  "created_at": "2026-05-16T10:53:47",
+  "category": "Microgreens",
+  "is_private": "0",
+  "protocol_role": "protocol",
+  "can_start_flow": "1"
+}
+
+=== step_templates ===
+Count: 95
+
+Columns:
+  cid=0 name=id type=INTEGER notnull=1 default=None pk=1
+  cid=1 name=template_id type=INTEGER notnull=1 default=None pk=0
+  cid=2 name=sort_order type=INTEGER notnull=0 default=None pk=0
+  cid=3 name=name type=VARCHAR(200) notnull=1 default=None pk=0
+  cid=4 name=step_type type=VARCHAR(50) notnull=0 default=None pk=0
+  cid=5 name=instructions_html type=TEXT notnull=0 default=None pk=0
+  cid=6 name=minimum_minutes type=INTEGER notnull=0 default=None pk=0
+  cid=7 name=ideal_minutes type=INTEGER notnull=0 default=None pk=0
+  cid=8 name=limit_minutes type=INTEGER notnull=0 default=None pk=0
+  cid=9 name=detrimental_minutes type=INTEGER notnull=0 default=None pk=0
+  cid=10 name=failure_minutes type=INTEGER notnull=0 default=None pk=0
+  cid=11 name=estimated_duration_minutes type=INTEGER notnull=0 default=None pk=0
+  cid=12 name=context_tag type=VARCHAR(100) notnull=0 default=None pk=0
+  cid=13 name=step_kind type=TEXT notnull=1 default='step' pk=0
+  cid=14 name=procedure_template_id type=INTEGER notnull=0 default=None pk=0
+  cid=15 name=procedure_snapshot_title type=TEXT notnull=0 default=None pk=0
+  cid=16 name=procedure_snapshot_description type=TEXT notnull=0 default=None pk=0
+  cid=17 name=procedure_snapshot_minutes type=INTEGER notnull=1 default=0 pk=0
+
+Foreign keys:
+  (0, 0, 'protocol_templates', 'template_id', 'id', 'NO ACTION', 'NO ACTION', 'NONE')
+
+Indexes:
+  (none)
+
+Likely title/name columns: name, procedure_snapshot_title
+Likely instruction/content columns: instructions_html, procedure_snapshot_description
+Likely type/procedure columns: template_id, step_type, step_kind, procedure_template_id, procedure_snapshot_title, procedure_snapshot_description, procedure_snapshot_minutes
+Likely public/visibility columns: 
+Likely timing columns: minimum_minutes, ideal_minutes, limit_minutes, detrimental_minutes, failure_minutes, estimated_duration_minutes, procedure_snapshot_minutes
+Likely parent columns: template_id, procedure_template_id
+
+Distinct values for likely type/procedure/public columns:
+  template_id: ["2", "4", "5", "6", "7", "12", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27"]
+  step_type: [null, "action", "task", "wait"]
+  step_kind: ["procedure", "step"]
+  procedure_template_id: [null, "12"]
+  procedure_snapshot_title: [null, "Wait to clap"]
+  procedure_snapshot_description: [null, "This is my test procedure. It will need a few days to complete."]
+  procedure_snapshot_minutes: ["0", "4320"]
+
+Longest text samples from likely instruction/content columns:
+  instructions_html:
+    {"rowid": 13, "length": 13653, "sample": "<div class=\"\" data-bfc=\"\" data-ved=\"2ahUKEwjM9ISl1LmUAxXTDTQIHVxqDfEQi4wTegoIAggACAAICxAA\" data-processed=\"true\" data-copy-service-computed-style=\"font-family: &quot;Google Sans&quot;, Arial, sans-serif; font-size: 16px;"}
+    {"rowid": 12, "length": 10150, "sample": "<div class=\"\" data-bfc=\"\" data-ved=\"2ahUKEwjM9ISl1LmUAxXTDTQIHVxqDfEQi4wTegoIAggACAAIChAA\" data-processed=\"true\" data-copy-service-computed-style=\"font-family: &quot;Google Sans&quot;, Arial, sans-serif; font-size: 16px;"}
+    {"rowid": 14, "length": 542, "sample": "<p>Measure mung beans for one or more tray sets. Rinse thoroughly in cool clean water.</p><p>Place beans in a clean soaking container and cover with plenty of cool water. Keep covered and dark at room temperature.</p><p>"}
+    {"rowid": 30, "length": 419, "sample": "<p>Use whole green or brown lentils intended for sprouting if possible. Remove debris or cracked pieces.</p><p>Rinse thoroughly in cool clean water. Place lentils in a clean soaking container and cover with plenty of coo"}
+    {"rowid": 29, "length": 410, "sample": "<p>Drain well before storage. Optionally air-dry briefly on a clean towel or rack before refrigerating.</p><p>Store refrigerated in a clean ventilated or lightly covered container. Use promptly.</p><p>Avoid packing wet s"}
+  procedure_snapshot_description:
+    {"rowid": 67, "length": 63, "sample": "This is my test procedure. It will need a few days to complete."}
+
+Sample rows:
+{
+  "id": "5",
+  "template_id": "2",
+  "sort_order": "1",
+  "name": "Brew day cleanup and yeast pitch",
+  "step_type": "action",
+  "instructions_html": "<p>Pitch yeast after wort is cooled. Record temperature and original gravity.</p>",
+  "minimum_minutes": null,
+  "ideal_minutes": null,
+  "limit_minutes": null,
+  "detrimental_minutes": null,
+  "failure_minutes": null,
+  "estimated_duration_minutes": "60",
+  "context_tag": "Kitchen",
+  "step_kind": "step",
+  "procedure_template_id": null,
+  "procedure_snapshot_title": null,
+  "procedure_snapshot_description": null,
+  "procedure_snapshot_minutes": "0"
+}
+{
+  "id": "6",
+  "template_id": "2",
+  "sort_order": "2",
+  "name": "Fermentation activity check",
+  "step_type": "wait",
+  "instructions_html": "<p>Look for krausen, airlock activity, and temperature stability.</p>",
+  "minimum_minutes": "1440",
+  "ideal_minutes": "2160",
+  "limit_minutes": "2880",
+  "detrimental_minutes": "4320",
+  "failure_minutes": "5760",
+  "estimated_duration_minutes": "10",
+  "context_tag": "Brew Area",
+  "step_kind": "step",
+  "procedure_template_id": null,
+  "procedure_snapshot_title": null,
+  "procedure_snapshot_description": null,
+  "procedure_snapshot_minutes": "0"
+}
+{
+  "id": "7",
+  "template_id": "2",
+  "sort_order": "3",
+  "name": "Dry hop addition",
+  "step_type": "wait",
+  "instructions_html": "<p>Add dry hops if fermentation is slowing and aroma target is appropriate.</p>",
+  "minimum_minutes": "7200",
+  "ideal_minutes": "10080",
+  "limit_minutes": "12960",
+  "detrimental_minutes": "15840",
+  "failure_minutes": "20160",
+  "estimated_duration_minutes": "15",
+  "context_tag": "Brew Area",
+  "step_kind": "step",
+  "procedure_template_id": null,
+  "procedure_snapshot_title": null,
+  "procedure_snapshot_description": null,
+  "procedure_snapshot_minutes": "0"
+}
+
+=== jobs ===
+Count: 2
+
+Columns:
+  cid=0 name=id type=INTEGER notnull=1 default=None pk=1
+  cid=1 name=template_id type=INTEGER notnull=1 default=None pk=0
+  cid=2 name=name type=VARCHAR(200) notnull=1 default=None pk=0
+  cid=3 name=template_version type=INTEGER notnull=0 default=None pk=0
+  cid=4 name=status type=VARCHAR(50) notnull=0 default=None pk=0
+  cid=5 name=started_at type=DATETIME notnull=0 default=None pk=0
+  cid=6 name=completed_at type=DATETIME notnull=0 default=None pk=0
+  cid=7 name=allow_ai_read type=BOOLEAN notnull=0 default=None pk=0
+  cid=8 name=allow_ai_suggest type=BOOLEAN notnull=0 default=None pk=0
+  cid=9 name=allow_ai_write type=BOOLEAN notnull=0 default=None pk=0
+  cid=10 name=priority type=VARCHAR(20) notnull=0 default='Normal' pk=0
+  cid=11 name=is_private type=INTEGER notnull=1 default=0 pk=0
+
+Foreign keys:
+  (0, 0, 'protocol_templates', 'template_id', 'id', 'NO ACTION', 'NO ACTION', 'NONE')
+
+Indexes:
+  (none)
+
+Likely title/name columns: name
+Likely instruction/content columns: 
+Likely type/procedure columns: template_id, template_version
+Likely public/visibility columns: is_private
+Likely timing columns: 
+Likely parent columns: template_id
+
+Distinct values for likely type/procedure/public columns:
+  template_id: ["1", "6"]
+  template_version: ["1"]
+  is_private: ["0"]
+
+Longest text samples from likely instruction/content columns:
+
+Sample rows:
+{
+  "id": "6",
+  "template_id": "6",
+  "name": "Lentil Microgreens - Tray Dunk Method Job_260618",
+  "template_version": "1",
+  "status": "completed",
+  "started_at": "2026-06-05 20:00:00.000000",
+  "completed_at": "2026-05-20 18:17:05.470977",
+  "allow_ai_read": "1",
+  "allow_ai_suggest": "1",
+  "allow_ai_write": "0",
+  "priority": "Normal",
+  "is_private": "0"
+}
+{
+  "id": "7",
+  "template_id": "1",
+  "name": "PF67 Demo - Blackberry Wine Batch - Now",
+  "template_version": "1",
+  "status": "completed",
+  "started_at": "2026-05-18 21:02:45.899699",
+  "completed_at": "2026-05-20 18:11:02.403843",
+  "allow_ai_read": "1",
+  "allow_ai_suggest": "1",
+  "allow_ai_write": "0",
+  "priority": "Normal",
+  "is_private": "0"
+}
+
+=== job_steps ===
+Count: 14
+
+Columns:
+  cid=0 name=id type=INTEGER notnull=1 default=None pk=1
+  cid=1 name=job_id type=INTEGER notnull=1 default=None pk=0
+  cid=2 name=source_step_template_id type=INTEGER notnull=0 default=None pk=0
+  cid=3 name=sort_order type=INTEGER notnull=0 default=None pk=0
+  cid=4 name=name type=VARCHAR(200) notnull=1 default=None pk=0
+  cid=5 name=step_type type=VARCHAR(50) notnull=0 default=None pk=0
+  cid=6 name=instructions_html type=TEXT notnull=0 default=None pk=0
+  cid=7 name=context_tag type=VARCHAR(100) notnull=0 default=None pk=0
+  cid=8 name=minimum_minutes type=INTEGER notnull=0 default=None pk=0
+  cid=9 name=ideal_minutes type=INTEGER notnull=0 default=None pk=0
+  cid=10 name=limit_minutes type=INTEGER notnull=0 default=None pk=0
+  cid=11 name=detrimental_minutes type=INTEGER notnull=0 default=None pk=0
+  cid=12 name=failure_minutes type=INTEGER notnull=0 default=None pk=0
+  cid=13 name=estimated_duration_minutes type=INTEGER notnull=0 default=None pk=0
+  cid=14 name=anchor_time type=DATETIME notnull=1 default=None pk=0
+  cid=15 name=completed_at type=DATETIME notnull=0 default=None pk=0
+  cid=16 name=status_override type=VARCHAR(50) notnull=0 default=None pk=0
+  cid=17 name=notes_html type=TEXT notnull=0 default=None pk=0
+  cid=18 name=source_protocol_step_id type=INTEGER notnull=0 default=None pk=0
+  cid=19 name=source_procedure_template_id type=INTEGER notnull=0 default=None pk=0
+  cid=20 name=source_procedure_step_id type=INTEGER notnull=0 default=None pk=0
+  cid=21 name=source_procedure_reference_step_id type=INTEGER notnull=0 default=None pk=0
+  cid=22 name=is_procedure_derived type=INTEGER notnull=1 default=0 pk=0
+  cid=23 name=sequence_order type=INTEGER notnull=1 default=0 pk=0
+
+Foreign keys:
+  (0, 0, 'jobs', 'job_id', 'id', 'NO ACTION', 'NO ACTION', 'NONE')
+
+Indexes:
+  (none)
+
+Likely title/name columns: name
+Likely instruction/content columns: instructions_html, notes_html
+Likely type/procedure columns: source_step_template_id, step_type, source_protocol_step_id, source_procedure_template_id, source_procedure_step_id, source_procedure_reference_step_id, is_procedure_derived
+Likely public/visibility columns: 
+Likely timing columns: minimum_minutes, ideal_minutes, limit_minutes, detrimental_minutes, failure_minutes, estimated_duration_minutes
+Likely parent columns: source_step_template_id, source_procedure_template_id
+
+Distinct values for likely type/procedure/public columns:
+  source_step_template_id: ["1", "2", "3", "4", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39"]
+  step_type: ["action", "task", "wait"]
+  source_protocol_step_id: [null]
+  source_procedure_template_id: [null]
+  source_procedure_step_id: [null]
+  source_procedure_reference_step_id: [null]
+  is_procedure_derived: ["0"]
+
+Longest text samples from likely instruction/content columns:
+  instructions_html:
+    {"rowid": 45, "length": 419, "sample": "<p>Use whole green or brown lentils intended for sprouting if possible. Remove debris or cracked pieces.</p><p>Rinse thoroughly in cool clean water. Place lentils in a clean soaking container and cover with plenty of coo"}
+    {"rowid": 53, "length": 303, "sample": "<p>Begin harvest checks around day 6 from initial soaking.</p><p>Target harvest is usually day 8 to 10, with a practical limit around day 12 depending on desired length and freshness.</p><p>Harvest only if growth smells "}
+    {"rowid": 46, "length": 278, "sample": "<p>Drain soaked lentils thoroughly. Spread evenly in the insert tray in a single dense layer.</p><p>Nest the insert tray inside the catch tray. Keep dark with a loose cover or inverted lid.</p><p>Do not pack lentils tigh"}
+    {"rowid": 51, "length": 271, "sample": "<p>Once sprouts have established roots and begin lifting, keep the lid inverted to provide air space.</p><p>For pale/yellow lentil sprouts, keep dark. For greener lentil microgreens, move to gentle indirect light or grow"}
+    {"rowid": 54, "length": 268, "sample": "<p>Drain very well before storage. Refrigerate in a clean container with light ventilation or a dry paper towel.</p><p>Avoid storing wet, packed lentils in a sealed container.</p><p>Use promptly. Discard if sour, slimy, "}
+  notes_html:
+
+Sample rows:
+{
+  "id": "45",
+  "job_id": "6",
+  "source_step_template_id": "30",
+  "sort_order": "1",
+  "name": "Rinse and start lentil soak",
+  "step_type": "task",
+  "instructions_html": "<p>Use whole green or brown lentils intended for sprouting if possible. Remove debris or cracked pieces.</p><p>Rinse thoroughly in cool clean water. Place lentils in a clean soaking container and cover with plenty of cool water.</p><p>Timing window: Check 8 hours, Ideal 10 hours, Limit 12 hours, Detrimental/Risk 16 hours, Failure 24 hours.</p><p>Discard if soak water smells sour, slimy, fermented, or unpleasant.</p>",
+  "context_tag": "soak",
+  "minimum_minutes": "720",
+  "ideal_minutes": "1080",
+  "limit_minutes": "1440",
+  "detrimental_minutes": "1800",
+  "failure_minutes": "2280",
+  "estimated_duration_minutes": "10",
+  "anchor_time": "2026-06-05 20:00:00.000000",
+  "completed_at": "2026-05-18 03:04:23.902980",
+  "status_override": "",
+  "notes_html": "",
+  "source_protocol_step_id": null,
+  "source_procedure_template_id": null,
+  "source_procedure_step_id": null,
+  "source_procedure_reference_step_id": null,
+  "is_procedure_derived": "0",
+  "sequence_order": "1000"
+}
+{
+  "id": "46",
+  "job_id": "6",
+  "source_step_template_id": "31",
+  "sort_order": "2",
+  "name": "Drain and load lentils into tray set",
+  "step_type": "task",
+  "instructions_html": "<p>Drain soaked lentils thoroughly. Spread evenly in the insert tray in a single dense layer.</p><p>Nest the insert tray inside the catch tray. Keep dark with a loose cover or inverted lid.</p><p>Do not pack lentils tightly and do not leave standing water in the catch tray.</p>",
+  "context_tag": "setup",
+  "minimum_minutes": "0",
+  "ideal_minutes": "0",
+  "limit_minutes": "30",
+  "detrimental_minutes": "60",
+  "failure_minutes": "120",
+  "estimated_duration_minutes": "15",
+  "anchor_time": "2026-06-05 20:00:00.000000",
+  "completed_at": "2026-05-20 18:17:05.470977",
+  "status_override": "",
+  "notes_html": "",
+  "source_protocol_step_id": null,
+  "source_procedure_template_id": null,
+  "source_procedure_step_id": null,
+  "source_procedure_reference_step_id": null,
+  "is_procedure_derived": "0",
+  "sequence_order": "2000"
+}
+{
+  "id": "47",
+  "job_id": "6",
+  "source_step_template_id": "32",
+  "sort_order": "3",
+  "name": "Dark dunk care - Day 1 morning",
+  "step_type": "task",
+  "instructions_html": "<p>Keep trays dark. Lift one side of the insert tray and pour clean cool water into the catch tray.</p><p>Soak for 5 minutes, then lift and drain thoroughly so no standing water remains.</p><p>Return to dark conditions with loose cover or inverted lid.</p>",
+  "context_tag": "dark_care",
+  "minimum_minutes": "600",
+  "ideal_minutes": "720",
+  "limit_minutes": "840",
+  "detrimental_minutes": "1080",
+  "failure_minutes": "1440",
+  "estimated_duration_minutes": "10",
+  "anchor_time": "2026-06-05 20:00:00.000000",
+  "completed_at": "2026-05-18 03:07:42",
+  "status_override": "",
+  "notes_html": "",
+  "source_protocol_step_id": null,
+  "source_procedure_template_id": null,
+  "source_procedure_step_id": null,
+  "source_procedure_reference_step_id": null,
+  "is_procedure_derived": "0",
+  "sequence_order": "3000"
+}
+
+=== job_notes ===
+Count: 2
+
+Columns:
+  cid=0 name=id type=INTEGER notnull=1 default=None pk=1
+  cid=1 name=job_id type=INTEGER notnull=1 default=None pk=0
+  cid=2 name=job_step_id type=INTEGER notnull=0 default=None pk=0
+  cid=3 name=note_type type=VARCHAR(50) notnull=0 default=None pk=0
+  cid=4 name=title type=VARCHAR(200) notnull=0 default=None pk=0
+  cid=5 name=note_html type=TEXT notnull=0 default=None pk=0
+  cid=6 name=created_at type=DATETIME notnull=0 default=None pk=0
+  cid=7 name=updated_at type=DATETIME notnull=0 default=None pk=0
+  cid=8 name=event_at type=DATETIME notnull=0 default=None pk=0
+  cid=9 name=preview_image_url type=TEXT notnull=0 default='' pk=0
+
+Foreign keys:
+  (0, 0, 'job_steps', 'job_step_id', 'id', 'NO ACTION', 'NO ACTION', 'NONE')
+  (1, 0, 'jobs', 'job_id', 'id', 'NO ACTION', 'NO ACTION', 'NONE')
+
+Indexes:
+  (none)
+
+Likely title/name columns: title
+Likely instruction/content columns: note_type, note_html
+Likely type/procedure columns: note_type
+Likely public/visibility columns: 
+Likely timing columns: 
+Likely parent columns: 
+
+Distinct values for likely type/procedure/public columns:
+  note_type: ["completion_note", "note"]
+
+Longest text samples from likely instruction/content columns:
+  note_type:
+    {"rowid": 11, "length": 15, "sample": "completion_note"}
+    {"rowid": 10, "length": 4, "sample": "note"}
+  note_html:
+    {"rowid": 11, "length": 138, "sample": "<p>I so pale.<img src=\"../static/uploads/jobs/7/20260520_174354_9498d41592e04c86bc83ca82787f0da3.jpg\" alt=\"\" width=\"650\" height=\"392\"></p>"}
+    {"rowid": 10, "length": 13, "sample": "<p>tester</p>"}
+
+Sample rows:
+{
+  "id": "10",
+  "job_id": "6",
+  "job_step_id": "50",
+  "note_type": "note",
+  "title": "hhh",
+  "note_html": "<p>tester</p>",
+  "created_at": "2026-05-18 16:39:54.768150",
+  "updated_at": "2026-05-18 16:39:54.768158",
+  "event_at": "2026-05-18 16:39:00.000000",
+  "preview_image_url": ""
+}
+{
+  "id": "11",
+  "job_id": "7",
+  "job_step_id": "56",
+  "note_type": "completion_note",
+  "title": "omg",
+  "note_html": "<p>I so pale.<img src=\"../static/uploads/jobs/7/20260520_174354_9498d41592e04c86bc83ca82787f0da3.jpg\" alt=\"\" width=\"650\" height=\"392\"></p>",
+  "created_at": "2026-05-20 17:43:56.576230",
+  "updated_at": "2026-05-20 17:43:56.576237",
+  "event_at": "2026-05-20 17:43:00.000000",
+  "preview_image_url": "../static/uploads/jobs/7/20260520_174354_9498d41592e04c86bc83ca82787f0da3.jpg"
+}
+
+=== attachments ===
+Count: 0
+
+Columns:
+  cid=0 name=id type=INTEGER notnull=1 default=None pk=1
+  cid=1 name=job_id type=INTEGER notnull=1 default=None pk=0
+  cid=2 name=job_step_id type=INTEGER notnull=0 default=None pk=0
+  cid=3 name=note_id type=INTEGER notnull=0 default=None pk=0
+  cid=4 name=filename type=VARCHAR(255) notnull=1 default=None pk=0
+  cid=5 name=storage_path type=VARCHAR(500) notnull=1 default=None pk=0
+  cid=6 name=mime_type type=VARCHAR(100) notnull=0 default=None pk=0
+  cid=7 name=caption type=VARCHAR(255) notnull=0 default=None pk=0
+  cid=8 name=uploaded_at type=DATETIME notnull=0 default=None pk=0
+
+Foreign keys:
+  (0, 0, 'job_notes', 'note_id', 'id', 'NO ACTION', 'NO ACTION', 'NONE')
+  (1, 0, 'job_steps', 'job_step_id', 'id', 'NO ACTION', 'NO ACTION', 'NONE')
+  (2, 0, 'jobs', 'job_id', 'id', 'NO ACTION', 'NO ACTION', 'NONE')
+
+Indexes:
+  (none)
+
+Likely title/name columns: filename
+Likely instruction/content columns: note_id
+Likely type/procedure columns: mime_type
+Likely public/visibility columns: 
+Likely timing columns: 
+Likely parent columns: 
+
+Distinct values for likely type/procedure/public columns:
+  mime_type: []
+
+Longest text samples from likely instruction/content columns:
+  note_id:
+
+Sample rows:
+
+=== protocol_attachments ===
+Count: 1
+
+Columns:
+  cid=0 name=id type=INTEGER notnull=0 default=None pk=1
+  cid=1 name=template_id type=INTEGER notnull=1 default=None pk=0
+  cid=2 name=filename type=TEXT notnull=1 default=None pk=0
+  cid=3 name=storage_path type=TEXT notnull=1 default=None pk=0
+  cid=4 name=mime_type type=TEXT notnull=1 default='' pk=0
+  cid=5 name=title type=TEXT notnull=1 default='' pk=0
+  cid=6 name=caption type=TEXT notnull=1 default='' pk=0
+  cid=7 name=attachment_type type=TEXT notnull=1 default='Reference' pk=0
+  cid=8 name=sort_order type=INTEGER notnull=1 default=1 pk=0
+  cid=9 name=uploaded_at type=TEXT notnull=1 default=CURRENT_TIMESTAMP pk=0
+
+Foreign keys:
+  (none)
+
+Indexes:
+  (none)
+
+Likely title/name columns: filename, title
+Likely instruction/content columns: 
+Likely type/procedure columns: template_id, mime_type, attachment_type
+Likely public/visibility columns: 
+Likely timing columns: 
+Likely parent columns: template_id
+
+Distinct values for likely type/procedure/public columns:
+  template_id: ["6"]
+  mime_type: ["image/png"]
+  attachment_type: ["Reference"]
+
+Longest text samples from likely instruction/content columns:
+
+Sample rows:
+{
+  "id": "1",
+  "template_id": "6",
+  "filename": "substreamer.png",
+  "storage_path": "/static/uploads/protocols/6/13d876dc936647238f267c31643b724c.png",
+  "mime_type": "image/png",
+  "title": "Test Image",
+  "caption": "Just a test image.",
+  "attachment_type": "Reference",
+  "sort_order": "1",
+  "uploaded_at": "2026-05-18T18:22:36"
+}
+
+=== Relationship guesses: protocol_templates -> step_templates ===
+{"step_column": "template_id", "parent_column": "id", "matching_steps": 95, "non_null_steps": 95}
+
+=== Existing Sample records ===
+rowid=15 title=Sample Procedure - Sanitize Fermenter, Lid, Bung, and Airlock
+rowid=16 title=Sample Procedure - Clean Reflux Column and Condenser After Use
+rowid=17 title=Sample Procedure - Leak Check Condenser Water Lines
+rowid=18 title=Sample Procedure - Prepare Laminar Airflow Hood Before Petri Pouring
+rowid=19 title=Sample Procedure - Reset Microgreen Gear After Harvest
+rowid=20 title=Sample Protocol - Birdwatcher-Style Sugar Wash Fermenter Observation
+rowid=21 title=Sample Protocol - Wine Kit in Conical Fermenter
+rowid=22 title=Sample Protocol - Reflux Condenser Cleanup and Storage
+rowid=23 title=Sample Protocol - Broccoli Microgreens Tray
+rowid=24 title=Sample Protocol - Radish Microgreens Tray
+rowid=25 title=Sample Protocol - Sunflower Microgreens Tray
+rowid=26 title=Sample Protocol - Lettuce Leafy Greens Tray
+rowid=27 title=Sample Protocol - Potato Plants in Raised Bed
+rowid=28 title=Sample Protocol - Onion Sets in Raised Bed

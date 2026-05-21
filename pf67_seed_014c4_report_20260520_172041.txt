@@ -1,0 +1,47 @@
+PF67 Seed 014C4 report
+Dry run: False
+Database: /volume1/docker/pf67/data/db/pf67.sqlite3
+Backup: /volume1/docker/pf67/_pf67_patch_backups/seed_014c4_20260520_172041/pf67.sqlite3
+
+Removed existing Sample records:
+- id 15: Sample Procedure - Sanitize Fermenter, Lid, Bung, and Airlock
+- id 16: Sample Procedure - Clean Reflux Column and Condenser After Use
+- id 17: Sample Procedure - Leak Check Condenser Water Lines
+- id 18: Sample Procedure - Prepare Laminar Airflow Hood Before Petri Pouring
+- id 19: Sample Procedure - Reset Microgreen Gear After Harvest
+- id 20: Sample Protocol - Birdwatcher-Style Sugar Wash Fermenter Observation
+- id 21: Sample Protocol - Wine Kit in Conical Fermenter
+- id 22: Sample Protocol - Reflux Condenser Cleanup and Storage
+- id 23: Sample Protocol - Broccoli Microgreens Tray
+- id 24: Sample Protocol - Radish Microgreens Tray
+- id 25: Sample Protocol - Sunflower Microgreens Tray
+- id 26: Sample Protocol - Lettuce Leafy Greens Tray
+- id 27: Sample Protocol - Potato Plants in Raised Bed
+- id 28: Sample Protocol - Onion Sets in Raised Bed
+
+Created Sample records:
+- id 15 procedure: Sample Procedure - Sanitize Fermenter, Lid, Bung, and Airlock (3 steps)
+- id 16 procedure: Sample Procedure - Clean Reflux Column and Condenser After Use (3 steps)
+- id 17 procedure: Sample Procedure - Leak Check Condenser Water Lines (2 steps)
+- id 18 procedure: Sample Procedure - Prepare Laminar Airflow Hood Before Petri Pouring (3 steps)
+- id 19 procedure: Sample Procedure - Reset Microgreen Gear After Harvest (3 steps)
+- id 20 protocol: Sample Protocol - Birdwatcher-Style Sugar Wash Fermenter Observation (3 steps)
+- id 21 protocol: Sample Protocol - Wine Kit in Conical Fermenter (4 steps)
+- id 22 protocol: Sample Protocol - Reflux Condenser Cleanup and Storage (3 steps)
+- id 23 protocol: Sample Protocol - Broccoli Microgreens Tray (4 steps)
+- id 24 protocol: Sample Protocol - Radish Microgreens Tray (3 steps)
+- id 25 protocol: Sample Protocol - Sunflower Microgreens Tray (4 steps)
+- id 26 protocol: Sample Protocol - Lettuce Leafy Greens Tray (3 steps)
+- id 27 protocol: Sample Protocol - Potato Plants in Raised Bed (4 steps)
+- id 28 protocol: Sample Protocol - Onion Sets in Raised Bed (5 steps)
+
+Notes:
+- Procedure records use protocol_templates.protocol_role = 'procedure'.
+- Protocol records use protocol_templates.protocol_role = 'protocol'.
+- Step instructions are written to step_templates.instructions_html.
+- Check windows are stored in minimum_minutes.
+- Ideal windows are stored in ideal_minutes.
+- Limit windows are stored in limit_minutes.
+- Risk windows are stored in detrimental_minutes.
+- Failure windows are stored in failure_minutes.
+- No jobs/flows were created.

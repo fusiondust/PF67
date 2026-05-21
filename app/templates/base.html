@@ -7100,6 +7100,29 @@
             background: transparent !important;
         }
 
+    
+
+
+
+
+        /* PF67 Patch 014A9 Public Protocol Toggle and Flows Nav Cleanup */
+        .pf67-dashboard-hero.pf67-public-protocols-hero {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin-right: 0 !important;
+            padding-right: 0 !important;
+            grid-column: 1 / -1 !important;
+        }
+
+        .pf67-dashboard-hero.pf67-public-protocols-hero > *,
+        .pf67-dashboard-hero.pf67-public-protocols-hero .pf67-dashboard-description {
+            width: 100% !important;
+            max-width: none !important;
+            margin-right: 0 !important;
+            padding-right: 0 !important;
+        }
+
     </style>
 
     <script>
@@ -7164,13 +7187,13 @@
                 {% if can_edit %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint in ['views.templates_page', 'views.template_detail'] %}active{% endif %}"
-                           href="{{ url_for('views.templates_page') }}">Protocols</a>
+                           href="/protocols">Protocols</a>
                     </li>
                 {% endif %}
 
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint in ['views.jobs_page', 'views.job_detail'] %}active{% endif %}"
-                       href="{{ url_for('views.jobs_page', view='active') }}">Flows</a>
+                    <a class="nav-link {% if request.endpoint in ['views.pf67_patch009m_flows_console', 'views.jobs_page', 'views.job_detail'] %}active{% endif %}"
+                       href="/flows">Flows</a>
                 </li>
 
                 <li class="nav-item dropdown">
@@ -7210,11 +7233,7 @@
 <div class="container-fluid">
     {% block content %}{% endblock %}
 
-    <div class="pf67-footer">
-        PF67 · <span class="pf67-footer-rev">Test Rev 013D5 Plain Outcome Symbols</span>
-        · App {{ pf67_revision }}
-        · <span class="pf67-footer-loaded">Loaded <span id="pf67-loaded-stamp">...</span></span>
-    </div>
+    <div class="pf67-footer">PF67 - v1.14.11</div>
 </div>
 
 <script
@@ -8136,7 +8155,7 @@ document.addEventListener("DOMContentLoaded", function pf67Patch009JBackendFlows
         return;
     }
 
-    var flowsUrl = "{{ url_for('views.pf67_patch009j_flows_console') }}";
+    var flowsUrl = "/flows";
 
     Array.prototype.slice.call(document.querySelectorAll("nav a, .navbar a, header a")).forEach(function(link) {
         var label = (link.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -8179,7 +8198,7 @@ document.addEventListener("DOMContentLoaded", function pf67Patch009LBackendFlows
         return;
     }
 
-    var flowsUrl = "{{ url_for('views.pf67_patch009l_flows_console') }}";
+    var flowsUrl = "/flows";
 
     Array.prototype.slice.call(document.querySelectorAll("nav a, .navbar a, header a")).forEach(function(link) {
         var label = (link.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -8211,7 +8230,7 @@ document.addEventListener("DOMContentLoaded", function pf67Patch009MBackendFlows
         return;
     }
 
-    var flowsUrl = "{{ url_for('views.pf67_patch009m_flows_console') }}";
+    var flowsUrl = "/flows";
 
     Array.prototype.slice.call(document.querySelectorAll("nav a, .navbar a, header a")).forEach(function(link) {
         var label = (link.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -9941,7 +9960,7 @@ document.addEventListener("DOMContentLoaded", function pf67Patch011CD3StableKeyw
     }
 
     function templateCards() {
-        return uniqueCardsForLinks("a[href^='/templates/'], a[href*='/templates/']");
+        return uniqueCardsForLinks("a[href^='/templates/'], a[href*='/templates/'], a[href^='/public/protocol'], a[href*='/public/protocol'], .pf67-protocol-card a[href], .pf67-public-protocol-card[href], .pf67-public-protocol-card a[href]");
     }
 
     function flowCards() {
@@ -10916,6 +10935,90 @@ document.addEventListener("DOMContentLoaded", function pf67Patch013D5LoadedStamp
     }
 });
 </script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch014ALoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch014A2LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch014A3LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch014A4LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch014A5LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function pf67Patch014A6LoadedStamp() {
+    var loadedStamp = document.getElementById("pf67-loaded-stamp");
+
+    if (loadedStamp) {
+        loadedStamp.textContent = new Date().toLocaleString();
+    }
+});
+</script>
+
+
+
 
 </body>
 </html>

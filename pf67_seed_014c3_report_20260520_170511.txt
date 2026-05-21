@@ -1,0 +1,55 @@
+PF67 Seed 014C3 report
+Dry run: False
+Database: /volume1/docker/pf67/data/db/pf67.sqlite3
+Backup: /volume1/docker/pf67/_pf67_patch_backups/seed_014c3_20260520_170511/pf67.sqlite3
+Protocol table: protocol_templates
+Step table: step_templates
+
+Created:
+- Sample Procedure - Sanitize Fermenter, Lid, Bung, and Airlock
+- Sample Procedure - Clean Reflux Column and Condenser After Use
+- Sample Procedure - Leak Check Condenser Water Lines
+- Sample Procedure - Prepare Laminar Airflow Hood Before Petri Pouring
+- Sample Procedure - Reset Microgreen Gear After Harvest
+- Sample Protocol - Birdwatcher-Style Sugar Wash Fermenter Observation
+- Sample Protocol - Wine Kit in Conical Fermenter
+- Sample Protocol - Reflux Condenser Cleanup and Storage
+- Sample Protocol - Broccoli Microgreens Tray
+- Sample Protocol - Radish Microgreens Tray
+- Sample Protocol - Sunflower Microgreens Tray
+- Sample Protocol - Lettuce Leafy Greens Tray
+- Sample Protocol - Potato Plants in Raised Bed
+- Sample Protocol - Onion Sets in Raised Bed
+
+Updated/rebuilt:
+- None
+
+Protocol columns:
+{
+  "id": "id",
+  "title": "name",
+  "description": "description",
+  "category": "category",
+  "kind": null,
+  "is_procedure": null,
+  "is_public": null,
+  "created_at": "created_at",
+  "updated_at": null,
+  "duration": null
+}
+
+Step columns:
+{
+  "id": "id",
+  "parent_id": "template_id",
+  "title": "name",
+  "instructions": null,
+  "sequence": "sort_order",
+  "created_at": null,
+  "updated_at": null,
+  "check": "minimum_minutes",
+  "ideal": "ideal_minutes",
+  "limit": "limit_minutes",
+  "risk": "detrimental_minutes",
+  "failure": "failure_minutes"
+}

@@ -1208,13 +1208,15 @@ def api_upcoming_fingerprint():
 
 
 @views_bp.route("/templates")
+@views_bp.route("/protocols")
 def templates_page():
     templates = ProtocolTemplate.query.order_by(ProtocolTemplate.name).all()
 
-    return render_template("templates_list.html", templates=templates)
+    return render_template("protocol_list.html", templates=templates)
 
 
 @views_bp.route("/templates/new", methods=["GET", "POST"])
+@views_bp.route("/protocol/new", methods=["GET", "POST"])
 @edit_required
 def new_template():
     if request.method == "POST":
@@ -1232,13 +1234,15 @@ def new_template():
 
 
 @views_bp.route("/templates/<int:template_id>")
+@views_bp.route("/protocol/<int:template_id>")
 def template_detail(template_id):
     template = ProtocolTemplate.query.get_or_404(template_id)
 
-    return render_template("template_detail.html", template=template, today_suffix=datetime.utcnow().strftime("%y%m%d"))
+    return render_template("protocol_detail.html", template=template, today_suffix=datetime.utcnow().strftime("%y%m%d"))
 
 
 @views_bp.route("/templates/<int:template_id>/steps/new", methods=["POST"])
+@views_bp.route("/protocol/<int:template_id>/steps/new", methods=["POST"])
 @edit_required
 def add_step(template_id):
     template = ProtocolTemplate.query.get_or_404(template_id)
@@ -1268,6 +1272,7 @@ def add_step(template_id):
 
 
 @views_bp.route("/templates/<int:template_id>/steps/<int:step_id>/edit", methods=["POST"])
+@views_bp.route("/protocol/<int:template_id>/steps/<int:step_id>/edit", methods=["POST"])
 @edit_required
 def edit_template_step(template_id, step_id):
     template = ProtocolTemplate.query.get_or_404(template_id)
@@ -1293,6 +1298,7 @@ def edit_template_step(template_id, step_id):
 
 
 @views_bp.route("/templates/<int:template_id>/steps/<int:step_id>/move/<direction>", methods=["POST"])
+@views_bp.route("/protocol/<int:template_id>/steps/<int:step_id>/move/<direction>", methods=["POST"])
 @edit_required
 def move_template_step(template_id, step_id, direction):
     template = ProtocolTemplate.query.get_or_404(template_id)
@@ -1328,6 +1334,7 @@ def move_template_step(template_id, step_id, direction):
 
 
 @views_bp.route("/templates/<int:template_id>/start", methods=["POST"])
+@views_bp.route("/protocol/<int:template_id>/start", methods=["POST"])
 @edit_required
 def start_job(template_id):
     template = ProtocolTemplate.query.get_or_404(template_id)
@@ -1354,10 +1361,11 @@ def jobs_page():
         view = "active"
         jobs = Job.query.filter(Job.status.in_(list(ACTIVE_JOB_STATUSES))).order_by(Job.started_at.desc()).all()
 
-    return render_template("jobs_list.html", jobs=jobs, view=view)
+    return render_template("flow_list.html", jobs=jobs, view=view)
 
 
 @views_bp.route("/jobs/<int:job_id>")
+@views_bp.route("/flow/<int:job_id>")
 def job_detail(job_id):
     job = Job.query.get_or_404(job_id)
     edit_note_raw = request.args.get("edit_note", "").strip()
@@ -1415,7 +1423,7 @@ def job_detail(job_id):
         })
 
     return render_template(
-        "job_detail.html",
+        "flow_detail.html",
         job=job,
         timeline=timeline,
         images=images,
@@ -1434,6 +1442,7 @@ def job_detail(job_id):
 
 
 @views_bp.route("/jobs/<int:job_id>/status", methods=["POST"])
+@views_bp.route("/flow/<int:job_id>/status", methods=["POST"])
 @edit_required
 def update_job_status(job_id):
     job = Job.query.get_or_404(job_id)
@@ -1455,6 +1464,7 @@ def update_job_status(job_id):
 
 
 @views_bp.route("/jobs/<int:job_id>/notes/new", methods=["POST"])
+@views_bp.route("/flow/<int:job_id>/notes/new", methods=["POST"])
 @edit_required
 def add_job_note(job_id):
     job = Job.query.get_or_404(job_id)
@@ -1772,6 +1782,7 @@ def upload_job_image(job_id):
 
 
 @views_bp.route("/jobs/<int:job_id>/delete", methods=["POST"])
+@views_bp.route("/flow/<int:job_id>/delete", methods=["POST"])
 @edit_required
 def delete_job(job_id):
     job = Job.query.get_or_404(job_id)
@@ -1805,6 +1816,7 @@ def report_image_paths_from_html(html):
 
 
 @views_bp.route("/jobs/<int:job_id>/report.pdf")
+@views_bp.route("/flow/<int:job_id>/report.pdf")
 def job_report_pdf(job_id):
     job = Job.query.get_or_404(job_id)
     timeline = make_job_timeline(job)
@@ -4383,6 +4395,7 @@ except NameError:
         return func
 
 @views_bp.route("/templates/<int:template_id>/category", methods=["POST"])
+@views_bp.route("/protocol/<int:template_id>/category", methods=["POST"])
 @_pf67_patch_002_edit_required
 def save_template_category_detail_v105c(template_id):
     template = ProtocolTemplate.query.get_or_404(template_id)
@@ -4418,6 +4431,7 @@ def _pf67_patch_002_minutes_from_form(prefix):
     return value
 
 @views_bp.route("/templates/<int:template_id>/steps/<int:step_id>/timing-v107", methods=["POST"])
+@views_bp.route("/protocol/<int:template_id>/steps/<int:step_id>/timing-v107", methods=["POST"])
 @_pf67_patch_002_edit_required
 def update_template_step_timing_v107(template_id, step_id):
     step = StepTemplate.query.filter_by(id=step_id, template_id=template_id).first_or_404()
@@ -4573,6 +4587,7 @@ def new_protocol_patch003():
 
 
 @views_bp.route("/templates/<int:template_id>/protocol-info-p003", methods=["POST"])
+@views_bp.route("/protocol/<int:template_id>/protocol-info-p003", methods=["POST"])
 @_pf67_p003_edit_required
 def update_protocol_info_patch003(template_id):
     template = _PF67P003ProtocolTemplate.query.get_or_404(template_id)
@@ -4592,6 +4607,7 @@ def update_protocol_info_patch003(template_id):
 
 
 @views_bp.route("/templates/<int:template_id>/steps/add-p003", methods=["POST"])
+@views_bp.route("/protocol/<int:template_id>/steps/add-p003", methods=["POST"])
 @_pf67_p003_edit_required
 def add_protocol_step_patch003(template_id):
     template = _PF67P003ProtocolTemplate.query.get_or_404(template_id)
@@ -4638,6 +4654,7 @@ def add_protocol_step_patch003(template_id):
 
 
 @views_bp.route("/templates/<int:template_id>/steps/<int:step_id>/edit-p003", methods=["POST"])
+@views_bp.route("/protocol/<int:template_id>/steps/<int:step_id>/edit-p003", methods=["POST"])
 @_pf67_p003_edit_required
 def update_protocol_step_patch003(template_id, step_id):
     step = _PF67P003StepTemplate.query.filter_by(id=step_id, template_id=template_id).first_or_404()
@@ -4658,6 +4675,7 @@ def update_protocol_step_patch003(template_id, step_id):
 
 
 @views_bp.route("/templates/<int:template_id>/protocol-image-p003", methods=["POST"])
+@views_bp.route("/protocol/<int:template_id>/protocol-image-p003", methods=["POST"])
 @_pf67_p003_edit_required
 def upload_protocol_image_patch003(template_id):
     _PF67P003ProtocolTemplate.query.get_or_404(template_id)
@@ -7718,6 +7736,7 @@ def _pf67_patch009m_item(job):
 
 
 @views_bp.route("/flows-console-patch009m")
+@views_bp.route("/flows")
 @_pf67_patch009m_edit_required
 def pf67_patch009m_flows_console():
     rows = Job.query.order_by(Job.id.desc()).all()
@@ -8249,6 +8268,7 @@ def _pf67_patch010b2_marker(procedure_id):
 
 
 @views_bp.route("/templates/<int:template_id>/role-patch010b2.json")
+@views_bp.route("/protocol/<int:template_id>/role-patch010b2.json")
 def pf67_patch010b2_template_role_json(template_id):
     template = ProtocolTemplate.query.get_or_404(template_id)
 
@@ -8554,6 +8574,7 @@ def _pf67_patch010b3_marker(procedure_id):
 
 
 @views_bp.route("/templates/<int:template_id>/role-patch010b3.json")
+@views_bp.route("/protocol/<int:template_id>/role-patch010b3.json")
 def pf67_patch010b3_template_role_json(template_id):
     template = ProtocolTemplate.query.get_or_404(template_id)
 
@@ -8875,6 +8896,7 @@ def _pf67_patch010b7_marker(procedure_id):
 
 
 @views_bp.route("/templates/<int:template_id>/role-patch010b7.json")
+@views_bp.route("/protocol/<int:template_id>/role-patch010b7.json")
 def pf67_patch010b7_template_role_json(template_id):
     template = ProtocolTemplate.query.get_or_404(template_id)
 

@@ -5,6 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}PF67{% endblock %} - ProtocolFlow</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+
+
+
+
+
+        /* PF67 Patch 014A9 Public Protocol Toggle and Flows Nav Cleanup */
+        .pf67-dashboard-hero.pf67-public-protocols-hero {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin-right: 0 !important;
+            padding-right: 0 !important;
+            grid-column: 1 / -1 !important;
+        }
+
+        .pf67-dashboard-hero.pf67-public-protocols-hero > *,
+        .pf67-dashboard-hero.pf67-public-protocols-hero .pf67-dashboard-description {
+            width: 100% !important;
+            max-width: none !important;
+            margin-right: 0 !important;
+            padding-right: 0 !important;
+        }
+
+    </style>
 </head>
 <body>
     <nav>
@@ -26,5 +51,11 @@
         
         {% block content %}{% endblock %}
     </main>
+
+
+
+
+
+
 </body>
 </html>

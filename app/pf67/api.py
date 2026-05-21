@@ -17,6 +17,7 @@ def ping():
 
 
 @api_bp.route("/templates")
+@api_bp.route("/protocols")
 def templates():
     items = ProtocolTemplate.query.order_by(ProtocolTemplate.name).all()
 
@@ -36,6 +37,7 @@ def templates():
 
 
 @api_bp.route("/templates/<int:template_id>")
+@api_bp.route("/protocol/<int:template_id>")
 def template_detail(template_id):
     template = ProtocolTemplate.query.get_or_404(template_id)
 
@@ -75,6 +77,7 @@ def jobs():
 
 
 @api_bp.route("/jobs/active")
+@api_bp.route("/flow/active")
 def active_jobs():
     items = Job.query.filter_by(status="active").order_by(Job.started_at.desc()).all()
 
@@ -82,6 +85,7 @@ def active_jobs():
 
 
 @api_bp.route("/jobs/<int:job_id>")
+@api_bp.route("/flow/<int:job_id>")
 def job_detail(job_id):
     job = Job.query.get_or_404(job_id)
     data = job_to_dict(job, include_steps=True)
@@ -91,6 +95,7 @@ def job_detail(job_id):
 
 
 @api_bp.route("/jobs/<int:job_id>/steps")
+@api_bp.route("/flow/<int:job_id>/steps")
 def job_steps(job_id):
     job = Job.query.get_or_404(job_id)
 
@@ -98,6 +103,7 @@ def job_steps(job_id):
 
 
 @api_bp.route("/jobs/<int:job_id>/notes")
+@api_bp.route("/flow/<int:job_id>/notes")
 def job_notes(job_id):
     job = Job.query.get_or_404(job_id)
 
